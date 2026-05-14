@@ -108,6 +108,9 @@ its own runtime database, initialized from the exported app's `conf/init.sql`.
 After import, use the existing project export/generation path to produce the
 PHP app from the populated Tabilet records.
 
+Custom generated-code files should be kept as explicit overlays referenced by
+the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).
+
 ## Development Checks
 
 Compile the application modules and entrypoints:
