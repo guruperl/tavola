@@ -115,6 +115,7 @@ sub composer {
 	my $str = qq~{
     "name": "genelet/project-php",
     "description": "Sample Application of Genelet Framework",
+    "license": "LGPL-2.1-only",
     "type": "project",
     "authors": [
         {
@@ -123,7 +124,7 @@ sub composer {
         }
     ],
     "require": {
-        "genelet/php": ~.($local ? '"dev-main || dev-master"' : '"^1.3.1"').qq~
+        "genelet/php": ~.($local ? '"dev-main || dev-master"' : '"^1.3.2"').qq~
     },~;
 	if ($local) {
 		$str .= qq~
@@ -394,7 +395,8 @@ sub beacon {
     my $self = shift;
 
     my $project = ucfirst $self->{PROJECT}->{Project};
-	my $comp    = ucfirst $self->{COMPONENT}->{name_component};
+	my $component = $self->{COMPONENT}->{name_component};
+	my $comp    = ucfirst $component;
 
     return qq~<?php
 declare (strict_types = 1);
@@ -405,11 +407,11 @@ use $project;
 class Beacon extends \\$project\\Beacon
 {
     public function GET(string \$query=null) {
-        return parent::get_mock("$comp", \$query);
+        return parent::get_mock("$component", \$query);
     }
 
     public function POST(array \$data) {
-        return parent::post_mock("$comp", \$data);
+        return parent::post_mock("$component", \$data);
     }
 }
 ~;
