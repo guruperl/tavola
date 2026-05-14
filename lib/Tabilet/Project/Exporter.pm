@@ -10,6 +10,7 @@ use File::Path qw(make_path remove_tree);
 use File::Spec;
 use JSON qw(decode_json);
 use Tabilet::Generator::PHP;
+use Tabilet::Generator::Perl;
 use Tabilet::Template::Base;
 use Tabilet::Template::Role;
 
@@ -22,6 +23,8 @@ sub new {
 		projectid   => $args{projectid},
 		owner       => $args{owner},
 		project     => $args{project},
+		lang        => lc($args{lang} || 'php'),
+		data        => $args{data},
 		asset_root  => $args{asset_root} || '.',
 		logger      => $args{logger},
 	}, $class;
@@ -37,7 +40,7 @@ sub export_tar {
 
 sub add_to_tar {
 	my ($self, $tar, $form) = @_;
-	my ($one, $other) = $form ? $self->_from_form($form) : $self->_load_export_data();
+	my ($one, $other) = $form ? $self->_from_form($form) : $self->{data} ? @{$self->{data}} : $self->_load_export_data();
 
 	return 3007 unless ($one->{def_component} && $one->{def_action});
 	for my $role (@{$one->{role_topics}}) {
@@ -59,7 +62,8 @@ sub add_to_tar {
 
 	my $project = {};
 	$project->{$_} = $one->{$_} for (qw(memberid filter model config_json Document_root Project Server_url Script Template Uploaddir Pubrole def_component def_action ds));
-	my $php = Tabilet::Generator::PHP->new(
+	$project->{$_} = $one->{$_} for (qw(dbtype dbname dbuser dbpass host port Log_file));
+	my $generator = $self->_generator(
 		project    => $project,
 		logger     => $self->{logger},
 		_config    => $self->_config(),
@@ -68,29 +72,13 @@ sub add_to_tar {
 	);
 
 	$tar->add_data('conf/init.sql', $str);
-	$tar->add_data('composer.json', $php->composer());
 	$tar->add_data('www/index.html', Tabilet::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
-	$tar->add_data('www/app.php', $php->app());
 	$tar->add_data('logs/debug.log', '');
 	$tar->chmod('logs/debug.log', '777');
 	$tar->add_data('conf/config.json', $one->{config_json});
-	$tar->add_data('src/Application.php', $php->application());
-	$tar->add_data('src/Beacon.php', $php->project_beacon());
-	$tar->add_data('src/Filter.php', $one->{filter});
-	$tar->add_data('src/Model.php', $one->{model});
-	for my $item (@{$one->{component_topics}}) {
-		my $c = $item->{name_component};
-		my $comp_php = Tabilet::Generator::PHP->new(
-			project   => $project,
-			logger    => $self->{logger},
-			_config   => $self->_config(),
-			component => $item,
-		);
-		$tar->add_data("src/$c/component.json", $item->{component_json});
-		$tar->add_data("src/$c/Beacon.php", $comp_php->beacon());
-		$tar->add_data("src/$c/Filter.php", $item->{filter});
-		$tar->add_data("src/$c/Model.php", $item->{model});
-	}
+	$self->{lang} eq 'php'
+		? $self->_add_php_project($tar, $one, $project, $generator)
+		: $self->_add_perl_project($tar, $one, $project, $generator);
 
 	my ($html, $output, $twig) = Tabilet::Template::Role::vues($one, $self->{logger});
 	$tar->add_data('www/app.html', Tabilet::Template::Base::app($html, 'p', $one->{def_component}, $one->{def_action}));
@@ -114,6 +102,61 @@ sub add_to_tar {
 		}
 	}
 	return;
+}
+
+sub _add_php_project {
+	my ($self, $tar, $one, $project, $php) = @_;
+
+	$tar->add_data('composer.json', $php->composer());
+	$tar->add_data('www/app.php', $php->app());
+	$tar->add_data('src/Application.php', $php->application());
+	$tar->add_data('src/Beacon.php', $php->project_beacon());
+	$tar->add_data('src/Filter.php', $one->{filter});
+	$tar->add_data('src/Model.php', $one->{model});
+	for my $item (@{$one->{component_topics}}) {
+		my $c = $item->{name_component};
+		my $comp_php = $self->_generator(
+			project   => $project,
+			logger    => $self->{logger},
+			_config   => $self->_config(),
+			component => $item,
+		);
+		$tar->add_data("src/$c/component.json", $item->{component_json});
+		$tar->add_data("src/$c/Beacon.php", $comp_php->beacon());
+		$tar->add_data("src/$c/Filter.php", $item->{filter});
+		$tar->add_data("src/$c/Model.php", $item->{model});
+	}
+	return;
+}
+
+sub _add_perl_project {
+	my ($self, $tar, $one, $project, $perl) = @_;
+
+	my $name = ucfirst $one->{Project};
+	$tar->add_data('script/app', $perl->app('conf/config.json', 'lib'));
+	$tar->chmod('script/app', '755');
+	$tar->add_data("lib/$name/Filter.pm", $perl->project_filter());
+	$tar->add_data("lib/$name/Model.pm", $perl->project_model());
+	for my $item (@{$one->{component_topics}}) {
+		my $c = ucfirst $item->{name_component};
+		my $comp_perl = $self->_generator(
+			project   => $project,
+			logger    => $self->{logger},
+			_config   => $self->_config(),
+			component => $item,
+		);
+		$tar->add_data("lib/$name/$c/component.json", $item->{component_json});
+		$tar->add_data("lib/$name/$c/Filter.pm", $comp_perl->filter());
+		$tar->add_data("lib/$name/$c/Model.pm", $comp_perl->model());
+	}
+	return;
+}
+
+sub _generator {
+	my ($self, %args) = @_;
+	die "Unsupported language '$self->{lang}'\n" unless $self->{lang} eq 'php' || $self->{lang} eq 'perl';
+	my $class = $self->{lang} eq 'perl' ? 'Tabilet::Generator::Perl' : 'Tabilet::Generator::PHP';
+	return $class->new(%args);
 }
 
 sub write_tar {

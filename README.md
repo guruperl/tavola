@@ -69,11 +69,10 @@ The `TABILET_SMTP_AUTH` and `TABILET_GMAIL_AUTH` values use the existing
 
 ## JSON Project Specs
 
-Tabilet can also load a generated-project definition from JSON into the
-Tabilet metadata database. The JSON file becomes the source of truth for the
-records that the old UI collected: owner, project, datasource, tables,
-procedures, roles, components, action access, landing defaults, and optional
-custom generated-code overlays.
+Tabilet can generate an application directly from a JSON project spec. The JSON
+file is the source of truth for the records that the old UI collected: owner,
+project, datasource, tables, procedures, roles, components, action access,
+landing defaults, and optional custom generated-code overlays.
 
 Start from the template, then edit the copied spec:
 
@@ -81,16 +80,34 @@ Start from the template, then edit the copied spec:
 cp specs/project.template.json specs/my.project.json
 ```
 
+Validate a spec without writing files:
+
+```bash
+script/generate-project --lang php --spec specs/project.template.json --dry-run
+```
+
+Generate a PHP app directly from JSON:
+
+```bash
+script/generate-project \
+  --lang php \
+  --spec specs/jenny.project.json \
+  --out ../jenny \
+  --replace
+```
+
+Use `--lang perl` for Perl output and `--tar PATH` instead of `--out PATH` to
+write an archive without extracting it.
+
+## Metadata DB Compatibility
+
+The metadata database path is still available for compatibility and migration
+checks.
+
 Initialize the Tabilet metadata database:
 
 ```bash
 mysql -u root tabilet < conf/init.sql
-```
-
-Validate a spec without writing to the database:
-
-```bash
-script/import-project-spec --dry-run --spec specs/project.template.json
 ```
 
 Import or replace a project in the metadata database:
@@ -105,7 +122,7 @@ script/import-project-spec \
 
 The importer writes Tabilet metadata records only. The generated app still has
 its own runtime database, initialized from the exported app's `conf/init.sql`.
-After import, export the generated PHP app from the populated Tabilet records:
+After import, export the generated app from the populated Tabilet records:
 
 ```bash
 TABILET_DB_USER=... TABILET_DB_PASS=... \
@@ -117,8 +134,8 @@ script/export-project \
 ```
 
 Use `--tar PATH` instead of `--out PATH` to write an archive without extracting
-it. The exporter is headless and does not require the Tabilet web UI, CGI
-entrypoints, or browser workflow.
+it. The direct generator and metadata exporter are headless and do not require
+the Tabilet web UI, CGI entrypoints, or browser workflow.
 
 Custom generated-code files should be kept as explicit overlays referenced by
 the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).
@@ -135,6 +152,7 @@ done
 perl -Ilib -I../perl -c script/tabi
 perl -Ilib -I../perl -c script/import-project-spec
 perl -Ilib -I../perl -c script/export-project
+perl -Ilib -I../perl -c script/generate-project
 perl -Ilib -I../perl -c cgi-bin/tabi
 perl -Ilib -I../perl -c cgi-bin/xtabi
 ```

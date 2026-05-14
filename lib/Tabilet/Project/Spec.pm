@@ -57,6 +57,29 @@ sub run {
 	return;
 }
 
+sub export_data {
+	my $self = shift;
+
+	$self->{spec} = $self->_read_json($self->{spec_path});
+	$self->_validate_spec($self->{spec});
+	$self->{config} = $self->_read_json($self->{config_path}) if $self->{config_path};
+
+	return $self->_build_export_data();
+}
+
+sub export_summary {
+	my $self = shift;
+	my ($one) = $self->export_data();
+	return {
+		project    => $one->{Project},
+		memberid   => $one->{memberid},
+		components => scalar @{$one->{component_topics}},
+		roles      => scalar @{$one->{role_topics}},
+		tables     => scalar @{$one->{table_topics}},
+		procedures => scalar @{$one->{stored_topics}},
+	};
+}
+
 sub _read_json {
 	my ($self, $path) = @_;
 	die "Missing JSON path\n" unless $path;
@@ -185,6 +208,268 @@ sub _print_plan {
 	print "planned inserts: 1 member if missing, 1 project, 1 datasource, $tables tables, $procedures procedures, $roles roles, $components components, $actions action rows\n";
 	print "replace: " . ($self->{replace} ? "yes" : "no") . "\n";
 	return;
+}
+
+sub _build_export_data {
+	my $self = shift;
+	my $spec = $self->{spec};
+
+	my $memberid = $spec->{owner}->{memberid} || 0;
+	my $projectid = 1;
+	my $paths = $self->_project_paths($spec->{project}, $spec->{owner});
+
+	my $one = {
+		projectid      => $projectid,
+		memberid       => $memberid,
+		ds             => $spec->{project}->{ds} || 'remote',
+		Document_root  => $paths->{document_root},
+		Project        => $spec->{project}->{name},
+		Server_url     => $paths->{server_url},
+		Script         => $spec->{project}->{script},
+		Template       => $paths->{template},
+		Uploaddir      => $paths->{upload_dir},
+		Pubrole        => $spec->{project}->{publicRole},
+		def_component  => $spec->{project}->{default}->{component},
+		def_action     => $spec->{project}->{default}->{action},
+		admin_role     => $spec->{project}->{adminRole} || 'a',
+		admin_user     => $spec->{project}->{adminUser} || 'admin',
+		admin_pass     => $spec->{project}->{adminPass} || $self->_random_hex(8),
+		Log_file       => $paths->{log_file},
+		dbtype         => $spec->{datasource}->{type},
+		dbname         => $spec->{datasource}->{database},
+		dbuser         => $spec->{datasource}->{user},
+		dbpass         => $spec->{datasource}->{password},
+		host           => $spec->{datasource}->{host},
+		port           => $spec->{datasource}->{port},
+	};
+
+	my (%tables_by_name, %tables_by_id, %procedures_by_table);
+	my $tableid = 1;
+	for my $table (@{$spec->{schema}->{tables}}) {
+		my $row = {
+			tableid         => $tableid++,
+			projectid       => $projectid,
+			table_name      => $table->{name},
+			current_key     => $table->{primaryKey},
+			current_id_auto => $table->{autoKey},
+			insert_pars     => $self->_json($table->{insert} || []),
+			edit_pars       => $self->_json($table->{edit} || []),
+			update_pars     => $self->_json($table->{update} || []),
+			topics_pars     => $self->_json($table->{topics} || []),
+			statement       => $self->_statement($table),
+			is_tabilet      => $table->{isTabilet} || 0,
+			table_comment   => $table->{comment},
+		};
+		push @{$one->{table_topics}}, $row;
+		$tables_by_name{$table->{name}} = $row;
+		$tables_by_id{$row->{tableid}} = $row;
+	}
+
+	my $procedureid = 1;
+	for my $procedure (@{$spec->{schema}->{procedures}}) {
+		my $table = $procedure->{table} ? $tables_by_name{$procedure->{table}} : undef;
+		my $row = {
+			procedureid    => $procedureid++,
+			projectid      => $projectid,
+			procedure_name => $procedure->{name},
+			statement      => $self->_statement($procedure),
+			tableid        => $table ? $table->{tableid} : undef,
+			is_tabilet     => $procedure->{isTabilet} || 0,
+		};
+		push @{$one->{stored_topics}}, $row;
+		$procedures_by_table{$row->{tableid}} = $row if $row->{tableid};
+	}
+
+	my (%roles_by_name, %roles_by_id);
+	my $roleid = 1;
+	for my $role (@{$spec->{roles}}) {
+		my $fields = $role->{fields};
+		my $default = $role->{default} || {};
+		my $table = $role->{table} ? $tables_by_name{$role->{table}} : undef;
+		my $row = {
+			roleid            => $roleid++,
+			projectid         => $projectid,
+			name_role         => $role->{name},
+			description       => $role->{description},
+			authen            => $role->{authen},
+			is_admin          => $role->{isAdmin} || 0,
+			is_auto           => $role->{isAuto} || 0,
+			tableid           => $table ? $table->{tableid} : undef,
+			default_component => $default->{component},
+			default_action    => $default->{action},
+			field_id          => $fields->{id},
+			field_login       => $fields->{login},
+			field_passwd      => $fields->{password},
+			field_firstname   => $fields->{firstname},
+			field_lastname    => $fields->{lastname},
+			restriction       => $role->{restriction},
+			procedure_name    => $table && $procedures_by_table{$table->{tableid}} ? $procedures_by_table{$table->{tableid}}->{procedure_name} : undef,
+		};
+		push @{$one->{role_topics}}, $row;
+		$roles_by_name{$role->{name}} = $row;
+		$roles_by_id{$row->{roleid}} = $row;
+	}
+
+	my @component_actions;
+	my $componentid = 1;
+	for my $component (@{$spec->{components}}) {
+		my $table = $tables_by_name{$component->{table}};
+		my $table_for_json = {
+			current_key     => $table->{current_key},
+			current_id_auto => $table->{current_id_auto},
+			insert_pars     => decode_json($table->{insert_pars} || '[]'),
+			edit_pars       => decode_json($table->{edit_pars} || '[]'),
+			update_pars     => decode_json($table->{update_pars} || '[]'),
+			topics_pars     => decode_json($table->{topics_pars} || '[]'),
+		};
+		my $component_json = $self->_component_json($component, $table_for_json);
+		my $filter = $self->_overlay_text($component, 'filter')
+			|| Tabilet::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->filter();
+		my $model = $self->_overlay_text($component, 'model')
+			|| Tabilet::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->model();
+
+		my $row = {
+			componentid     => $componentid++,
+			projectid       => $projectid,
+			name_component => $component->{name},
+			description    => $component->{description},
+			tableid        => $table->{tableid},
+			table_name     => $component->{table},
+			current_key    => $component->{primaryKey} || $table->{current_key},
+			current_id_auto=> exists $component->{autoKey} ? $component->{autoKey} : $table->{current_id_auto},
+			current_tables => $component->{currentTables} ? $self->_json($component->{currentTables}) : undef,
+			topics_hash    => $component->{topicsHash} ? $self->_json($component->{topicsHash}) : undef,
+			insert_pars    => $self->_json($component->{insert} || decode_json($table->{insert_pars} || '[]')),
+			edit_pars      => $self->_json($component->{edit} || decode_json($table->{edit_pars} || '[]')),
+			update_pars    => $self->_json($component->{update} || decode_json($table->{update_pars} || '[]')),
+			topics_pars    => $self->_json($component->{topics} || decode_json($table->{topics_pars} || '[]')),
+			component_json => $component_json,
+			filter         => $filter,
+			model          => $model,
+		};
+		push @{$one->{component_topics}}, $row;
+
+		if (my $crud = $self->_crud_set($component->{public})) {
+			my $acl = $self->_acl_row($row, { crud => $crud });
+			push @{$one->{role_pub_acl}}, $acl;
+			push @component_actions, { component => $row, role => undef, action => $acl };
+		}
+		for my $role_name (sort keys %{$component->{roles} || {}}) {
+			my $action = $component->{roles}->{$role_name};
+			my $crud = ref($action) eq 'HASH' ? $self->_crud_set($action->{crud}) : $self->_crud_set($action);
+			next unless $crud;
+			my $role = $roles_by_name{$role_name};
+			my $acl = $self->_acl_row($row, {
+				ref($action) eq 'HASH' ? %$action : (),
+				crud      => $crud,
+				roleid    => $role->{roleid},
+				name_role => $role->{name_role},
+				field_id  => $role->{field_id},
+			});
+			push @{$one->{role_role_acl}}, $acl;
+			push @component_actions, { component => $row, role => $role, action => $acl };
+		}
+	}
+
+	$one->{table_topics} ||= [];
+	$one->{stored_topics} ||= [];
+	$one->{role_topics} ||= [];
+	$one->{component_topics} ||= [];
+	$one->{role_pub_acl} ||= [];
+	$one->{role_role_acl} ||= [];
+
+	my $php = Tabilet::Generator::PHP->new(
+		_config => $self->{config} || {},
+		project => $one,
+		roles   => $one->{role_topics},
+	);
+	my $project_overlays = $spec->{overlays}->{project} || {};
+	$one->{config_json} = $php->get_config();
+	$one->{filter} = $project_overlays->{filter}
+		|| ($project_overlays->{filterFile} ? $self->_read_text($project_overlays->{filterFile}) : undef)
+		|| $php->project_filter();
+	$one->{model} = $project_overlays->{model}
+		|| ($project_overlays->{modelFile} ? $self->_read_text($project_overlays->{modelFile}) : undef)
+		|| $php->project_model();
+
+	my $other = {
+		p_list => [
+			map {
+				{
+					name_component => $_->{component}->{name_component},
+					action => $self->_landing_action($_->{action}->{crud}, 1),
+				}
+			} grep { !$_->{role} } @component_actions
+		],
+		a_list => [
+			map { { name_component => $_->{name_component} } } @{$one->{component_topics}}
+		],
+		r_list => $self->_role_landing_rows(\@component_actions, \%tables_by_id),
+	};
+
+	return ($one, $other);
+}
+
+sub _acl_row {
+	my ($self, $component, $values) = @_;
+	return {
+		%$values,
+		componentid    => $component->{componentid},
+		name_component=> $component->{name_component},
+		current_key    => $component->{current_key},
+		insert_pars    => $component->{insert_pars},
+		edit_pars      => $component->{edit_pars},
+		update_pars    => $component->{update_pars},
+		topics_pars    => $component->{topics_pars},
+	};
+}
+
+sub _landing_action {
+	my ($self, $crud, $public) = @_;
+	my %has = map { $_ => 1 } split(',', $crud || '', -1);
+	return 'topics' if $has{topics};
+	return 'startnew' if $has{startnew};
+	return $public ? '' : ($has{edit} ? 'edit' : '');
+}
+
+sub _role_landing_rows {
+	my ($self, $actions, $tables_by_id) = @_;
+	my @rows;
+	for my $item (@$actions) {
+		my $role = $item->{role} or next;
+		next if $role->{name_role} eq 'a';
+		my $role_table = $role->{tableid} ? $tables_by_id->{$role->{tableid}} : undef;
+		next unless $role_table;
+		my $component = $item->{component};
+		my $action = $item->{action};
+		my %has = map { $_ => 1 } split(',', $action->{crud} || '', -1);
+		my ($level, $landing);
+		if ($role->{tableid} && $role->{tableid} == $component->{tableid} && ($has{topics} || $has{startnew} || $has{edit})) {
+			$level = 1;
+			$landing = $has{edit} ? 'edit' : ($has{topics} ? 'topics' : 'startnew');
+		} elsif (($action->{inkey} || '') eq ($role_table->{current_key} || '') && ($has{topics} || $has{startnew})) {
+			$level = 2;
+			$landing = $has{topics} ? 'topics' : 'startnew';
+		} elsif ((!$action->{inkey}) && $has{topics}) {
+			$level = 3;
+			$landing = 'topics';
+		} else {
+			next;
+		}
+		push @rows, {
+			roleid            => $role->{roleid},
+			name_role         => $role->{name_role},
+			default_component => $role->{default_component},
+			default_action    => $role->{default_action},
+			name_component    => $component->{name_component},
+			level             => $level,
+			action            => $landing,
+			is_edit           => $has{edit} ? 1 : 0,
+			is_topics         => $has{topics} ? 1 : 0,
+			is_startnew       => $has{startnew} ? 1 : 0,
+		};
+	}
+	return [sort { $a->{name_component} cmp $b->{name_component} || $a->{level} <=> $b->{level} } @rows];
 }
 
 sub _import {
@@ -501,7 +786,8 @@ sub _component_json {
 		my $cruds = ref($component->{roles}->{$role}) eq 'HASH'
 			? $component->{roles}->{$role}->{crud}
 			: $component->{roles}->{$role};
-		for my $crud (@$cruds) {
+		my @cruds = ref($cruds) eq 'ARRAY' ? @$cruds : split /\s*,\s*/, $cruds;
+		for my $crud (@cruds) {
 			push @{$actions->{$crud}->{groups}}, $role;
 		}
 	}

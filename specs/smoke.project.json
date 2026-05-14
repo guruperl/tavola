@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "owner": {
+    "login": "smoke",
+    "email": "smoke@example.test",
+    "typeid": 1
+  },
+  "project": {
+    "name": "Smoke",
+    "script": "/app.php",
+    "publicRole": "p",
+    "default": {
+      "component": "widget",
+      "action": "topics"
+    }
+  },
+  "datasource": {
+    "type": "MySQL",
+    "nickname": "smoke",
+    "database": "smoke",
+    "host": "127.0.0.1",
+    "port": "3306",
+    "user": "${SMOKE_DB_USER}",
+    "password": "${SMOKE_DB_PASSWORD}"
+  },
+  "schema": {
+    "tables": [
+      {
+        "name": "tabilet_login_a",
+        "primaryKey": "a_id",
+        "autoKey": "a_id",
+        "statement": "CREATE TABLE tabilet_login_a (a_id int unsigned NOT NULL AUTO_INCREMENT, email varchar(255) NOT NULL, passwd varchar(255) NOT NULL, firstname varchar(255), lastname varchar(255), status enum('Yes','No') DEFAULT 'Yes', created datetime, PRIMARY KEY (a_id))",
+        "insert": ["email", "passwd", "firstname", "lastname", "status", "created"],
+        "edit": ["a_id", "email", "passwd", "firstname", "lastname", "status", "created"],
+        "update": ["a_id", "email", "passwd", "firstname", "lastname", "status"],
+        "topics": ["a_id", "email", "firstname", "lastname", "status", "created"]
+      },
+      {
+        "name": "widget",
+        "primaryKey": "widget_id",
+        "autoKey": "widget_id",
+        "statement": "CREATE TABLE widget (widget_id int unsigned NOT NULL AUTO_INCREMENT, name varchar(255) NOT NULL, created datetime, PRIMARY KEY (widget_id))",
+        "insert": ["name", "created"],
+        "edit": ["widget_id", "name", "created"],
+        "update": ["widget_id", "name"],
+        "topics": ["widget_id", "name", "created"]
+      }
+    ],
+    "procedures": [
+      {
+        "name": "proc_smoke_a",
+        "table": "tabilet_login_a",
+        "statement": "CREATE PROCEDURE proc_smoke_a(IN i_email varchar(255), IN i_passwd varchar(255), OUT a_id int unsigned, OUT email varchar(255), OUT a_firstname varchar(255), OUT a_lastname varchar(255)) BEGIN SELECT 1, i_email, '', '' INTO a_id, email, a_firstname, a_lastname; END"
+      }
+    ]
+  },
+  "roles": [
+    {
+      "name": "a",
+      "description": "Built-in administrator",
+      "authen": "db",
+      "isAdmin": 1,
+      "isAuto": 1,
+      "table": "tabilet_login_a",
+      "default": {
+        "component": "widget",
+        "action": "topics"
+      },
+      "fields": {
+        "id": "a_id",
+        "login": "email",
+        "password": "passwd",
+        "firstname": "firstname",
+        "lastname": "lastname"
+      },
+      "restriction": "status IN (\"Yes\")"
+    }
+  ],
+  "components": [
+    {
+      "name": "widget",
+      "description": "Smoke test widgets",
+      "table": "widget",
+      "public": ["startnew", "topics"],
+      "roles": {
+        "a": ["startnew", "insert", "edit", "update", "delete", "topics"]
+      }
+    }
+  ],
+  "overlays": {}
+}

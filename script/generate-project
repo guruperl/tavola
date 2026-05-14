@@ -1,0 +1,84 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use FindBin qw($Bin);
+use lib "$Bin/../lib", "$Bin/../../perl";
+
+use Getopt::Long qw(GetOptions);
+use Tabilet::Project::Exporter;
+use Tabilet::Project::Spec;
+
+my $config = "$Bin/../conf/config.json";
+my $lang = 'php';
+my $spec;
+my $out;
+my $tar;
+my $replace = 0;
+my $dry_run = 0;
+my $help = 0;
+
+GetOptions(
+	'config=s' => \$config,
+	'lang=s'   => \$lang,
+	'spec=s'   => \$spec,
+	'out=s'    => \$out,
+	'tar=s'    => \$tar,
+	'replace'  => \$replace,
+	'dry-run'  => \$dry_run,
+	'help'     => \$help,
+) or usage(2);
+
+usage(0) if $help;
+usage(2) unless $spec;
+usage(2) unless $dry_run || $out || $tar;
+$lang = lc $lang;
+die "Unsupported --lang '$lang'. Use php or perl.\n" unless $lang eq 'php' || $lang eq 'perl';
+
+my $loader = Tabilet::Project::Spec->new(
+	config_path => $config,
+	spec_path   => $spec,
+);
+my ($one, $other) = $loader->export_data();
+
+if ($dry_run) {
+	print "Dry run: generate $lang project $one->{Project}\n";
+	print "source: $spec\n";
+	print "metadata: "
+		. scalar(@{$one->{role_topics}}) . " roles, "
+		. scalar(@{$one->{component_topics}}) . " components, "
+		. scalar(@{$one->{table_topics}}) . " tables, "
+		. scalar(@{$one->{stored_topics}}) . " procedures\n";
+	exit 0;
+}
+
+my $exporter = Tabilet::Project::Exporter->new(
+	config_path => $config,
+	lang        => $lang,
+	data        => [$one, $other],
+	asset_root  => "$Bin/..",
+);
+
+$exporter->write_tar($tar) if $tar;
+$exporter->write_dir($out, $replace) if $out;
+
+exit 0;
+
+sub usage {
+	my $exit = shift;
+	print <<"USAGE";
+Usage: script/generate-project --lang php|perl --spec PATH [options]
+
+Options:
+  --config PATH  Tabilet generator config. Defaults to conf/config.json.
+  --lang LANG    Output language: php or perl. Defaults to php.
+  --spec PATH    JSON project spec.
+  --out PATH     Extract generated files into PATH.
+  --tar PATH     Write a generated tar archive to PATH.
+  --replace      Replace --out PATH if it already exists.
+  --dry-run      Validate and summarize generation without writing.
+  --help         Show this help.
+USAGE
+	exit $exit;
+}

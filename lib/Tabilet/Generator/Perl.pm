@@ -130,7 +130,7 @@ use Template;
 
 use Genelet::Dispatch;
 
-Genelet::Dispatch::run("$json","$lib", ["~.join('","', grep {ucfirst} @{$self->{COMPONENTS}}).qq~"]);
+Genelet::Dispatch::run("$json","$lib", ["~.join('","', map {ucfirst} @{$self->{COMPONENTS}}).qq~"]);
 
 exit;
 ~;
