@@ -67,6 +67,47 @@ TABILET_ADMIN_ROLE_CODING
 The `TABILET_SMTP_AUTH` and `TABILET_GMAIL_AUTH` values use the existing
 `user,password` format expected by the mail adapters.
 
+## JSON Project Specs
+
+Tabilet can also load a generated-project definition from JSON into the
+Tabilet metadata database. The JSON file becomes the source of truth for the
+records that the old UI collected: owner, project, datasource, tables,
+procedures, roles, components, action access, landing defaults, and optional
+custom generated-code overlays.
+
+Start from the template, then edit the copied spec:
+
+```bash
+cp specs/project.template.json specs/my.project.json
+```
+
+Initialize the Tabilet metadata database:
+
+```bash
+mysql -u root tabilet < conf/init.sql
+```
+
+Validate a spec without writing to the database:
+
+```bash
+script/import-project-spec --dry-run --spec specs/project.template.json
+```
+
+Import or replace a project in the metadata database:
+
+```bash
+TABILET_DB_USER=... TABILET_DB_PASS=... \
+script/import-project-spec \
+  --config conf/config.json \
+  --spec specs/jenny.project.json \
+  --replace
+```
+
+The importer writes Tabilet metadata records only. The generated app still has
+its own runtime database, initialized from the exported app's `conf/init.sql`.
+After import, use the existing project export/generation path to produce the
+PHP app from the populated Tabilet records.
+
 ## Development Checks
 
 Compile the application modules and entrypoints:
@@ -77,6 +118,7 @@ find lib -name '*.pm' | sort | while read -r f; do
 done
 
 perl -Ilib -I../perl -c script/tabi
+perl -Ilib -I../perl -c script/import-project-spec
 perl -Ilib -I../perl -c cgi-bin/tabi
 perl -Ilib -I../perl -c cgi-bin/xtabi
 ```

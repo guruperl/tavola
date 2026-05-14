@@ -2,6 +2,7 @@ package Tabilet::Generator::Config;
 
 use strict;
 use Genelet::Accessor;
+use Genelet::Utils;
 use vars qw(@ISA);
 @ISA = qw(Genelet::Accessor);
 

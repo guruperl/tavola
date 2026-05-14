@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "owner": {
+    "login": "jenny",
+    "email": "jenny@example.test",
+    "typeid": 1
+  },
+  "project": {
+    "name": "Jenny",
+    "script": "/jenny/app.php",
+    "publicRole": "p",
+    "default": {
+      "component": "car",
+      "action": "topics"
+    }
+  },
+  "datasource": {
+    "type": "MySQL",
+    "nickname": "jenny",
+    "database": "jenny",
+    "host": "127.0.0.1",
+    "port": "3306",
+    "user": "${JENNY_DB_USER}",
+    "password": "${JENNY_DB_PASSWORD}"
+  },
+  "schema": {
+    "tables": [],
+    "procedures": []
+  },
+  "roles": [],
+  "components": [],
+  "overlays": {}
+}

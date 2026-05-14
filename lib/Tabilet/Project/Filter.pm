@@ -269,7 +269,10 @@ sub get_tar {
 		$str .= "\nDROP TABLE IF EXISTS " . $hash->{table_name} . ";\n" . $hash->{statement} . ";\n\n";
 	}
 	for my $hash (@{$one->{"stored_topics"}}) {
-		$str .= "\nDROP PROCEDURE IF EXISTS " . $hash->{procedure_name} . ";\n" . $hash->{statement} . "\n\n";
+		$str .= "\nDROP PROCEDURE IF EXISTS " . $hash->{procedure_name} . ";\n"
+			. "DELIMITER //\n"
+			. $hash->{statement} . "//\n"
+			. "DELIMITER ;\n\n";
 	}
 	
 	my $project = {};

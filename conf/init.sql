@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `member` (
   PRIMARY KEY (`memberid`),
   UNIQUE KEY `login` (`login`),
   foreign key (typeid) references def_type (typeid) on update cascade,
-  foreign key (groupid) references member (groupid) on update cascade
+  foreign key (groupid) references member (memberid) on update cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -162,6 +162,9 @@ CREATE TABLE IF NOT EXISTS `user_project` (
   admin_user varchar(255) not null,
   admin_pass varchar(255) not null,
   Log_file VARCHAR(255) NOT NULL,
+  config_json JSON DEFAULT NULL,
+  filter text DEFAULT NULL,
+  model text DEFAULT NULL,
   created datetime,
   primary key (projectid),
   unique key (memberid),
@@ -236,7 +239,7 @@ CREATE TABLE IF NOT EXISTS `user_procedure` (
   projectid	int unsigned not null,
   procedure_name	varchar(255) not null,
   statement text not null,
-  tableid int unsigned default null;
+  tableid int unsigned default null,
   is_tabilet tinyint unsigned default 0,
   created datetime, 
   primary key (procedureid),
@@ -342,7 +345,7 @@ CREATE TABLE IF NOT EXISTS `user_action_public` (
 CREATE TABLE IF NOT EXISTS `tt` (
   `subjectid` int(11) NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(255) NOT NULL,
-  `category` enum('Development','Deployment','Account','Other') default 'Other';
+  `category` enum('Development','Deployment','Account','Other') default 'Other',
   `status` enum('Open','Close') DEFAULT 'Open',
   `name` VARCHAR(255) NOT NULL,
   `comm` VARCHAR(255) DEFAULT '',

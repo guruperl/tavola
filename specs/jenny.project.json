@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "owner": {
+    "login": "jenny",
+    "email": "jenny@example.test",
+    "typeid": 1
+  },
+  "project": {
+    "name": "Jenny",
+    "script": "/jenny/app.php",
+    "publicRole": "p",
+    "root": "/home/peter/jenny",
+    "serverUrl": "https://www.tabilet.com",
+    "ds": "remote",
+    "adminRole": "a",
+    "adminUser": "admin",
+    "default": {
+      "component": "car",
+      "action": "topics"
+    }
+  },
+  "datasource": {
+    "type": "MySQL",
+    "nickname": "jenny",
+    "database": "jenny",
+    "host": "127.0.0.1",
+    "port": "3306",
+    "user": "${JENNY_DB_USER}",
+    "password": "${JENNY_DB_PASSWORD}",
+    "connected": "Yes"
+  },
+  "schema": {
+    "tables": [
+      {
+        "name": "tabilet_login_a",
+        "primaryKey": "a_id",
+        "autoKey": "a_id",
+        "statementFile": "jenny/sql/tabilet_login_a.sql",
+        "insert": ["email", "passwd", "firstname", "lastname", "status", "created"],
+        "edit": ["a_id", "email", "passwd", "firstname", "lastname", "status", "created"],
+        "update": ["a_id", "email", "passwd", "firstname", "lastname", "status"],
+        "topics": ["a_id", "email", "firstname", "lastname", "status", "created"],
+        "uniques": [
+          {"name": "email", "position": 1, "column": "email"}
+        ]
+      },
+      {
+        "name": "tabilet_login_a_tabilet_ip",
+        "primaryKey": "id",
+        "autoKey": "id",
+        "statementFile": "jenny/sql/tabilet_login_a_tabilet_ip.sql",
+        "insert": ["ip", "login", "ret"],
+        "edit": ["id", "ip", "login", "updated", "ret"],
+        "update": ["id", "ip", "login", "ret"],
+        "topics": ["id", "ip", "login", "updated", "ret"]
+      },
+      {
+        "name": "poll_question",
+        "primaryKey": "poll_id",
+        "autoKey": "poll_id",
+        "statementFile": "jenny/sql/poll_question.sql",
+        "insert": ["question"],
+        "edit": ["poll_id", "question", "created"],
+        "update": ["poll_id", "question"],
+        "topics": ["poll_id", "question", "created"]
+      },
+      {
+        "name": "poll_choice",
+        "primaryKey": "choice_id",
+        "autoKey": "choice_id",
+        "statementFile": "jenny/sql/poll_choice.sql",
+        "insert": ["poll_id", "choice", "votes"],
+        "edit": ["choice_id", "poll_id", "choice", "votes"],
+        "update": ["choice_id", "poll_id", "choice", "votes"],
+        "topics": ["choice_id", "poll_id", "choice", "votes"],
+        "fks": [
+          {"column": "poll_id", "primaryTable": "poll_question", "primaryColumn": "poll_id"}
+        ]
+      },
+      {
+        "name": "Book3_csv",
+        "primaryKey": "tabilet_id",
+        "autoKey": "tabilet_id",
+        "statementFile": "jenny/sql/Book3_csv.sql",
+        "insert": ["RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
+        "edit": ["tabilet_id", "RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
+        "update": ["tabilet_id", "RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
+        "topics": ["tabilet_id", "RECALL_NUMBER_NUM", "YEAR", "CATEGORY_ETXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "RECALL_DATE_DTE", "updated"]
+      },
+      {
+        "name": "log_download",
+        "primaryKey": "log_id",
+        "autoKey": "log_id",
+        "statementFile": "jenny/sql/log_download.sql",
+        "insert": ["theday", "num", "status"],
+        "edit": ["log_id", "theday", "num", "status"],
+        "update": ["log_id", "theday", "num", "status"],
+        "topics": ["log_id", "theday", "num", "status"]
+      }
+    ],
+    "procedures": [
+      {
+        "name": "proc_jenny_a",
+        "table": "tabilet_login_a",
+        "statementFile": "jenny/sql/proc_jenny_a.sql"
+      }
+    ]
+  },
+  "roles": [
+    {
+      "name": "a",
+      "description": "Built-in administrator",
+      "authen": "db",
+      "isAdmin": 1,
+      "isAuto": 1,
+      "table": "tabilet_login_a",
+      "default": {
+        "component": "car",
+        "action": "topics"
+      },
+      "fields": {
+        "id": "a_id",
+        "login": "email",
+        "password": "passwd",
+        "firstname": "firstname",
+        "lastname": "lastname"
+      },
+      "restriction": "status IN (\"Yes\")"
+    }
+  ],
+  "components": [
+    {
+      "name": "question",
+      "description": "Poll questions",
+      "table": "poll_question",
+      "public": ["startnew", "edit", "topics"],
+      "componentJsonFile": "../jenny/src/question/component.json"
+    },
+    {
+      "name": "choice",
+      "description": "Poll choices",
+      "table": "poll_choice",
+      "public": ["startnew", "update", "topics"],
+      "componentJsonFile": "../jenny/src/choice/component.json"
+    },
+    {
+      "name": "car",
+      "description": "Vehicle recalls",
+      "table": "Book3_csv",
+      "public": ["startnew", "edit", "topics"],
+      "componentJsonFile": "../jenny/src/car/component.json"
+    }
+  ],
+  "overlays": {
+    "components": {
+      "car": {
+        "filterFile": "../jenny/src/car/Filter.php",
+        "modelFile": "../jenny/src/car/Model.php"
+      }
+    }
+  }
+}
