@@ -1,0 +1,24 @@
+[% INCLUDE start.en %]
+[% SET item=insert.0 %]
+
+<h2>Project Summary</h2>
+<p>
+The following role and database tables have been added to the new project.
+<ul>
+<li><em>a</em>: role for system adminsitrators
+<li><em>login_a</em> and <em>login_a_ip</em>: tables supporting <em>a</em>
+</ul>
+</p>
+
+<h5>Next Step:</h5>
+<p>
+[% IF ds=="online" %]
+Please click <a href="database?action=topics&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">here</a> to add more tables.
+[% ELSE %]
+Please click <a href="database?action=sync&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">here</a> to load database tables into your
+workspace. It may take few minutes to finish, depending on how many
+remote tables. Please DO NOT refresh the page. Let it finish by itself.
+[% END %]
+</p>
+
+[% INCLUDE end.en %]

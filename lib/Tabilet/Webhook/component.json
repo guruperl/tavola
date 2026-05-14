@@ -1,0 +1,16 @@
+{
+    "actions" : {
+        "insert"  : {"groups":["public"]},
+        "edit"    : {"validate":["wkid"]},
+        "topics"  : {},
+        "delete"  : {"validate":["wkid"]}
+    },
+
+	"current_table"   : "paypal_webhook",
+	"current_key"     : "wkid",
+	"current_id_auto" : "wkid",
+
+	"insert_pars" : ["id","create_time","resource_id","resource_type","event_type","summary","resource","verification","webhook_id","auth_algo","cert_url","transmission_id","transmission_sig","transmission_time"],
+	"edit_pars"   : ["id","create_time","resource_id","resource_type","event_type","summary","resource","verification","webhook_id","auth_algo","cert_url","transmission_id","transmission_sig","transmission_time","wkid"],
+	"topics_pars" : ["id","create_time","resource_id","resource_type","event_type","summary","resource","verification","webhook_id","auth_algo","cert_url","transmission_id","transmission_sig","transmission_time","wkid"]
+}

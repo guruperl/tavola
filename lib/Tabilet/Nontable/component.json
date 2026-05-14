@@ -1,0 +1,22 @@
+{
+	"actions" : {
+		"startnew":{"groups":["member"],"options":["no_db", "no_method"]},
+		"insert"  :{"groups":["member"],"validate":["tableid"]},
+		"update"  :{"groups":["member"],"validate":["tableid","nonid"]},
+		"edit"    :{"groups":["member"],"validate":["tableid","nonid"]},
+		"topics"  :{"groups":["member"],"validate":["projectid"]},
+		"delete"  :{"groups":["member"],"validate":["tableid","nonid"]}
+	},
+
+    "fks" : {
+        "member" : ["tableid","tablemd5"]
+    },
+
+	"current_table"   : "user_table_non",
+	"current_key"     : "nonid",
+	"current_id_auto" : "nonid",
+	"insert_pars"     : ["tableid","COLUMN_NAME"],
+	"update_pars"     : ["tableid","COLUMN_NAME","nonid"],
+	"edit_pars"       : ["tableid","COLUMN_NAME","nonid"],
+	"topics_pars"     : ["tableid","COLUMN_NAME","nonid"]
+}

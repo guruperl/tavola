@@ -1,0 +1,26 @@
+[% INCLUDE start.en %]
+
+                    <div class="doc-content col-md-12 col-12 order-1">
+                        <div class="content-inner">
+                            <section id="chartjs" class="doc-section">
+                                <h2 class="section-title">New Tabilet Application</h2>
+                                <div class="section-block">
+
+
+                <div class="cards-wrapper row">
+                    <div class="col-md-12 col-12">
+
+<p>
+Please check your email, to activate your account.
+</p>
+
+                    </div><!--//item-->
+                </div>
+
+                                </div><!--//section-block-->
+                            </section><!--//doc-section-->
+                        </div><!--//content-inner-->
+                    </div><!--//doc-content-->
+
+
+[% INCLUDE end.en %]

@@ -1,0 +1,272 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>Tabilet 演示</title>
+  <meta name="description" content="tabilet mobile data service tutorial" />
+  <meta name="keywords" content="tabilet, mobile data serice, tutorial" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" type="text/css" href="style/style.css" title="style" />
+  <link rel="stylesheet" type="text/css" href="style/tabilet.css" title="style" />
+</head>
+
+<body>
+  <div id="main">
+    <div id="header">
+      <div id="logo">
+        <div id="logo_text">
+          <!-- class="logo_colour", allows you to change the colour of the text -->
+          <h1><a href="index.html">tabilet<span class="logo_colour">范例</span></a></h1>
+          <h2>如何开发汽车报告项目</h2>
+        </div>
+      </div>
+      <div id="menubar">
+        <ul id="menu">
+          <li><a href="index.html">主页</a></li>
+          <li><a href="introduction.html">开发指南</a></li>
+          <li class="selected"><a href="tutorial.html">范例演示</a></li>
+          <li><a href="/script/tabi/public/gb/member?action=startnew">申请账号</a></li>
+          <li><a href="aboutus.html">业务联系</a></li>
+		 <li><a href="/script/tabi/member/gb/project?action=topics">会员登录
+</a></li>
+
+        </ul>
+      </div>
+    </div>
+    <div id="site_content">
+      <div class="sidebar">
+        <!-- div>
+		  <a href="#" id="clientLogin" class="ajaxdialog">Client Login</a>
+        </div -->
+        <!-- insert your sidebar items here -->
+        <h3>数据库</h3>
+        <h4>cars</h4>
+        <pre style="font-size: 10px">CREATE TABLE cars (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `Trademark` int(11) DEFAULT NULL,
+  `Model` int(11) DEFAULT NULL,
+  `HP` smallint(6) DEFAULT NULL,
+  `Liter` double DEFAULT NULL,
+  `Cyl` tinyint(4) DEFAULT NULL,
+  `TransmissSpeedCount` tinyint(4) DEFAULT NULL,
+  `TransmissAutomatic` varchar(3) DEFAULT NULL,
+  `MPG_City` tinyint(4) DEFAULT NULL,
+  `MPG_Highway` tinyint(4) DEFAULT NULL,
+  `Category` varchar(7) DEFAULT NULL,
+  `Description` longtext,
+  `Hyperlink` varchar(50) DEFAULT NULL,
+  `Price` double DEFAULT NULL,
+  `Color` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+);
+</pre>
+      </div>
+      <div id="content">
+       <!-- insert the page content here -->
+<p></p>
+
+<h4>
+  &nbsp; <a href='tutorial.html'>开发软件安装</a> &nbsp;|
+  &nbsp; 汽车报告 &nbsp;|
+  &nbsp; <a href='tutorial2.html'>在线民调</a>
+</h4>
+
+<p></p>
+
+	<p>通过本演示，你将学习构造一个简单的汽车网站。公共区外网访客能看到各种汽车。后台管理员可登录，添加新汽车，修改或者删除原有汽车。本演示源自于 <a href-"http://phpmaker.dev/demo.php">PHPMaker</a>这个专业PHP开发软件。本解决方案远比它简洁和强大。我们不仅生成网站，还能生成开发手机App所需的API，和基于Vue框架的H5应用。</p>
+        <p>在进入演示前，务必确认你已经安装好MySQL数据库，网站服务器（如Apache）和PHP编程语言。请参阅<a href="tutorial.html">安装</a>课程。</p>
+<p>你需要申请Tabilet用户账号。我们假设你的用户名为 john。</p>
+<div>
+  <button onclick="openSection('database')">数据库设置</button>
+  <button onclick="openSection('development')">在线开发</button>
+  <button onclick="openSection('installation')">本地安装</button>
+</div>
+
+<div id="database" class="city">
+
+	<h2>数据库</h2>
+	<h4>项目管理员表格</h4>
+<ul>
+	<li>
+数据库里自动带有两个表格 <em>login_a</em>和<em>login_a_ip</em>，用于项目管理员登录。前者记录管理员登录名和密码，后者控制登录太多次失败后，如何锁住账号。
+	<li>
+系统已自动生成一个管理员，其账号和密码在会员主页可以查到。如果你需要通过Workbench或phpMyAdmin添加管理员，使用如下命令：
+<pre>
+&gt; INSERT INTO login_a (login, passwd, status, created) VALUES ('LOGIN', SHA1(CONCAT('LOGIN', 'PASSWORD')), 'Yes', NOW());
+
+</pre>
+其中大写的LOGIN和PASSWORD表示登录名和密码。
+</ul>
+
+	<h4>汽车表格</h4>
+<ul>
+	<li>
+	点击左边 <em>数据库</em> 链接，进入数据库管理页面。这里看到上述两个表格。（点击表格名称，将打开或关闭表的SQL语句。）
+	<li>
+	<em>添加新表</em> 的 <em>名称</em> 栏目下，输入我们要建的表格名称 <em>cars</em>。在 <em>SQL表格生成语句</em> 栏目下，输入：
+<pre>
+(
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `Trademark` int(11) DEFAULT NULL,
+  `Model` int(11) DEFAULT NULL,
+  `HP` smallint(6) DEFAULT NULL,
+  `Liter` double DEFAULT NULL,
+  `Cyl` tinyint(4) DEFAULT NULL,
+  `TransmissSpeedCount` tinyint(4) DEFAULT NULL,
+  `TransmissAutomatic` varchar(3) DEFAULT NULL,
+  `MPG_City` tinyint(4) DEFAULT NULL,
+  `MPG_Highway` tinyint(4) DEFAULT NULL,
+  `Category` varchar(7) DEFAULT NULL,
+  `Description` longtext,
+  `Hyperlink` varchar(50) DEFAULT NULL,
+  `Price` double DEFAULT NULL,
+  `Color` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+)
+</pre>
+<em>备注</em> 可设置为空白。点击 <em>提交</em>。
+	</ul>
+
+</div>
+<div id="development" class="city" style="display:none">
+
+<h2>在线开发</h2>
+<h4>开发新分量</h4>
+	创建了表格 <em>cars</em>，你就可以用来开发PHP程序了。在Genelet编程框架里，一个开发项目由多个分量（component）组成。数据库表格和分量通常是一
+一对应的。每个分量有自己独立的Namespace，执行对表格的各种Restful指令（action）。你也可以定制指令，编程是可以无限延展的。
+<ul>
+	<li>
+	点击左边栏目的 <em>项目</em>。此时下面出现 <em>角色</em> 和 <em>分量</em> 两个链接。本演示里，我们不构建新的登录角色。点击 <em>分量</em>。
+	<li>
+	在 <em>添加新分量</em> 下，<em>名称</em> 栏目里输入 <em>car</em>（此名称不必和表格名相同）。<em>选择表格</em> 里选 <em>cars</em>，分量 <em>car</em> 将对此表执行Resftful指令。	
+	<li>
+	<em>是否作为外网访客缺省分量</em> 和 <em>是否作为管理员的缺省分量</em> 均选上。意思是，访问时，如果不特意指定分量，此分量是否作为缺省。
+	<li>
+	<em>设置Restful指令执行权限</em> 英文上叫做 Access Control List (ACL)，限制哪个角色可以执行5个Resftful指令里哪些指令。对 <em>外网</em> 这个角色，选上 List 和 Read。 List的意思是观看所有种类的汽车，Read是按照汽车的ID，查看此汽车的细节。
+	<li>
+	<strong>系统管理员可以对所有分量做所以的执行指令</strong>。所以管理员角色不另设限制。
+	<li>
+	点击 <em>提交</em>。完成此次创建。
+</ul>
+
+<h4>项目下载</h4>
+至此，你虽然没有做任何编程工作，但系统已经帮助你完成了此项目的开发！
+你要做工作仅仅是下载自动生成的程序到本地机器上，安装后即可运行。
+<ul>
+	<li>
+返回 <em>项目</em>，点击 <em>打包下载软件</em>。
+</ul>
+
+</div>
+<div id="installation" class="city" style="display:none">
+
+<h2>本地安装</h2>
+    <p>确认MySQL，Apache和PHP编程都安装正确。解压下载包到某个文件区，比如 <em>C:\phpmaker</em>。
+    <h4>新建本地数据库</h4>
+
+<ul>
+    <li>
+由此下载数据库 <a href="https://phpmaker.dev/phpdemo2020.zip">https://phpmaker.dev/phpdemo2020.zip</a>
+</ul>
+        <h4>灌入数据库 demo2020</h4>
+<ul>
+    <li>
+解压，找到文件 demo2020.sql 。用 MySQL Workbench，PhpMyAdmin 或者任何其它工具将
+此文件灌进MySQL服务器上。最后生成名为 demo2020 的数据库。
+	<li>
+编辑Tabilet生成文件 <em>C:\phpmaker\conf\init.sql</em>，去掉其中的有关表格 <em>cars</em>
+的删除和生成语句（此表格和表格数据已经安装好了）后，把其它语句灌进 <em>demo2020</em>。
+此操作生成管理员表格和登录的 Procedure 语句。
+	<li>
+执行SQL命令：
+<pre>
+&gt; INSERT INTO login_a (login, passwd, status, created) VALUES ('LOGIN', SHA1(CONCAT('LOGIN', 'PASSWORD')), 'Yes', NOW());
+</pre>
+即在管理员表格 login_a 里安插了一个名为LOGIN，密码为PASSWORD的管理员账号。用于网页上管理员登录。
+</ul>
+
+    <h4>新建虚拟网站</h4>
+<ul>
+    <li>做为管理员，用编辑器打开 <em>c:\Windows\System32\Drivers\etc\hosts</em>，添加如下行：
+<pre>
+127.0.0.1 phpmaker
+</pre>
+    保存，退出。此行即对本机新加了一个虚拟地址 <em>phpmaker</em>。当浏览网址 <em>http://phpmaker</em> 时，它即在本机上寻找此虚拟域名。
+    <li>进入你的Apache网站服务器栏目，<em>c:\Apache24\conf\extra</em>，打开>其中 <em>httpd-vhosts.conf文件</em>，添加（不要删除已有的内容。如果你的解压>路径不一样，请做相应修改）：
+<pre>
+#
+&lt;VirtualHost *:80&gt;
+    ServerAdmin webmaster@localhost
+    DocumentRoot "C:/phpmaker/www"
+    ServerName phpmaker
+    &lt;Directory C:/phpmaker/www&gt;
+        Options Indexes MultiViews
+        AllowOverride None
+        Require all granted
+    &lt;Directory&gt;
+    ErrorLog "C:/phpmaker/logs/error.log"
+    CustomLog "C:/phpmaker/logs/access.log" common
+&lt;/VirtualHost&gt;
+</pre>
+    保存，退出，再重新启动Apache。此虚拟网站即构建成功。
+</ul>
+
+    <h4>修改项目配置文件</h4>
+<ul>
+    <li>项目启动时需要的配置参数由一个JSON格式的文件表达，由于运行环境不同，
+你需要修改它以便适应本机。用编辑器打开 <em>c:\phpmaker\conf\config.json</em>。
+    <li>把参数 <em>Document_root</em>，<em>Template</em>，<em>Uploaddir</em>，<em>Filename</em> 里面的 <em>/home/user/tabilet/sandy</em>字符换成你项目根
+目录 <em>c:/phpmaker</em>。
+    <li>把 <em>Server_url</em> 换成当下的虚拟网址 <em>http://phpmaker</em>。
+    <li>把数据库链接参数换成（假设数据库用户是USER和PASS）：
+<pre>
+"Db" : ["mysql:host=localhost;dbname=demo2020", "USER", "PASS"],
+</pre>
+    <li>把登录网站的域名 <em>Roles => a => Domain</em> 换成
+<pre>
+ "Domain"  : "phpmaker",
+</pre>
+    <li>保存，退出。
+</ul>
+
+    <h4>安装Genelet和其它软件库</h4>
+<ul>
+    <li>进入 <em>C:\phpmaker</em>，用composer安装所有第三方软件：
+<pre>
+composer install
+</pre>
+    <li>继续执行如下命令，以便把下载软件包名，铭记到autoload里
+<pre>
+composer dump-autoload -o
+</pre>
+</ul>
+
+    <h4>打开首页</h4>
+到这一步，你的网站已经安装完毕。请访问此项目首页: <em>http://phpmaker</em>
+<ul>
+    <li><em>网页</em>：采用Twig文字模板生成的普通动态网页。
+    <li><em>API和Vue.js生成的H5应用</em>：基于Restful API，用Vue.js生成的互>动单页网站。此网站稍作修改，即可继续开发为手机H5应用或微信小程序。
+    <li>继续了解在线编程，见 <a href="tutorial2.html">教程2</a>。
+</ul>
+
+</div>
+
+     </div><!-- content -->
+    </div><!-- site content -->
+    <div id="content_footer"></div>
+    <div id="footer">
+      版权所以 &copy; 2011-2020 tabilet.com
+    </div>
+  </div><!-- main -->
+<script>
+function openSection(name) {
+  var i;
+  var x = document.getElementsByClassName("city");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  document.getElementById(name).style.display = "block";
+}
+</script>
+</body>
+</html>

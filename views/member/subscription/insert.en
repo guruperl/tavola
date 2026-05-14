@@ -1,0 +1,13 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+
+<h2>Membership Payment</h2>
+<div class="section-block">
+
+The Paypal payment is complete.
+
+</div>
+</section>
+
+[% INCLUDE end.en %]

@@ -1,0 +1,35 @@
+[% FOREACH role IN item.role_role_acl %]
+<p></p>
+<h5>For Role <em>[% role.key %]</em></h5>
+[% FOREACH single IN role.value %][% SET $c = single.name_component %]
+<p>
+<li>Component: <strong>[% $c %]</strong>, Endpoint: <strong>http://WEBSITE/app.php/p/json/[% $c %]</strong></li>
+</p>
+<div class="table-responsive">
+<table class="table table-sm">
+<thead>
+<tr>
+<th style="width: 15%">Action</th>
+<th style="width: 15%">Method</th>
+<th style="width: 55%">Query or Body</th>
+<th style="width: 15%">Response</th>
+</tr>
+</thead>
+<tbody>[% FOREACH pair IN single.cruds %]
+<tr>
+<td>[% pair.key %]</td>
+<td><span class="badge badge-pill badge-info">[% pair.value.0 %]</span></td>
+<td style="overflow-x: hidden">
+<em>[% pair.value.2 %]</em>
+</td>
+<td><button type="button" class="btn btn-blank btn-sm" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content='<pre>[% pair.value.3 %]</pre>'>
+click
+</button>
+</td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>
+[% END %]
+
+[% END %]

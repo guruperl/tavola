@@ -1,0 +1,211 @@
+[% INCLUDE start.gb %]
+
+[% SET item=topics.0 %]
+
+<h2>项目总结</h2>
+[% IF item %]
+<!--
+Go to: <a class="btn btn-sm btn-default" href="role?action=topics&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">Roles</a>
+or
+<a class="btn btn-sm btn-default" href="component?action=topics&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">Component</a>, 
+or <a class="btn btn-sm btn-primary" href="project?action=edit&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">see code</a>
+-->
+<a class="btn btn-sm btn-warning" download href="../xtar/project?action=topics">打包下载软件</a>
+
+
+<!--
+<h5>Access API</h5>
+<div class="row">
+	<div class="col-8">The default <em>actions</em> are RESTful:</div>
+	<div class="col-2">Default <em>action</em></div>
+	<div class="col-2">Meaning</div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>GET</strong>:</div>
+	<div class="col-7"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT</code></div>
+	<div class="col-2"><code>topics</code></div>
+	<div class="col-2"><em>LIST all</em></div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>GET</strong>:</div>
+	<div class="col-7"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT/ID</code></div>
+	<div class="col-2"><code>edit</code></div>
+	<div class="col-2"><em>READ record</em></div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>POST</strong>:</div>
+	<div class="col-7"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT</code></div>
+	<div class="col-2"><code>insert</code></div>
+	<div class="col-2"><em>CREATE new</em></div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>PUT</strong>:</div>
+	<div class="col-7"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT</code></div>
+	<div class="col-2"><code>update</code></div>
+	<div class="col-2"><em>UPDATE record</em></div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>DELETE</strong>:</div>
+	<div class="col-7"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT</code></div>
+	<div class="col-2"><code>delete</code></div>
+	<div class="col-2"><em>DELETE record</em></div>
+</div>
+<p></p>
+<div class="row">
+	<div class="col-12">If <code>action=insert|edit|topics|update|delete</code> is assigned, it will override the defaults in all HTTP methods.</div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>GET</strong>:</div>
+	<div class="col-11"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT?action=ACTION&query</code></div>
+</div>
+<div class="row">
+	<div class="col-1"><strong>POST</strong>:</div>
+	<div class="col-11"><code>[% item.Server_url %][% item.Script %]/ROLE/json/COMPONENT</code> (with <code>action=</code> in body)</div>
+</div>
+<p></p>
+<div class="row">
+	<div class="col-12">Here are your <em>ROLE</em> and <em>COMPONENT</em>:</div>
+</div>
+<div class="row">
+	<div class="col-1"><hr></div>
+	<div class="col-2">All ROLEs</div>
+	<div class="col-1"><hr></div>
+</div>
+<div class="row">
+	<div class="col-1"><em>Public</em></div>
+	<div class="col-1"><em>Admin</em></div>
+	<div class="col-2"><em>Login Required</em></div>
+	<div class="col-2">COMPONENTs</div>
+	<div class="col-2">Script</div>
+	<div class="col-4">Server URL</div>
+</div>
+<div class="row">
+	<div class="col-1"><code>[% item.Pubrole %]</code></div>
+	<div class="col-1"><code>[% item.admin_role %]</code></div>
+	<div class="col-2"><code>[% item.db_roles %]</code></div>
+	<div class="col-2"><code>[% item.db_comps %]</code></div>
+	<div class="col-2"><code>[% item.Script %]</code></div>
+	<div class="col-4"><code>[% item.Server_url %]</code></div>
+</div>
+<p></p>
+<div class="row">
+	<div class="col-12">Data received at Status <em>OK 200</em>:</div>
+</div>
+<div class="row">
+	<div class="col-2">Successful:</div>
+	<div class="col-10"><code>{"success":true, "incomings":HASH, "included":HASH, "data":ARRAY OF HASH, "relationships":HASH OF <em>data</em>}</code></div>
+</div>
+<div class="row">
+	<div class="col-2">Login Required:</div>
+	<div class="col-10"><code>{"data":"[% item.Challenge %]"}</code></div>
+</div>
+<div class="row">
+	<div class="col-2">Found Error:</div>
+	<div class="col-10"><code>{"success":false, "error":CODE, "errorstr":STRING}</code></div>
+</div>
+<p></p>
+<h5>Login API</h5>
+<div class="row">
+	<div class="col-1"><strong>POST:</strong></div>
+	<div class="col-11"><code>[% item.Server_url %][% item.Script %]/ROLE/json/login</code></div>
+</div>
+<div class="row">
+	<div class="col-2">Data Sent:</div>
+	<div class="col-3">For ROLE</div>
+	<div class="col-3">Cookie Expected</div>
+	<div class="col-4">JSON</div>
+</div>
+[% FOREACH role=item.Whos %]<div class="row">
+	<div class="col-2"></div>
+	<div class="col-3"><code>[% role.role %]</code></div>
+	<div class="col-3"><code>[% role.cookie %]</code></div>
+	<div class="col-4"><code>{[% role.login %]:ACCOUNT, [% role.pass %]:PASSWORD}</code></div>
+</div>[% END %]
+<div class="row">
+	<div class="col-2">Data Received:</div>
+	<div class="col-3">Successful</div>
+	<div class="col-3">What to Follow</div>
+	<div class="col-4">Failed</div>
+</div>
+<div class="row">
+	<div class="col-2"></div>
+	<div class="col-3"><code>{"data":"[% item.Logged %]"}</code></div>
+	<div class="col-3"><code><em>Send the Role Cookie</em></code></div>
+	<div class="col-4"><code>{"data":"[% item.Failed %]"}</code></div>
+</div>
+<p></p>
+<h5>Logout API</h5>
+<div class="row">
+	<div class="col-1"><strong>POST</strong>:</div>
+	<div class="col-11"><code>[% item.Server_url %][% item.Script %]/ROLE/json/logout</code></div>
+</div>
+<div class="row">
+	<div class="col-2">Data Received:</div>
+	<div class="col-3">Successful</div>
+	<div class="col-3">What to Follow</div>
+	<div class="col-4">Failed</div>
+</div>
+<div class="row">
+    <div class="col-2"></div>
+	<div class="col-3"><code>{"data":"[% item.Logout %]"}</code></div>
+	<div class="col-3"><code><em>Remove the Role Cookie</em></code></div>
+	<div class="col-4"><code><em>All Others</em></code></div>
+</div>
+<p></p>
+<h5>Files On Server</h5>
+<div class="row">
+	<div class="col-6">Document_root</div>
+	<div class="col-6">Template</div>
+</div>
+<div class="row">
+	<div class="col-6"><code>[% item.Document_root %]</code></div>
+	<div class="col-6"><code>[% item.Template %]</code></div>
+</div>
+<div class="row">
+	<div class="col-6">Upload Directory</div>
+	<div class="col-6">Log File</div>
+</div>
+<div class="row">
+	<div class="col-6"><code>[% item.Uploaddir %]</code></div>
+	<div class="col-6"><code>[% item.Log_file %]</code></div>
+</div>
+<p></p>
+<h5>Database Access</h5>
+<div class="row">
+	<div class="col-2">Database</div>
+	<div class="col-2">User</div>
+	<div class="col-2">Pass</div>
+	<div class="col-6">Host</div>
+</div>
+<div class="row">
+	<div class="col-2"><code>[% item.Project %]</code></div>
+	<div class="col-2"><code>[% item.Project %]</code></div>
+	<div class="col-2"><code>[% item.Db_pass %]</code></div>
+	<div class="col-6"><code>[% item.Db_host %]</code></div>
+</div>
+<p></p>
+<h5>Table for Role <em>Admin</em></h5>
+<div class="row">
+	<div class="col-2">Table Name</div>
+	<div class="col-2">Account</div>
+	<div class="col-2">Account Pass</div>
+</div>
+<div class="row">
+	<div class="col-2"><code>login_[% item.admin_role %]</code></div>
+	<div class="col-2"><code>[% item.admin_user %]</code></div>
+	<div class="col-2"><code>[% item.admin_pass %]</code></div>
+</div>
+-->
+
+<p>
+删除此项目？ <a class="btn btn-sm btn-default" onclick="return confirm('删除项目将清除已有表格，角色和分量等，此操作不可反悔。请再次确认删除本项目吗？')" href="project?action=delete&projectid=[% item.projectid %]">是，请删除</a>
+</p>
+
+[% ELSE %]
+<form name=form1 class="form" method="POST" action="project">
+<input type=hidden name="action" value="insert">
+<button class="btn btn-primary" type="submit">创建新项目和新数据库</button>
+</form>
+[% END %]
+
+[% INCLUDE end.gb %]

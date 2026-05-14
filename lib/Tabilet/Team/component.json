@@ -1,0 +1,33 @@
+{
+	"actions" : {
+		"loginas"    :{"groups":["member"], "method":["GET"], "validate":["group_memberid"]},
+		"topics"     :{"groups":["member"]},
+		"startnew"   :{"groups":["member"], "method":["GET"], "options":["no_db","no_method"]},
+		"insert"     :{"groups":["member"]},
+		"delete"     :{"groups":["member"], "validate":["group_memberid"]},
+		"update"     :{"groups":["member"], "validate":["group_memberid"]},
+		"edit"       :{"groups":["member"], "validate":["group_memberid"]},
+		"change_pass":{"groups":["member"], "validate":["group_memberid", "passwd", "newpasswd"]}
+	},
+
+	"current_table"   :"member",
+	"current_key"     :"memberid",
+	"insert_pars"     :["city","typeid","street","state","zip","email","ip","country","memberid","groupid","active","created","lastname","login","firstname","passwd"],
+	"update_pars"     :["city","typeid","street","state","zip","email",     "country","memberid","groupid","active",          "lastname","login","firstname"],
+	"edit_pars"       :["city","typeid","street","state","zip","email",     "country","memberid","groupid","active","created","lastname","login","firstname"],
+	"current_tables" : [
+		{"name":"member", "alias":"m"},
+		{"name":"def_type", "alias":"t", "using":"typeid"}
+	],
+	"topics_pars": {
+		"t.name": "typename",
+		"t.typeid": "typeid",
+		"m.memberid": "memberid",
+		"m.groupid": "groupid",
+		"m.active": "active",
+		"DATE_FORMAT(m.created, '%b %d')": "created",
+		"m.login": "login",
+		"m.firstname": "firstname",
+		"m.lastname": "lastname"
+	}
+}

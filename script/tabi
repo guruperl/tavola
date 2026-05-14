@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+use FindBin qw($Bin);
+use lib "$Bin/../lib", "$Bin/../../perl";
+
+use strict;
+use JSON;
+
+use DBI;
+use XML::LibXML;
+use LWP::UserAgent;
+
+use Data::Dumper;
+use URI;
+use URI::Escape();
+use Digest::HMAC_SHA1;
+use MIME::Base64();
+use Template;
+
+use Genelet::Dispatch;
+use Tabilet::Config qw(load_config);
+
+Genelet::Dispatch::run(load_config("$Bin/../conf/config.json"),"$Bin/../lib", ["Project","Database","Role","Component","Nextpage","Act","Admin","Member","Team","Ds","Table","Fktable","Uniquetable","Nontable","Stored","Webhook","Paypal","Subscription","Tt","Ttpost"], 1);
+
+exit;

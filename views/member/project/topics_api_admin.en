@@ -1,0 +1,42 @@
+<p> &nbsp; </p>
+<h5>For Admin Role <em>a</em></h5>
+<p>
+This role can access all actions at the following endpoints without signature for keys.
+</p>
+<div class="table-responsive">
+<table class="table table-sm">
+<thead>
+<tr>
+<th>Component</th>
+<th>Action</th>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Input</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>[% FOREACH single IN item.component_topics %]
+<tr>
+<td>[% single.name_component %]</td>
+<td><em>topics,edit,delete</em></td>
+<td><span class="badge badge-pill badge-info">GET</span></td>
+<td>http://WEBSITE/app.php/a/json/[% single.name_component %]</td>
+<td><button type="button" class="btn btn-blank btn-sm" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content='action=<em>action</em>&[% single.current_key %]=CODE'>query</button></td>
+<td><button type="button" class="btn btn-blank btn-sm" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content='<pre>topics => [% single.topics_pars %]
+edit => [% single.edit_pars %]
+delete => NONE
+</pre>'>click</button></td>
+</tr>
+<tr>
+<td></td>
+<td><em>insert,update</em></td>
+<td><span class="badge badge-pill badge-info">POST</span></td>
+<td>http://WEBSITE/app.php/a/json/[% single.name_component %]</td>
+<td><button type="button" class="btn btn-blank btn-sm" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content='<pre>insert => [% single.insert_pars %]
+update => [% single.update_pars %]
+</pre>'>body</button></td>
+<td></td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>

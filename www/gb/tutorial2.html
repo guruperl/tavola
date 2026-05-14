@@ -1,0 +1,404 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>Tabilet Tutorial</title>
+  <meta name="description" content="tabilet mobile data service tutorial" />
+  <meta name="keywords" content="tabilet, mobile data serice, tutorial" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" type="text/css" href="style/style.css" title="style" />
+  <link rel="stylesheet" type="text/css" href="style/tabilet.css" title="style" />
+</head>
+
+<body>
+  <div id="main">
+    <div id="header">
+      <div id="logo">
+        <div id="logo_text">
+          <!-- class="logo_colour", allows you to change the colour of the text -->
+          <h1><a href="index.html">tabilet<span class="logo_colour">范例</span></a></h1>
+          <h2>如何开发在线民调项目</h2>
+        </div>
+      </div>
+      <div id="menubar">
+        <ul id="menu">
+          <li><a href="index.html">主页</a></li>
+          <li><a href="introduction.html">开发指南</a></li>
+          <li class="selected"><a href="tutorial.html">范例演示</a></li>
+          <li><a href="/script/tabi/public/gb/member?action=startnew">申请账号</a></li>
+          <li><a href="aboutus.html">业务联系</a></li>
+		 <li><a href="/script/tabi/member/gb/project?action=topics">会员登录
+</a></li>
+
+        </ul>
+      </div>
+    </div>
+    <div id="site_content">
+      <div class="sidebar">
+        <!-- insert your sidebar items here -->
+        <h3>数据库表</h3>
+        <h4>poll_question</h4>
+        <pre style="font-size: 10px">CREATE TABLE poll_question (
+poll_id int NOT NULL auto_increment,
+question varchar(200) NOT NULL,
+pub_date timestamp,
+PRIMARY KEY  (`poll_id`)
+);</pre>
+        <p></p>
+        <h4>poll_choice</h4>
+        <pre style="font-size: 10px">CREATE TABLE poll_choice (
+choice_id int NOT NULL auto_increment,
+poll_id int NOT NULL,
+choice varchar(200) NOT NULL,
+votes int NOT NULL default '0',
+PRIMARY KEY  (choice_id),
+KEY poll_id (poll_id)
+);</pre>
+      </div>
+      <div id="content">
+        <!-- insert the page content here -->
+<p></p>
+
+<h4>
+  &nbsp; <a href='tutorial.html'>开发软件安装</a> &nbsp;|
+  &nbsp; <a href='tutorial1.html'>汽车报告</a> &nbsp;|
+  &nbsp; 在线民调
+</h4>
+
+<p></p>
+
+        <p>本演示源自Python编程语言里Django框架的<a target=_blank href="https://docs.djangoproject.com/en/3.0/intro/tutorial02/">在线民调范例</a>。管理员在后台设计民调问题，每个问题有几种选择，让外网访客在线选择其中一个，即投票。选择的数量统计，即构成一个民调报告。</p>
+		<p>通过本课程，你将学习如何在线完成此开发项目。把生成的PHP程序，下载到本机或在线云服务上，确认安装好MySQL数据库，网站服务器（如Apache）和PHP编程语言（请参阅安装课程 ）后，即可启动网站了。</p>
+
+<p>你需要申请Tabilet用户账号。假设你账号的用户名为 <em>Sandy</em>。</p>
+
+<div>
+  <button onclick="openSection('design')">项目设计</button>
+  <button onclick="openSection('development')">在线开发</button>
+  <button onclick="openSection('installation')">本地安装</button>
+  <button onclick="openSection('backend')">后台管理</button>
+  <button onclick="openSection('votes')">公共投票</button>
+</div>
+
+<div id="design" class="city">
+
+        <h2>项目设计</h2>
+<h4>访问者角色</h4>
+	<ul>
+		<li>管理员：管理员可以登录后台做民调的管理。
+		<li>外网访客：无登录要求。在线观看和对民调问题投票。
+	</ul>
+<h4>数据库设计</h4>
+	<ul>
+		<li>我们需要两个表格。第一个是民调问题表 <em>poll_question</em>:
+<pre>
+CREATE TABLE poll_question (
+poll_id int NOT NULL auto_increment,
+question varchar(255) NOT NULL,
+created timestamp,
+PRIMARY KEY  (`poll_id`)
+);
+</pre>
+其中 <em>question</em> 即问题，<em>poll_id</em>为自动生成的问题序列号，<em>created</em>为填写时间，也是自动生成的。
+		<li>第二个表格是民调的几种投票选择 <em>poll_choice</em>:
+<pre>
+CREATE TABLE poll_choice (
+choice_id int NOT NULL auto_increment,
+poll_id int NOT NULL,
+choice varchar(255) NOT NULL,
+votes int NOT NULL default '0',
+PRIMARY KEY  (choice_id),
+KEY poll_id (poll_id)
+);
+</pre>
+<em>poll_id</em>即第一个表格的序列号，它是唯一的；<em>choice</em>是民调的答复：<em>votes</em>是此答复的在线投票数。当用户选择一个回答时，投票数即增加1。
+</ul>
+
+		<h4>管理员工作流程</h4>
+<ul>
+	<li>登录
+	<li>查看系统里所有的民调
+	<li>新建一个民调问题
+	<li>对新建的民调添加几种选项
+	<li>修改或删除某选项
+</ul>
+		<h4>外网工作流程</h4>
+<ul>
+	<li>发现某民调。为简单起见，我们同时显示目前已有投票计数。
+	<li>选择几个回答里面的一个提交。
+	<li>刷新页面后，被选回答的总数增加1。
+</ul>
+
+</div>
+
+</div>
+<div id="development" class="city" style="display:none">
+
+    <h2>在线开发</h2>
+		<h4>启动项目</h4>
+<ul>
+	<li>登录后，点击 <em>创建新项目和新数据库</em>，启动开发项目。
+</ul>
+		<h4>管理员数据库</h4>
+<ul>
+	<li>项目启动后，系统将自动赋予你一个私有数据库，并自动生成管理员用户表 <em>login_a</em> 和防登录攻击监控表 <em>login_a_ip</em>。
+	<li>添加或修改管理员通过直接在 <em>login_a</em> 表格里添减数据完成。
+</ul>
+		<h4>民调内容表格</h4>
+<ul>
+	<li>点击左栏 <em>数据库</em>，在 <em>添加新表</em> 下填入 <em>名称</em> ：</em>poll_question</em>。在 <em>SQL表格生成语句里填入</em> ：
+<pre>
+(
+poll_id int NOT NULL auto_increment,
+question varchar(200) NOT NULL,
+pub_date timestamp,
+PRIMARY KEY  (`poll_id`)
+)
+</pre>
+然后 <em>提交</em>。此表格即生成。
+	<li>重复上一步，在 <em>添加新表</em> 下填入 <em>名称</em> ：</em>poll_choice</em>。在 <em>SQL表格生成语句里填入</em> ：	
+<pre>
+(
+choice_id int NOT NULL auto_increment,
+poll_id int NOT NULL,
+choice varchar(200) NOT NULL,
+votes int NOT NULL default '0',
+PRIMARY KEY  (choice_id),
+KEY poll_id (poll_id)
+)
+然后 <em>提交</em>。此民调回答表即生成。
+</ul>
+		<h4>开发“民调问题”分量</h4>
+<ul>
+	<li>再次点击左边 <em>项目</em>。这时下面出现 <em>分量</em> 链接。点击此链接，进入分量管理。
+	<li>每一个数据库表格对应于一个分量。 现在创建新分量。在 <em>名称</em> 里填入 <em>question</em> 表格选为 <em>poll_question</em>，这是民调问题分量。
+	<li>选上 <em>是否作为外网访客的缺省分量</em> 和 <em>是否作为管理员的缺省分量</em>。
+	<li><em>设置Restful指令执行权限</em> 让你选择哪个角色可以执行哪个Restfull指令？管理员总是可以执行所以分量的所有指令，所以这里不再列出管理员这个角色。
+	<li>除去管理员外，本项目只有 <em>外网</em> 一个角色。选上 <em>Read</em>（外网可以按照ID看某民调） 和 <em>List</em>（民调的罗列）。
+	<li>提交，此分量即完成。
+</ul> 
+		<h4>开发“问题回答”分量</h4>
+<ul>
+	<li>重复 <em>添加新分量</em>。在 <em>名称</em> 里填入 <em>choice</em> 表格选为 <em>poll_choice</em> 建立问题回答分量。
+	<li><em>是否作为外网访客的缺省分量</em> 和 <em>是否作为管理员的缺省分量</em> 都不选（因为已经被上一个问题分量选上了）。
+	<li><em>设置Restful指令执行权限</em> 让外网选上 <em>List</em> 和 <em>Update</em>。后者用来做投票指令，每投票一次，<em>votes</em> 数目加1。
+	<li>提交，此分量即完成。
+</ul> 
+		<h4>下载</h4>
+<ul>
+	<li>到目前为止，你的项目开始就基本完成了。但存在几个遗留问题，它们不能
+用简单的Restful指令实现。我们可以在运行学习如何修改。
+	<li>回到 <em>项目</em>。点击 <em>打包下载软件</em>。
+</ul>
+
+</div>
+<div id="installation" class="city" style="display:none">
+
+<h2>本地安装</h2>
+	<p>确认MySQL，Apache和PHP编程都安装正确。解压下载包到某个文件区，比如 <em>C:\Django</em>。
+	<h4>新建本地数据库</h4>
+<ul>
+	<li>打开 MySQL Workbench 或 phpMyAdmin, 新建一个 <em>Schema</em>即数据库。名称取为 <em>poll</em>。
+	<li>把 <em>C:\Django\conf\init.sql</em> 里面的SQL内容，灌进此数据库。此后看到如下四个表格：<em>login_a</em>, <em>login_a_ip</em>, <em>poll_choice</em>, <em>poll_question</em> 和一个名为 <em>proc_sandy_a</em>的<em>Stored Procedure</em>。
+	<li>执行SQL命令：
+<pre>
+&gt; INSERT INTO login_a (login, passwd, status, created) VALUES ('LOGIN', SHA1(CONCAT('LOGIN', 'PASSWORD')), 'Yes', NOW());
+</pre>
+即在管理员表格 <em>login_a</em> 里安插了一个名为LOGIN，密码为PASSWORD的管理员账号。
+	<li>设置一个PHP链接数据库用的数据库用户（它是运行环境的参数之一，属于数据库管理的一部分，这里不再涉及）。我们假设此用户名为USER，密码为PASS。
+</ul>
+	<h4>新建虚拟网站</h4>
+<ul>
+	<li>做为管理员，用编辑器打开 <em>c:\Windows\System32\Drivers\etc\hosts</em>，添加如下行：
+<pre>
+127.0.0.1 django
+</pre>
+	保存，退出。此行即对本机新加了一个虚拟地址 <em>django</em>。当浏览网址 <em>http://django</em> 时，它即在本机上寻找此虚拟域名。
+	<li>进入你的Apache网站服务器栏目，<em>c:\Apache24\conf\extra</em>，打开其中 <em>httpd-vhosts.conf文件</em>，添加（不要删除已有的内容。如果你的解压路径不一样，请做相应修改）：
+<pre>
+#
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot "C:/django/www"
+    ServerName django
+    <Directory C:/django/www>
+        Options Indexes MultiViews
+        AllowOverride None
+        Require all granted
+    </Directory>
+    ErrorLog "C:/django/logs/error.log"
+    CustomLog "C:/django/logs/access.log" common
+</VirtualHost>
+</pre>
+	保存，退出，再重新启动Apache。此虚拟网站即构建成功。
+</ul>
+
+	<h4>修改项目配置文件</h4>
+<ul>
+	<li>项目启动时需要的配置参数由一个JSON格式的文件表达，由于运行环境不同，你需要修改它以便适应本机。用编辑器打开 <em>c:\django\conf\config.json</em>。
+	<li>把参数 <em>Document_root</em>，<em>Template</em>，<em>Uploaddir</em>，<em>Filename</em> 里面的 <em>/home/user/tabilet/sandy</em>字符换成你项目根目录 <em>c:/django</em>。
+	<li>把 <em>Server_url</em> 换成当下的虚拟网址 <em>http://django</em>。
+	<li>把数据库链接参数换成（假设数据库用户是USERh和PASS）：
+<pre>
+"Db" : ["mysql:host=localhost;dbname=poll", "USER", "PASS"],
+</pre>
+	<li>把登录网站的域名 <em>Roles => a => Domain</em> 换成
+<pre>
+ "Domain"  : "django",
+</pre>
+	<li>保存，退出。
+</ul>
+
+	<h4>安装Genelet和其它软件库</h4>
+<ul>
+	<li>进入 <em>C:\django</em>，用composer即可按照所有第三方软件：
+<pre>
+composer install
+</pre>
+    <li>继续执行如下命令，以便把下载软件包名，铭记到autoload里
+<pre>
+composer dump-autoload -o
+</pre>
+</ul>
+
+	<h4>打开首页</h4>
+到这一步，你的网站已经安装完毕。请访问此项目首页: <em>http://django</em>
+<ul>
+	<li><em>网页</em>：采用Twig文字模板生成的普通动态网页。
+	<li><em>API和Vue.js生成的H5应用</em>：基于Restful API，用Vue.js生成的互动单页网站。此网站稍作修改，即可继续开发为手机H5应用或微信小程序。
+	<li>了解Genelet的基本概念，有助于帮助本例的学习。见 <em>Genelet编程简洁</em>。
+</ul>
+
+</div>
+<div id="backend" class="city" style="display:none">
+
+<h2>后台管理</h2>
+	<h4>添加民调问题</h4>
+<ul>
+	<li>点击管理员角色的 <em>a区</em> 链接。
+	<li>使用之前设置的管理员用户名LOGIN和密码PASSWORD登录。
+	<li>登录后到达分量 <em>question</em> 的 <em>action=topics</em> 指令页。
+	<li>目前民调里面没有任何问题。此页为空白页。
+	<li>把网址里面的指令 <em>action=topics</em> 换为 <em>action=startnew</em>。
+<pre>
+http://django/app.php/a/html/question?action=startnew
+</pre>
+	此页是新添民调表格填写页。
+	<li>在 <em>Quetion</em> 栏目里输入 <em>你用安卓手机还是苹果手机？</em>，点击 <em>添加</em>。
+	<li>回到之前的 <em>action=topics</em> 指令页。刷新，新民调即可见到。此问题被自动赋予了一个序列号 <em>poll_id=1</em>。
+</ul>
+	<h4>添加问题选项</h4>
+<ul>
+	<li>把民调问题填写页网址里面的分量换成 <em>choice</em>，即进入民调选项填写页：
+<pre>
+http://django/app.php/a/html/choice?action=startnew	
+</pre>
+	<li>在 <em>Poll_id</em> 里填写 <em>1</em>，<em>choice</em> 填写 <em>安卓</em> ，<em>Votes</em> 填 <em>0</em>。 <em>提交</em>。
+	<li>在 <em>Poll_id</em> 里填写 <em>1</em>，<em>choice</em> 填写 <em>苹果</em> ，<em>Votes</em> 填 <em>0</em>。 <em>提交</em>。
+	<li>回到民调选项的LIST页
+<pre>
+http://django/app.php/a/html/choice?action=topics
+</pre>
+	这时 <em>poll_id=1</em> 这个问卷下的两个选项都出现了。
+</ul>
+
+	<h4>后台登出</h4>
+<ul>
+	<li>
+登出链接的分量是 <em>logout</em> ：
+<pre>
+http://django/app.php/a/html/logout
+</pre>
+	<li>
+你可以再访问管理员的民调问题页或选项页，这时要求密码输入。表明登出成功。
+</ul>
+
+</div>
+<div id="votes" class="city" style="display:none">
+
+<h2>外网投票</h2>
+
+<h4>投票问题页</h4>
+在首页，点击 <em>公共区外网</em> 后的链接，即到达公共区投票问题LIST页。
+因为自动生成，此页要做手工做修改。
+<ul>
+	<li>编程中亦对公共区里问题选择页赋予了LIST功能，所以公众可在
+<pre>
+http://django/app.php/p/html/choice?action=topics
+</pre>
+看到民调选项。
+	<li>我们通常在列出民调问题时同时把选项列出来，而不是分割为两个页面。如何实现此功能？
+		<ol>
+		<li>民调问题和选项是两个表格，目前分别用 <em>quesetion</em> 和 <em>choice</em> 描叙。从分量角度看，就是要求在启动 <em>question</em> 的LIST指令后，对每个记录，再调用 <em>choice</em> 的LIST指令。
+		<li>在Genelet编程里，你可以从一个分量调用另一个分量，这个功能称为 <em>nextpage</em>。 进入 <em>C:\django\src\question</em>，打开 <em>component.json</em>，在 <em>current_table</em> 这行之前插入：
+<pre>
+"nextpages":{
+	"topics":[
+		{"model":"choice","action":"topics","relate_item":{"poll_id":"poll_id"}}
+	]
+},
+</pre>
+		<li>进入 <em>C:\django\views\p\question</em>，打开 <em>topics.html</em> 文件，在 <em>{% endfor %}&lt;tbody> </em> 行之前加入：
+<pre>
+&lt;tr>
+&lt;td>&lt;/td>&lt;td>
+&lt;table>
+&lt;tr>&lt;th>选项&lt;/th>&lt;th>目前投票数&lt;/th>&lt;th>&lt;/th>&lt;/tr>{% for one in item.choice_topics %}
+&lt;tr>&lt;td>{{ one.choice }}&lt;/td>&lt;td>{{ one.votes }}&lt;/td>&lt;td>&lt;a href="choice?action=update&choice_id={{ one.choice_id }}">投票&lt;/a>&lt;/td>&lt;/tr>
+{% endfor %}&lt;/table>
+&lt;/td>&lt;td>&lt;/td>
+&lt;/tr>
+</pre>
+		<li>回到公共区民调页，此时问题和选项都显示出来了。
+	</ol></li>
+	<li>公共区不允许 <em>删除</em> 操作（强行点击后即跳出404错误）。可以去掉此链接。
+</ul>
+
+	<h4>公共投票</h4>
+<ul>
+	<li>在线开发中，投票设为对 <em>choice</em> 做一次 <em>update</em>指令。但目前存在两个问题：
+	<ul>
+		<li>缺省 <em>update</em> 直接修改表 <em>poll_choice</em> 里的 <em>votes</em> 栏，而投票是对它添加 1。
+		<li>缺省 <em>update</em> 让外网用户修改 <em>poll_choice</em> 里其它栏目，如选项内容字符串（由 <em>update_pars</em> 定义），这不安全。
+	</ul>
+	<li>解决方法是进入 <em>C:\django\src\choice</em> 打开 <em>model.php</em>，改为：
+<pre>
+&lt;?php
+declare (strict_types = 1);
+namespace Sandy\Choice;
+use Sandy;
+class Model extends \Sandy\Model
+{
+    public function update(...$extra) : ?\Genelet\Gerror {
+        if ($this->Get_rolename() == "p") {
+            return $this->Do_sql(
+"UPDATE poll_choice SET votes=votes+1 WHERE choice_id=?", $this->ARGS["choice_id"]);
+        }
+        return parent::update(...$extra);
+    }
+};
+</pre>
+	它即取代缺省的 <em>update</em> 指令。当用户是外网用户时，把 <em>votes</em> 值增加1。其它角色（目前即指管理员）仍然采用从Genelet继承来的缺省操作。
+其中调用细节我们在Genelet课程里另外介绍。
+	<li>可以点击 安卓 苹果 后的投票链接。刷新页面后，即看到票数的变化。
+</ul>
+     </div><!-- content -->
+    </div><!-- site content -->
+
+    <div id="content_footer"></div>
+    <div id="footer">
+      版权所以 &copy; 2011-2020 tabilet.com
+    </div>
+  </div><!-- main -->
+<script>
+function openSection(name) {
+  var i;
+  var x = document.getElementsByClassName("city");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  document.getElementById(name).style.display = "block";
+}
+</script>
+</body>
+</html>

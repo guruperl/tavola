@@ -1,0 +1,28 @@
+DROP VIEW IF EXISTS view_landing;
+CREATE VIEW view_landing AS
+SELECT r.projectid, r.roleid, r.name_role, c.componentid, c.name_component, 
+	IF(t.tableid=c.tableid, 1, IF(a.inkey=t.current_key, 2, 3)) AS level,
+	IF(t.tableid=c.tableid && FIND_IN_SET('edit',a.crud)>0, 'edit', IF(FIND_IN_SET('topics',a.crud)>0, 'topics', 'startnew')) AS action,
+	IF(t.tableid=c.tableid AND FIND_IN_SET('edit',a.crud)>0, 1, 0) AS is_edit,
+	IF(FIND_IN_SET('topics',a.crud)>0, 1, 0) AS is_topics,
+	IF(FIND_IN_SET('startnew',a.crud)>0, 1, 0) AS is_startnew
+FROM user_role r
+INNER JOIN user_table t ON (r.tableid=t.tableid)
+INNER JOIN user_action a USING (roleid)
+INNER JOIN user_component c USING (componentid)
+WHERE (
+    (t.tableid=c.tableid AND (FIND_IN_SET('topics',a.crud)>0 OR FIND_IN_SET('startnew',a.crud)>0 OR FIND_IN_SET('edit',a.crud)>0))
+    OR
+    (a.inkey=t.current_key AND (FIND_IN_SET('topics',a.crud)>0 OR FIND_IN_SET('startnew',a.crud)>0))
+	OR
+	((a.inkey IS NULL OR a.inkey='') AND FIND_IN_SET('topics',a.crud)>0)
+-- role can do others, but not as landing which needs no component's ID
+);
+
+DROP VIEW IF EXISTS view_landing_p;
+CREATE VIEW view_landing_p AS
+SELECT c.projectid, c.name_component,
+	IF(FIND_IN_SET('topics',p.crud)>0, 'topics', IF(FIND_IN_SET('startnew',p.crud)>0, 'startnew', '')) AS action
+FROM user_component c
+INNER JOIN user_action_public p USING (componentid);
+-- p can do others, but not as landing which requires no component's ID

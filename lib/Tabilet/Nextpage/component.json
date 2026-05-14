@@ -1,0 +1,48 @@
+{
+	"actions" : {
+		"startnew":{"groups":["member"],"options":["no_db", "no_method"]},
+		"insert"  :{"groups":["member"],"validate":["object_name","componentid"]},
+		"update"  :{"groups":["member"],"validate":["componentid","nextpageid"]},
+		"edit"    :{"groups":["member"],"validate":["componentid","nextpageid"]},
+		"topics"  :{"groups":["member"],"validate":["memberid"]},
+		"delete"  :{"groups":["member"],"validate":["componentid","nextpageid"]}
+	},
+
+    "fks" : {
+        "member" : ["componentid","componentmd5","nextpageid","nextpagemd5"]
+    },
+
+   "oncepages" : {
+        "edit": [
+            {"model":"fktable", "action":"topics", "relate_item":{"tableid":"tableid"}}
+        ],
+        "topics": [
+            {"model":"component", "action":"topics"}
+        ]
+    },
+
+	"current_table"   : "user_nextpage",
+	"current_key"     : "nextpageid",
+	"current_id_auto" : "nextpageid",
+	"insert_pars"     : ["componentid","object_name","object_key","otherid","otherfk"],
+	"update_pars"     : ["componentid","object_name","object_key","otherid","otherfk","nextpageid"],
+	"edit_pars"       : ["componentid","object_name","object_key","otherid","otherfk","nextpageid"],
+	"current_tables"  : [
+		{"name":"user_project","alias":"j","sortby":"p.nextpageid"},
+		{"name":"user_component","alias":"c","type":"inner","using":"projectid"},
+		{"name":"user_nextpage", "alias":"p","type":"inner","using":"componentid"},
+		{"name":"user_component","alias":"o","type":"inner","on":"p.otherid=o.componentid"}
+	],
+	"topics_pars" : {
+		"p.nextpageid"     : "nextpageid",
+		"p.object_name"    : "object_name",
+		"p.object_key"     : "object_key",
+		"p.componentid"    : "componentid",
+		"p.otherid"        : "otherid",
+		"p.otherfk"        : "otherfk",
+		"c.name_component" : "name_component",
+		"c.current_key"    : "current_key",
+		"c.projectid"      : "projectid",
+		"o.name_component" : "othername"
+	}
+}

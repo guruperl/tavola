@@ -1,0 +1,7 @@
+[% INCLUDE start.en %]
+
+<h2>Project</h2>
+
+Project reset.
+
+[% INCLUDE end.en %]

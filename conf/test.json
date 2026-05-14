@@ -1,0 +1,182 @@
+{
+    "Document_root" : "/tmp/tabilet/www",
+    "Project"  : "Tabilet",
+	"Server_url"   : "http://www.tabolet.com",
+    "Script"   : "/cgi-bin/tabi",
+    "Template" : "/tmp/tabilet/views",
+    "Uploaddir": "/tmp/tabilet/www/upload",
+    "Pubrole"  : "public",
+    "Secret"   : "${TABILET_APP_SECRET}",
+    "Db"       : ["dbi:mysql:database=tabilet;host=localhost;port=3306", "${TABILET_DB_USER}", "${TABILET_DB_PASS}"],
+    "Custom"   : {
+        "DB_admin":{"role":"a","user":"admin"},
+		"GITHUB":{
+			"token":"${TABILET_GITHUB_TOKEN}",
+			"client_id":"${TABILET_GITHUB_CLIENT_ID}",
+			"client_secret":"${TABILET_GITHUB_CLIENT_SECRET}",
+			"callback_url":"https://www.tabilet.com/script/tabi/public/en/member?action=callback_github"
+		},
+        "MySQL":{
+            "dbuser":"${TABILET_MYSQL_ADMIN_USER}","dbpass":"${TABILET_MYSQL_ADMIN_PASS}","port":3306,"host":"localhost"
+        },
+        "PostgreSQL":{
+            "dbuser":"${TABILET_POSTGRES_ADMIN_USER}","dbpass":"${TABILET_POSTGRES_ADMIN_PASS}","port":5432,"host":"localhost"
+        },
+        "USER_domain":"tabilet.com",
+        "USER_root":"/home/user/tabilet",
+        "PAYPAL" : {
+            "client_id"    : "${TABILET_PAYPAL_CLIENT_ID}",
+            "client_secret": "${TABILET_PAYPAL_CLIENT_SECRET}",
+            "host" : "api.sandbox.paypal.com",
+            "realm": "https://api.sandbox.paypal.com/v1/oauth2/token"
+        },
+        "WEBHOOK": "${TABILET_PAYPAL_WEBHOOK_ID}",
+        "PRODUCT": {
+            "1":"${TABILET_PAYPAL_PRODUCT_ID_1}", "2":"${TABILET_PAYPAL_PRODUCT_ID_2}", "3":"${TABILET_PAYPAL_PRODUCT_ID_3}"
+        }
+    },
+    "Chartags" : {
+        "html":{"Content_type":"text/html; charset='UTF-8'", "Short":"html"},
+        "xtar":{"Content_type":"application/x-tar"},
+        "en": {"Content_type":"text/html; charset='UTF-8'", "Short":"html"},
+
+        "json" : {
+            "Content_type":"application/json; charset='UTF-8'",
+            "Short":"json",
+            "Challenge":"challenge",
+            "Logged":"logged",
+            "Logout":"logout",
+            "Failed":"failed",
+            "Case":1
+        }
+    },
+
+    "Log" : {
+        "filename": "/tmp/tabilet/logs/debug.log",
+        "minlevel": 0,
+        "maxlevel": "info"
+    },
+
+    "Blks": {
+        "_smtp": {
+            "Server": "smtpout.secureserver.net:465",
+            "Hello" : "tabilet.com",
+            "SSL"   : 1,
+            "Sender": "info@tabilet.com",
+            "From"  : "Tabilet Info<info@tabilet.com>",
+            "Auth"  : "${TABILET_SMTP_AUTH}"
+        },
+        "_gmail": {
+            "Server": "smtp.gmail.com",
+            "Auth": "${TABILET_GMAIL_AUTH}"
+        }
+    },
+
+    "Roles" : {
+        "member": {
+            "Id_name": "memberid",
+            "Type_id": 2,
+            "Attributes": ["login", "memberid", "m_active", "m_type", "m_subscription", "m_email", "m_lang", "m_firstname", "m_lastname", "m_isgroup", "m_groupid"],
+            "Secret": "${TABILET_MEMBER_ROLE_SECRET}",
+            "Coding": "${TABILET_MEMBER_ROLE_CODING}",
+            "Surface": "cm",
+            "Domain": "www.tabolet.com",
+            "Duration": 86400,
+            "Max_age": 86400,
+            "Logout": "/",
+            "Issuers": {
+                "db": {
+                    "Default": true,
+                    "Screen": 1,
+                    "Sql": "proc_member",
+                    "Sql_as": "proc_member_as",
+                    "Credential": [ "login", "passwd", "direct", "cm" ],
+                    "Condition_uri": [
+						["uC01","/cgi-bin/tabi/member/en/","md5","/cgi-bin/tabi/member/en/project?action=topics"]
+					],
+                    "Out_pars": ["memberid", "m_active", "m_type", "m_subscription", "m_email", "m_lang", "m_firstname", "m_lastname","m_groupid","m_isgroup"]
+                },
+                "github": {
+                    "Screen": 0,
+                    "Sql": "proc_github_member",
+                    "Sql_as": "proc_github_as",
+                    "Credential": [ "code", "error" ],
+                    "Provider_pars": {
+                        "scope": "repo_deployment,repo:invite,read:user,user:email",
+                        "callback_url":"https://www.tabilet.com/script/tabi/member/en/github",
+                        "client_id":"${TABILET_GITHUB_CLIENT_ID}",
+                        "client_secret":"${TABILET_GITHUB_CLIENT_SECRET}"
+                    },
+                    "Condition_uri": [
+                        ["uC01","/script/tabi/member/en/","md5","/script/tabi/member/en/project?action=topics"]
+                    ],
+                    "In_pars": ["id", "login", "name", "bio", "company", "url", "repos_url", "html_url", "firstname", "lastname", "email", "access_token"],
+                    "Out_pars": ["login", "memberid", "m_active", "m_type", "m_subscription", "m_email", "m_lang", "m_firstname", "m_lastname","m_groupid","m_isgroup"]
+                }
+            }
+        },
+        "admin" : {
+            "Id_name" : "adminid",
+            "Is_admin" : true,
+            "Attributes" : ["adminlogin","adminid"],
+            "Type_id" : 1,
+            "Surface" : "ca",
+            "Domain" : "www.tabolet.com",
+            "Duration" : 86400,
+            "Max_age"  : 86400,
+            "Secret" : "${TABILET_ADMIN_ROLE_SECRET}",
+            "Coding" : "${TABILET_ADMIN_ROLE_CODING}",
+            "Logout" : "/",
+            "Issuers" : {
+                "db" : {
+                    "Default" : true,
+                    "Credential" : ["login", "passwd", "direct", "ca"],
+                    "Sql": "select login AS adminlogin, adminid FROM admin WHERE login=? and passwd=SHA1(CONCAT(login, ?)) and status='Yes'"
+                }
+            }
+        }
+    },
+
+    "Errors" : {
+		"3001" : "wrong privilege",
+		"3002" : "wrong admin",
+		"3003" : "wrong login name format",
+		
+        "3005" : "Wrong starting or ending time.",
+        "3006" : "Empty searching string.",
+
+		"3007" : "Landing page for public role not defined.",
+		"3008" : "Landing page for this role not defined:",
+
+        "3100" : "login is 0-9a-z but must start with letter",
+        "3101" : "login is 4-10 in length",
+        "3102" : "Password not matched.",
+        "3103" : "Login has already been used in registration.",
+        "3106" : "This place has already been taken.",
+
+        "3111" : "Token not fountd.",
+        "3112" : "Token not matched.",
+        "3113" : "Token expired.",
+
+        "3121" : "Login is only 4-10 in length.",
+        "3122" : "Login can't start with a number.",
+        "3123" : "Password must contain both letter and digits.",
+        "3124" : "Password must be 6-letter long.",
+
+		"3130" : "Record not changed.",
+
+		"3201" : "Role name has to start with a-z and then a-z0-9 only",
+		"3202" : "Role name must be less than or equal to 10 in length.",
+		"3203" : "Table name is missing.",
+        "3204" : "Letter p is reserved for public role.",
+		"3205" : "Missing login.",
+		"3206" : "Missing parameters in defining role table and procedure.",
+
+		"3210" : "Missing incoming key name while incoming signature exists.",
+		"3211" : "Incoming key name is not found in the table.",
+		"3212" : "Incoming signature could not use a column name.",
+		"3213" : "Missing outgoing key or outgoing signature.",
+		"3214" : "Outgoing key name is not found in the table.",
+		"3215" : "Outgoing signature could not use a column name."
+    }
+}

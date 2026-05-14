@@ -1,0 +1,22 @@
+{
+	"actions" : {
+		"startnew":{"groups":["member"],"options":["no_db", "no_method"]},
+		"insert"  :{"groups":["member"],"validate":["tableid"]},
+		"update"  :{"groups":["member"],"validate":["tableid","uniqueid"]},
+		"edit"    :{"groups":["member"],"validate":["tableid","uniqueid"]},
+		"topics"  :{"groups":["member"]},
+		"delete"  :{"groups":["member"],"validate":["tableid","uniqueid"]}
+	},
+
+    "fks" : {
+        "member" : ["tableid","tablemd5"]
+    },
+
+	"current_table"   : "user_table_unique",
+	"current_key"     : "uniqueid",
+	"current_id_auto" : "uniqueid",
+	"insert_pars"     : ["tableid","INDEX_NAME","ORDINAL_POSITION","COLUMN_NAME"],
+	"update_pars"     : ["tableid","INDEX_NAME","ORDINAL_POSITION","COLUMN_NAME","uniqueid"],
+	"edit_pars"       : ["tableid","INDEX_NAME","ORDINAL_POSITION","COLUMN_NAME","uniqueid"],
+	"topics_pars"     : ["tableid","INDEX_NAME","ORDINAL_POSITION","COLUMN_NAME","uniqueid"]
+}

@@ -1,0 +1,10 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+	<h2>GraphQL Builder</h2>
+	<div class="section-block">
+GraphQL object deleted.
+	</div>
+</section>
+
+[% INCLUDE end.en %]

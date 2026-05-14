@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tabilet Member Portal</title>
+    <!-- Meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">    
+    <link rel="shortcut icon" href="/favicon.ico">  
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+    <!-- FontAwesome JS -->
+    <script defer src="https://use.fontawesome.com/releases/v5.8.2/js/all.js" integrity="sha384-DJ25uNYET2XCl5ZF++U8eNxPWqcKohUUBUpKGlNLMchM7q4Wjg2CUpjHLaL8yYPH" crossorigin="anonymous"></script>
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="/assets/plugins/bootstrap/css/bootstrap.min.css">   
+    <!-- Plugins CSS -->    
+    <link rel="stylesheet" href="/assets/plugins/prism/prism.css">
+    <link rel="stylesheet" href="/assets/plugins/lightbox/dist/ekko-lightbox.css">
+    <link rel="stylesheet" href="/assets/plugins/elegant_font/css/style.css">
+
+    <!-- Theme CSS -->
+    <link id="theme-style" rel="stylesheet" href="/assets/css/styles.css">
+   <style>
+.btn-primary {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.btn-primary:focus, .btn-primary.focus {
+  box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
+}
+
+.btn-primary.disabled, .btn-primary:disabled {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-primary:not(:disabled):not(.disabled):active, .btn-primary:not(:disabled):not(.disabled).active,
+.show > .btn-primary.dropdown-toggle {
+  color: #fff;
+  background-color: #0062cc;
+  border-color: #005cbf;
+}
+
+.btn-primary:not(:disabled):not(.disabled):active:focus, .btn-primary:not(:disabled):not(.disabled).active:focus,
+.show > .btn-primary.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
+}
+</style> 
+</head> 
+
+<body class="body-pink">
+    <div class="page-wrapper">
+        <!-- ******Header****** -->
+        <header id="header" class="header">
+            <div class="container">
+                <div class="branding">
+                    <h1 class="logo">
+                        <a href="/index.html">
+                            <span aria-hidden="true" class="icon_documents_alt icon"></span>
+                            <span class="text-highlight">Tabilet</span><span class="text-bold">Member</span>
+                        </a>
+                    </h1>
+                </div><!--//branding-->
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="member?action=edit">[% m_firstname %] [% m_lastname %] &nbsp; ([% login %])</a></li>
+                    <li class="breadcrumb-item"><a href="logout">Logout</a></li>
+                </ol>
+                <div class="top-search-box">
+                </div>
+            </div><!--//container-->
+        </header><!--//header-->
+        <div class="doc-wrapper">
+            <div class="container">
+                <div class="doc-body row" >
+                    <div class="doc-sidebar col-md-3 col-12 order-0 d-none d-md-flex">
+                        <div class="doc-nav">
+                            <nav class="nav doc-menu flex-column sticky">
+                  <h5>My Project</h5>
+                <a class="nav-link[% IF GENELET.obj=='project' AND action=='topics'  %] active[% END %]" href="project?action=topics">
+                <i class="fas fa-project-diagram"></i>
+					&nbsp; Dashboard
+                </a>
+				<a class="nav-link[% IF GENELET.obj=='role' AND action=='topics' %] active[% END %]" href="role?action=topics">
+				<i class="fas fa-user-friends"></i>
+                  &nbsp; Roles
+                </a>
+                <a class="nav-link[% IF GENELET.obj=='component' %] active[% END %]" href="component?action=topics">
+                  <i class="fas fa-cogs"></i>
+                  &nbsp; Components
+                <a class="nav-link[% IF GENELET.obj=='database' %] active[% END %]" href="database?action=topics">
+                  <i class="fas fa-database"></i>
+                  &nbsp; Database
+                </a>
+
+<p> </p>
+<h5>Management</h5>
+	<a class="nav-link[% IF GENELET.obj=='project' AND action=='startnew' %] active[% END %]" href="project?action=startnew">
+      <i class="fas fa-cubes"></i>
+      &nbsp; Software Package
+	</a>
+    <a class="nav-link[% IF GENELET.obj=='nextpage' %] active[% END %]" href="nextpage?action=topics">
+      <i class="fas fa-sliders-h"></i>
+      &nbsp; GraphQL Builder
+    </a>
+[% IF (m_type==2 || m_type==3 || m_type==5 || m_type==6) AND (m_groupid==memberid) %]
+	<a class="nav-link" href="team?action=topics">
+                  <i class="fas fa-chalkboard-teacher"></i>
+                  &nbsp; Team
+	</a>
+[% ELSIF (m_type==2 || m_type==3 || m_type==5 || m_type==6) %]
+	<a class="nav-link" href="team?action=loginas&group_memberid=[% m_groupid %]">
+                  <i class="fas fa-chalkboard-teacher"></i>
+                  &nbsp; Back to Team
+	</a>
+[% END %]
+
+<p> </p>
+<h5>Support</h5>
+	<a class="nav-link" href="tt?action=topics">
+                <i class="fas fa-ticket-alt"></i>
+                  &nbsp; Tickets 
+	</a>
+<!--
+[% IF (m_type==2 || m_type==3 || m_type==5 || m_type==6) AND (m_groupid==memberid) %]
+	<a class="nav-link" href="database?action=topics&projectid=[% topics.0.projectid %]&projectmd5=[% topics.0.projectmd5 %]">
+                  <i class="fas fa-taxi"></i>
+                  &nbsp; Full Service
+	</a>
+[% END %]
+	<a class="nav-link" href="database?action=topics&projectid=[% topics.0.projectid %]&projectmd5=[% topics.0.projectmd5 %]">
+                  <i class="fas fa-phone-volume"></i>
+                  &nbsp; Contact Us
+	</a>
+-->
+<!-- both login NONE subscription and instant NONE subscription -->
+[% IF (g_component=="project" AND action=="topics" AND memberid==m_groupid AND ( m_subscription=="NONE" OR m_subscription=="EXPIRED" OR m_subscription=="CANCELLED" OR m_subscription=="SUSPENDED" OR m_subscription=="PAYMENT.FAILED") AND ( subscription_type=="NONE" OR subscription_type=="EXPIRED" OR subscription_type=="CANCELLED" OR subscription_type=="SUSPENDED" OR subscription_type=="PAYMENT.FAILED")) %]
+	<p> &nbsp; </p>
+	<h6 id="paypal-title">Please pay:</h6>
+	<p class="nav-link">
+    <div id="paypal-button-container" style="width: 50%"></div>
+    <!-- Include the PayPal JavaScript SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=[% client_id %]&currency=USD&vault=true""></script>
+    <script>
+        // Render the PayPal button into #paypal-button-container
+        paypal.Buttons({
+            createSubscription: function(data, actions) {
+                return actions.subscription.create({
+                    "plan_id": "[% plan_id %]",
+					"application_context": {"shipping_preference":'NO_SHIPPING'}
+                });
+            },
+            onApprove: function(data, actions) {
+				var xhttp = new XMLHttpRequest();
+				xhttp.onreadystatechange = function() {
+					if (this.readyState == 4 && this.status == 200) {
+						//window.location.href = "../en/subscription?action=success";
+						document.getElementById("paypal-button-container").innerHTML = "<p><button class='btn btn-warning btn-sm'>Successful Payment.</button></p><h6 id='paypal-title'>Thank you!</h6>";
+						document.getElementById("paypal-title").innerHTML = "";
+					}
+				}
+				xhttp.open("POST", "../json/subscription", true);
+				xhttp.setRequestHeader("Content-type", "application/json");
+				xhttp.send(JSON.stringify(data));
+            }
+        }).render('#paypal-button-container');
+    </script>
+	</p>
+[% END %]
+
+
+                            </nav><!--//doc-menu-->
+                        </div><!--//doc-nav-->
+                    </div><!--//doc-sidebar-->
+                    <div class="doc-content col-md-9 col-12 order-1">
+                        <div class="content-inner">
+
+

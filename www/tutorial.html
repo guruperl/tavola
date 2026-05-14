@@ -1,0 +1,342 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>Tabilet Tutorial</title>
+  <meta name="description" content="tabilet mobile data service tutorial" />
+  <meta name="keywords" content="tabilet, mobile data serice, tutorial" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" type="text/css" href="style/style.css" title="style" />
+  <link rel="stylesheet" type="text/css" href="style/tabilet.css" title="style" />
+</head>
+
+<body>
+  <div id="main">
+    <div id="header">
+      <div id="logo">
+        <div id="logo_text">
+          <!-- class="logo_colour", allows you to change the colour of the text -->
+          <h1><a href="index.html">tabilet<span class="logo_colour">tutorial</span></a></h1>
+          <h2>HHHHH How to Build Your First Tabilet Project.</h2>
+        </div>
+      </div>
+      <div id="menubar">
+        <ul id="menu">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="introduction.html">Product</a></li>
+          <li class="selected"><a href="tutorial.html">Tutorial</a></li>
+          <li><a href="signup.html">Sign Up</a></li>
+          <li><a href="aboutus.html">About Us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div id="site_content">
+      <div class="sidebar">
+<div>
+		<a href="#" id="clientLogin" class="ajaxdialog">Client Login</a>
+</div>
+        <!-- insert your sidebar items here -->
+        <h3>Database Tables</h3>
+        <h4>poll_admin</h4>
+        <pre style="font-size: 10px">CREATE TABLE polls_admin (
+admin_id int NOT NULL auto_increment,
+login varchar(32) NOT NULL,
+passwd char(32) NOT NULL,
+PRIMARY KEY (admin_id),
+UNIQUE KEY login (login)
+);</pre>
+        <p></p>
+        <h4>poll_polls</h4>
+        <pre style="font-size: 10px">CREATE TABLE polls_poll (
+poll_id int NOT NULL auto_increment,
+question varchar(200) NOT NULL,
+pub_date timestamp,
+PRIMARY KEY  (`poll_id`)
+);</pre>
+        <p></p>
+        <h4>poll_choice</h4>
+        <pre style="font-size: 10px">CREATE TABLE polls_choice (
+choice_id int NOT NULL auto_increment,
+poll_id int NOT NULL,
+choice varchar(200) NOT NULL,
+votes int NOT NULL default '0',
+PRIMARY KEY  (choice_id),
+KEY poll_id (poll_id)
+);</pre>
+      </div>
+      <div id="content">
+        <!-- insert the page content here -->
+        <p>This tutorial is similar to the <a target=_blank href="https://docs.djangoproject.com/en/1.3/intro/tutorial01/">Poll Tutorial</a> in the Python-based
+Django framework. It lets people view public polls and vote in them; 
+plus, it creates an admin backend that lets you add, change and 
+delete polls.</p>
+        <h2>Pre-requests</h2>
+<p>You need to have a Tabilet account. If not, you can 
+apply one <a href="/tabi.let/">here</a>. After you get an account,
+login to your administration center and create a database containing 
+three tables listed on the right-hand side of this page. We assume that the 
+databased name and user are <em>dbname, dbuser, dbpass</em>.
+
+		<h2>Step 1: Run Helper</h2>
+<em>Helper</em> is a wizard program that helps you generate the first set
+of JSON service files.
+        <ul>
+<li>Enable <em>Helper</em> in section xxxx.</li>
+<li>Run it at the URL: <em>http://your_web_site/cgi-bin/helper/a/e/main</em></li>
+<li>Login, and you are ready to lunch your first project. </li>
+		</ul>
+
+		<h2>Step 2: Create a Project</h2>
+For each web site or web service, you create one and should only one project. Input project properties as follows.
+<ul>
+	<li>Name your project (alphanumeric only), choose <em>myproj</em>.</li>
+	<li>Name your controller script: <em>/myproj.let</em>, which must be
+a full webpath with the extention <em>.let</em>. </li>
+	<li>Name your debugging log: <em>/home/eightran/public_html/chinajilin/myproj.log</em>, which must be a full file path.</li>
+	<li>Modify the JSON object in <em>System Paramters</em>: 
+<ul>
+<li><em>"db"</em> is the array of the database source, use <em>["dbname", "dbuser", "dbpass"]</em> that you set up earlier in the client administration center;</li>
+<li><em>"template"</em> is the full directory path containing <a href="http://velocity.apache.org/engine/devel/user-guide.html">Velocity</a> template files 
+which display <em>Views</em>, 
+choose <em>"/home/eightran/public_html/chinajilin/tmpls"</em>
+(you don't need actually making the templates at this step);</li>
+<li><em>"components"</em> is the array of all active components. In this Tutorial, we will build three components: <em>["Admin", "Poll", "Choice"]</em>;</li>
+<li><em>"pubrole"</em> is the name of public role, choose <em>"p"</em>.</li>
+<li>You may leave all the other pairs as-is.</li>
+</ul></li>
+	<li><em>Content Tags</em> is an array describing which content types 
+you want to <em>View</em>. By default, there are two tags: <em>"json"</em> 
+and <em>"html"</em>. For <em>"json"</em>, returned <em>View</em> is always 
+JSON data so there is no need for templates.
+For <em>"html"</em>, you need to build Velocity templates
+for each <em>role</em> in directory <em>"template"</em>.
+For administrative roles, we will generate them automatically.</li>
+	<li><em>Role</em> can be public, which is for
+everybody; or non-public, which needs authentication. 
+By default, there are
+public role <em>"p"</em> and administrative role <em>"admin"</em>.
+For each non-public role, define the following JSON object:
+	<ul>
+		<li><em>"idname"</em>: unique id name for role members,
+most likely from database's role table. Choose <em>"admin_id"</em> here.</li>
+		<li><em>"sql"</em>: this SQL will let you verify the login and 
+return a list of authenticated account parameters. Choose <em>"select admin_id from admin where login=? and passwd=?"</em> as in the 
+<em>poll_admin</em> table.</li>
+		<li><em>"attributes"</em>: express the above returned property in a 
+valid JSON array; here it is <em>["admin_id"]</em>. 
+Note that the first element in the array is always
+the value of <em>"idname"</em>.</li>
+		<li><em>"credential_1"</em> and <em>"credential_2"</em>: on the
+role login page, they are names for the 
+user-and-password input pair. Choose <em>"admin"</em> and <em>"adminpass"</em>.</li>
+		<li>You may leave all the properties as-is.</li>
+	</ul>
+</ul>
+
+		<h2>Step 3: Create Component</h2>
+A project can have multiple components. A component is 
+usually associated with
+a database table and describes properties and methods of the table.
+Internally,
+component consists of both <em>Model</em> and <em>Controller</em>.
+<p></p>
+By default, component always inheritates 5 object methods:
+<ol>
+<li><em>insert</em> - insert new row to the table;</li>
+<li><em>topics</em> - list multiple rows;</li>
+<li><em>edit</em> - list one row by an id (which is usually
+what happens when clcking on webpage's Edit link);</li>
+<li><em>update</em> - update a row;</li>
+<li><em>delete</em> - delete a row.</li>
+</ol>
+In language CRUD: those 5 actions are C=insert, R=topics+edit, U=update, and D=delete.
+In language RESTful: POST=insert, GET=topics+edit, UPDATE=update, and DELETE=delete.
+<p></p>
+After finishing Step 2, click on COMPONENT on the top bar and you
+will land on the page to create new component.
+<ul>
+<li>Create component <em>Admin</em>; 
+put the whole "CREATE TABLE polls_admin .. " in the text area <em>Table</em>.
+Assign no action to public role <em>p</em>. 
+Leave all the other columns as-in.</li>
+<li>Create component <em>Poll</em>; 
+put the whole "CREATE TABLE polls_poll .. " in the text area <em>Table</em>.
+Assign <em>edit</em> and <em>topics</em> public role <em>p</em>. 
+Leave all the other columns as-in.</li>
+<li>Create component <em>Choice</em>; 
+put the whole "CREATE TABLE polls_poll .. " in the text area <em>Table</em>.
+Assign <em>topics</em> and <em>update</em> public role <em>p</em>. 
+Leave all the other columns as-in.</li>
+</ul>
+		<h2>Step 4: Deploy Project</h2>
+Go back to the dashboard, and click on Deploy to automatically generate
+the JSON web service and administrative web site. If you have ever made
+changes to a component, the Last Deployed time stamp would be turned in brown.
+
+		<p></p>
+	<h2>Step 5: Work on Administative Site</h2>
+Before log into the administative management backend, make sure you 
+add at least one
+row to table <em>poll_admin</em> via phpAdmin in the client administration 
+center. The administrative site is at:
+<ol>
+<li>Manage poll's administrator accounts: <em>http://your_web_site/myproj.let/admin/html/admin</em></li>
+<li>Manage polls: <em>http://your_web_site/myproj.let/admin/html/poll</em></li>
+<li>Manage poll choices: <em>http://your_web_site/myproj.let/admin/html/choice?poll_id=1</em></li>
+<li>Logout: <em>http://your_web_site/myproj.let/admin/logout</em></li>
+</ol>
+The first time you access any of the URLs, you are prompted to login. 
+Login using the account you added in the <em>poll_admin</em>.
+Now do the following tasks.
+<ul>
+<li>Add a new administrator on the account management page:
+choose <em>hello</em> for <em>LOGIN</em> and <em>world</em> for <em>PASSWD</em>, and click <em>Add</em>. Go back and refresh, you will see
+the new account is listed as administrator.
+<li>Try to logout and to access the account management page again
+using the <em>hello/world</em> pair.</li>
+<li>Add a new poll at the poll management URL. Choose <em>Do you like IPhone4?</em> and then submit. Go back and refresh the page. You will see the
+new poll is listed.</li>
+<li>Assume the first poll gets an auto increment ID as 1, go to 
+the choice management page using "poll_id=1" query string in the URL. Click on
+<em>Create New</em>; choose <em>1, hate, 0</em> for <em>POOL_ID</em>, <em>CHOICE</em> and <em>VOTES</em>. Go back, refrsh the page, 
+and <em>Create New</em> again. Choose
+<em>1, love, 0</em> as the second set of choices.
+</li>
+<li>Done. You are ready to poll the answers on your web site or via web service.</li>
+</ul>
+
+<h2>Step 6: Work on Public Site</h2>
+You have assigned permission <em>topics</em> and <em>edit</em> to components
+<em>Poll</em> and <em>Choice</em>. You can access different JSON data 
+as follows:
+<ul>
+<li>List of poll topics: <em>http://your_web_site/myproj.let/p/json/poll</em></li>
+<li>Get details of the <em>poll_id=1</em> entry: <em>http://your_web_site/myproj.let/p/json/poll?action=edit&poll_id=1</em></li>
+<li>List of choices: <em>http://your_web_site/myproj.let/p/json/choice?poll_id=1</em></li>
+<li>Get details of the <em>choice_id=1</em> entry: <em>http://your_web_site/myproj.let/p/json/choice?action=edit&poll_id=1&choice_id=1</em></li>
+</ul>
+
+<h2>Step 7: How about Vote?</h2>
+
+To allow visitors to vote, you need to create a customized method in
+<em>Choice</em>, since <em>vote</em> can not fit to any of the 5 existing 
+inherited methods. A vote is basically the SQL execution:
+<em>UPDATE polls_choice SET votes=votes+1 WHERE choice_id=?</em>
+with <em>choice_id=1</em> to hate iPhone and <em>choice_id=2</em> to love it.
+<ul>
+<li>Go back to Dashboard in <em>Helper</em> on Step 4.
+Follow <em>Myproj/edit</em>, <em>COMPONENT</em>, and then to edit component
+<em>Choice</em>.</li>
+<li>Under <em>Customized</em>, you can add all customized SQL executions as
+a JSON object. The JSON has three keys: <em>selects</em> for all 
+SELECT-type SQLs, <em>dos</em> for UPDATE or DELETE types, 
+and <em>procedures</em> for stored procedures. Here we should use <em>dos</em>.
+The value of <em>dos</em> is array of multiple cutomized SQL <em>DO</em>
+objects. There are three keys for each <em>DO</em>:
+<ol>
+<li><em>name</em>, give the <em>DO</em> a name.</li>
+<li><em>sql</em>, the SQL statement.</li>
+<li><em>pars</em>, list of all query parameters in the above SQL statement.</li>
+</ol>
+As a summary, you should add this JSON to <em>Customized</em>:
+<pre>
+{
+   "dos" : [
+      {
+         "sql" : "UPDATE polls_choice SET votes=votes+1 WHERE choice_id=?",
+         "pars" : [ "choice_id" ],
+         "name" : "vote"
+      }
+   ]
+}
+</pre>
+</li>
+<li>Finally, you should add this pair to the <em>Actions</em> object:
+<pre>
+{
+...
+   "vote" : {
+      "groups" : [ "p" ]
+   },
+...
+}
+</pre>
+which informs the system that there is a new method named <em>vote</em>
+for public visitors to use.
+</li>
+<li>Accessing this URL will add a vote to the poll:
+<em>http://your_web_site/myproj.let/p/json/choice?action=vote&poll_id=1&choice_id=?</em>
+with <em>choice_id</em> 1 or 2.
+</li>
+</ul>
+<h2>Step 8: How about JOIN?</h2>
+This step is optional. It is about how to override the existing <em>topics</em>
+method in <em>Choice</em>.
+<p></p>
+You may have noticed that in the returned data of <em>Choice</em> topics,
+you got only <em>poll_id</em>, instead of <em>question</em> for this <em>poll_id</em>. The reason is that <em>topics</em> 
+acts only on single table. You can use a customized <em>topics</em>
+to override the inherited one.
+<p></p>
+Add this pair to the <em>Customized</em> object:
+<pre>
+   "selects" : [
+      {
+         "sql" : "SELECT c.choice_id, c.poll_id, c.choice, p.question
+                  FROM polls_choice c 
+                  INNER JOIN polls_poll p ON c.poll_id=p.poll_id
+                  WHERE c.poll_id=?",
+         "pars" : [ "poll_id" ],
+         "name" : "topics"
+      }
+   ],
+</pre>
+<p>
+and you will get <em>question</em> in the return of <em>topics</em>. 
+If you want it also in <em>edit</em>, change the above to
+</p>
+<pre>
+   "selects" : [
+      {
+         "sql" : "SELECT c.choice_id, c.choice, c.votes, p.question 
+                  FROM polls_choice c 
+                  INNER JOIN polls_poll p ON c.poll_id=p.poll_id
+                  WHERE c.poll_id=?",
+         "pars" : [ "poll_id" ],
+         "name" : "topics"
+      },
+      {
+         "sql" : "SELECT c.choice, c.votes, p.question
+                  FROM polls_choice c
+                  INNER JOIN polls_poll p ON c.poll_id=p.poll_id
+                  WHERE c.poll_id=? AND c.choice_id=?",
+         "pars" : [ "poll_id", "choice_id" ],
+         "name" : "topics"
+      }
+   ],
+</pre>
+
+<h2>Step 9: Work on Public HTML Pages</h2>
+
+You may want to poll the choices on a normal web page too. Just make another
+set of <em>View</em> templates for the content tag <em>html</em>.
+<ul>
+<li>Under directory <em>template</em> (see Step 2), create another sub directory <em>p</em> in parallel to the existing <em>admin</em></li>
+<li>Under <em>p</em>, mkdir two sub directories <em>poll</em> and <em>choice</em>. Copy files <em>topics.html</em> and <em>edit.html</em> from <em>admin/poll</em> to <em>poll</em>; copy those from <em>admin/choice</em> to <em>choice</em>.</li>
+<li>Create a file <em>vote.html</em> in <em>p/choice</em> for the <em>vote</em>
+page. You may simply put the word "done" in the file.</li>
+<li>You definitely should re-design all the public html pages so they look nice
+and professional.</li>
+</ul>
+<p></p>
+
+Thanks! Then end.
+      </div>
+    </div>
+    <div id="content_footer"></div>
+    <div id="footer">
+      Copyright &copy; 2011 tabilet.com
+    </div>
+  </div>
+</body>
+</html>

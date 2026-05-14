@@ -1,0 +1,102 @@
+<div class="table-responsive">
+<table class="table table-striped">
+<thead class="thead-light">
+<tr>
+<th>Name</th>
+<th>Script URL</th>
+<th>Public Role</th>
+<th>Admin Role</th>
+<th>Data Source</th>
+<th>Created on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[% item.Project %]</td>
+<td>[% item.Script %]</td>
+<td>[% item.Pubrole %]</td>
+<td>[% item.admin_role %]</td>
+<td>[% item.ds %] <button type=button" class="btn btn-info py-0" style="font-size: 0.8em;" data-toggle="modal" data-target="#dsModal">EDIT</button></td>
+<td>[% item.created %]</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+[% INCLUDE modal_ds.en %]
+
+
+                                    <div class="callout-block callout-success">
+                                        <div class="icon-holder">
+                                            <i class="fas fa-thumbtack"></i>
+                                        </div><!--//icon-holder-->
+                                        <div class="content">
+<h4 class="callout-title">Roles and Components in the Project:</h4>
+<ul>
+<li><em>role</em>: defining access and restrictions around who can login and visit
+<ul>
+<li><em>p</em>: the built-in public role who can visit public area without login
+<li><em>a</em>: the built-in admin role who can can act on any component for any action
+</ul>
+<li><em>component</em>: building block or object classe, usually tied to a database table.
+</ul>
+<!-- Download the project package after the completion of roles and components.
+-->
+                                        </div><!--//content-->
+                                    </div>
+
+<h5>Login Roles:</h5>
+
+<div class="table-responsive">
+<table class="table table-striped">
+<thead class="thead-light">
+<tr>
+<th>Name</th>
+<th></th>
+<th>ID</th>
+<th>Description</th>
+<th>Authen SQL</th>
+</tr>
+</thead>
+<tbody>[% FOREACH single=item.role_topics %]
+<tr>
+<td>[% single.name_role %]</td>
+<td><span class="badge badge-pill badge-primary">[% single.authen %]</span>[% IF single.is_admin %] <span class="badge badge-pill badge-warning">admin</span>[% END %]</td>
+<td><em>[% single.field_id %]</em></td>
+<td>[% single.description %]</td>
+<td><button type="button" class="btn btn-sm btn-blank" data-html="true" data-toggle="popover" title="Creation SQL" data-placement="left" data-content="<pre>[% (single.p_statement || single.statement) | html %]</pre>">[% single.sql %]</button></td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>
+<ul>
+<li> On website, logins are generated automatically and follow-up visits handled by cookies.
+<li> For API, please check the login specification <button class="btn btn-info py-0" style="font-size: 1.0em;" data-toggle="modal" data-target="#loginModal">here</button>.
+</ul>
+[% INCLUDE modal_login.en %]
+<p>&nbsp;</p>
+
+<h5>Components:</h5>
+
+<div class="table-responsive">
+<table class="table table-striped">
+<thead class="thead-light">
+<tr>
+<th>Name</th>
+<th>ID</th>
+<th>Description</th>
+<th>Table</th>
+<th>Created</th>
+</tr>
+</thead>
+<tbody>[% FOREACH single=item.component_topics %]
+<tr>
+<td>[% single.name_component %]</td>
+<td><em>[% single.current_key %]</em></td>
+<td>[% single.description %]</td>
+<td><button type="button" class="btn btn-sm btn-blank" data-html="true" data-toggle="popover" title="Creation SQL" data-content="<pre>[% single.statement | html %]</pre>">[% single.table_name %]</button></td>
+<td>[% single.created %]</td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>

@@ -1,0 +1,24 @@
+<p>Your team currently has the following accounts:</p>
+
+<div class="table-responsive">
+<table class="table table-striped">
+<thead>
+<tr>
+<th>Login</th>
+<th> </th>
+<th>Name</th>
+<th>Created On</th>
+<th> </th>
+</tr>
+</thead>
+<tbody>[% FOREACH item IN topics %]
+<tr>
+<td>[% item.login %]</td>
+<td>[% UNLESS (item.memberid==memberid) %]<a href="team?action=loginas&group_memberid=[% item.memberid %]" class="btn btn-primary btn-sm">Enter</a>[% END %]</td>
+<td>[% item.firstname %] [% item.lastname %]</td>
+<td>[% item.created %]</td>
+<td>[% UNLESS (item.memberid==memberid) %]<a class="btn btn-sm btn-warning" onclick="return confirm('Make sure the project in the account is removed first. Do you want to continue?')" href="team?action=delete&group_memberid=[% item.memberid %]">DEL</a>[% END %]</td>
+</tr>[% END %]
+</tbody>
+</table>
+</div>

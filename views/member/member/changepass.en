@@ -1,0 +1,11 @@
+[% INCLUDE start.en %]
+
+   <section class="doc-section">
+<h2>Profile Management</h2>
+        <div class="section-block">
+
+Password changed.
+		</div>
+	</section>
+
+[% INCLUDE end.en %]

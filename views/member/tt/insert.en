@@ -1,0 +1,10 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+    <h2 class="section-title">Questions and Tickets</h2>
+    <div class="section-block">
+New ticket created.
+    </div>
+</section>
+
+[% INCLUDE end.en %]

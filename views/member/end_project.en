@@ -1,0 +1,41 @@
+  $('#def_component').on('change', function(e){
+	if (this.value != "") {
+    	$.ajax({
+			url:"../json/project",
+			tyep:'POST',
+			data:{action:"query_p", def_component:this.value, projectid:"[% item.projectid %]", projectmd5:"[% item.projectmd5 %]"},
+		 	success:function(response) {
+				var h = "";
+				response.data.forEach(function(item, index) {
+					h += "<option>"+item.crud+"</option>";
+				});
+				$("#def_action").removeAttr('disabled').html(h);
+			}
+		});
+	} else {
+		$("#def_action").attr('disabled','disabled').html("[% IF def_action %]<option value='[% def_action %]'>[% def_action %]</option>[% ELSE %]<option value=''>-- SELECT --</option>[% END %]");
+	}
+  });
+
+[% FOREACH role=r_list %]
+  $('#default_component_[% role.name_role %]').on('change', function(e){
+    if (this.value != "") {
+        $.ajax({
+            url:"../json/project",
+            tyep:'POST',
+            data:{action:"query_r", default_component:this.value, roleid:[% role.roleid %], projectid:"[% item.projectid %]", projectmd5:"[% item.projectmd5 %]"},
+            success:function(response) {
+                var h = "";
+                response.data.forEach(function(item, index) { // only data[0] is defined
+					if (item.is_edit>0) h += "<option>edit</option>";
+					if (item.is_topics>0) h += "<option>topics</option>";
+					if (item.is_startnew>0) h += "<option>startnew</option>";
+                });
+                $("#default_action_[% role.name_role %]").removeAttr('disabled').html(h);
+            }
+        });
+    } else {
+        $("#default_action_[% role.name_role %]").attr('disabled','disabled').html("[% IF role.default_action %]<option value='[% role.default_action %]'>[% role.default_action %]</option>[% ELSE %]<option value=''>-- SELECT --</option>[% END %]");
+    }
+  });
+[% END %]

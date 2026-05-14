@@ -1,0 +1,7 @@
+[% INCLUDE start.en %]
+
+<h2>Project</h2>
+
+Project deleted.
+
+[% INCLUDE end.en %]

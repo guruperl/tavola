@@ -1,0 +1,53 @@
+
+<form name=form1 class="form" method="POST" action="project">
+<input type=hidden name="action" value="insert">
+<input type=hidden name="csrf" value="[% csrf %]">
+
+    <h3>Data Source</h3>
+
+<div class="form-group row">
+    <div class="col-2">Type:</div>
+    <div class="col-4"><select class="form-control" name='dbtype'>
+<option value='MySQL'>MySQL</option>
+<option value='PostgreSQL'>PostgreSQL</option></select></div>
+</div>
+
+<div class="form-group row">
+    <label for="ds" class="col-2">Origin:</label>
+	<div class="col-10"><input class="form-control-inline" type=checkbox id=ds name='ds' value='remote' data-toggle='collapse' data-target='#mysql_tab'>Remote &nbsp; ( By default, which unckecks this box, we will create an online database for you. )</div>
+</div>
+
+<div class="collapse" id=mysql_tab>
+<div class="form-group row">
+	<div class="col-12"> &nbsp; </div>
+	<div class="col-12"><h5>Fill in your remote data source information:</h5></div>
+</div>
+<div class="form-group row">
+    <label class="col-2">Nickname:</label>
+    <div class="col-4"><input class="form-control" type=text name='nickname' placeholder="Choose a nickname"></div>
+    <label class="col-2">Database Name:</label>
+    <div class="col-4"><input class="form-control" type=text name='dbname' placeholder="mySchema"></div>
+</div>
+<div class="form-group row">
+    <label class="col-2">Remote Host:</label>
+    <div class="col-4"><input class="form-control" type=text name='host' placeholder="remote.host.com"></div>
+    <label class="col-2">Port:</label>
+    <div class="col-4"><input class="form-control" type=text name='port' placeholder="3306"></div>
+</div>
+<div class="form-group row">
+    <label class="col-2">Access Username:</label>
+    <div class="col-4"><input class="form-control" type=text name='dbuser' placeholder="Username"></div>
+    <label class="col-2">Access Password:</label>
+    <div class="col-4"><input class="form-control" type=text name='dbpass' placeholder="Password"></div>
+</div>
+</div>
+
+<div class="form-group row">
+	<div class="col-12"> &nbsp; </div>
+    <div class="col-12">
+<button class="btn btn-primary" type="submit">Create my project and database</button>
+	</div>
+</div>
+
+</form>
+

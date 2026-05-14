@@ -1,0 +1,6 @@
+[% INCLUDE start.gb %]
+
+<h2>数据库表格</h2>
+<em>[% table_name %]</em> 创建成功。
+
+[% INCLUDE end.gb %]

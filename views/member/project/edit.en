@@ -1,0 +1,95 @@
+[% INCLUDE start.en %]
+  <style type="text/css" media="screen">
+	.ace_editor {
+		border: 1px solid lightgray; margin: auto; height: 200px; width: 100%;
+	}
+	.scrollmargin { height: 30px; text-align: center; }
+  </style>
+[% item=edit.0 %]
+<h5>Code of My Project<em></h5>
+
+<div class=row>
+    <div class="col-12">config.json: &nbsp; <button id="c_button" class="btn btn-sm btn-primary">Upd</button></div>
+</div>
+<div class=row>
+    <div class="col-12">
+<pre id="editor3">[% item.config_json %]</pre>
+<div class="scrollmargin"></div>
+	</div>
+</div>
+
+<div class=row>
+    <div class="col-6">Filter.pm: &nbsp; <button id="f_button" class="btn btn-sm btn-primary">Upd</button></div>
+    <div class="col-6">Model.pm: &nbsp; <button id="m_button" class="btn btn-sm btn-primary">Upd</button></div>
+</div>
+
+<div class=row>
+    <div class="col-6">
+<pre id="filter">[% item.filter %]</pre>
+<div class="scrollmargin"></div>
+	</div>
+	<div class="col-6">
+<pre id="model">[% item.model %]</pre>
+<div class="scrollmargin"></div>
+	</div>
+</div>
+
+[% INCLUDE bottom.en %]
+<!-- load ace -->
+<script src="/ace-builds/src/ace.js"></script>
+<script>
+    var filter = ace.edit("filter", {
+        theme: "ace/theme/tomorrow_night_eighties",
+        mode: "ace/mode/perl",
+        maxLines: 30,
+        wrap: true,
+        autoScrollEditorIntoView: true
+    });
+
+	$("#f_button").click(function(){
+		$.post('project', {
+			action: "update",
+			projectid: "[% projectid %]",
+			filter: filter.getValue()
+		}, function(data,status) {
+			alert("Data: " + data + "\nStatus: " + status);
+		});
+	});
+
+    var model = ace.edit("model", {
+        theme: "ace/theme/tomorrow_night_blue",
+        mode: "ace/mode/perl",
+        autoScrollEditorIntoView: true,
+        maxLines: 30,
+        minLines: 30
+    });
+
+	$("#m_button").click(function(){
+		$.post('project', {
+			action: "update",
+			projectid: "[% projectid %]",
+			model: model.getValue()
+		}, function(data,status) {
+			alert("Data: " + data + "\nStatus: " + status);
+		});
+	});
+
+    var editor3 = ace.edit("editor3", {
+        autoScrollEditorIntoView: true,
+        mode: "ace/mode/json",
+        maxLines: 24
+    });
+
+	$("#c_button").click(function(){
+		$.post('project', {
+			action: "update",
+			projectid: "[% projectid %]",
+			config_json: editor3.getValue()
+		}, function(data,status) {
+			alert("Data: " + data + "\nStatus: " + status);
+		});
+	});
+</script>
+
+</body>
+</html>

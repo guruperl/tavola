@@ -1,0 +1,74 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+
+<h2>Role <em>[% name_role %]</em></h2>
+<div class="section-block">
+
+[% single=edit.0 %]
+
+<h5>Summary:</h5>
+
+<div class="table-responsive">
+<table class="table table-striped">
+<thead class="thead-light">
+<tr>
+<th rowspan=2>Name</th>
+<th rowspan=2></th>
+<th rowspan=2>Description</th>
+<th colspan=2>Land on</th>
+</tr>
+<tr>
+<th>Component</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[% single.name_role %]</td>
+<td><span class="badge badge-pill badge-primary">[% single.authen %]</span>[% IF single.is_auto==1 %] <span class="badge badge-pill badge-success">auto</span>[% END %][% IF single.is_admin==1 %] <span class="badge badge-pill badge-warning">admin</span>[% END %]</td>
+<td><em>[% single.description %]</em></td>
+<!-- td>[% single.authen %]</td>
+<td>[% IF single.is_auto %]&check;[% ELSE %]&#x2715;[% END %]</td>
+<td>[% IF single.is_admin %]&check;[% ELSE %]&#x2715;[% END %]</td -->
+<td>[% single.default_component %]</td>
+<td>[% single.default_action %]</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h5>Database Table:</h5>
+
+<div class="table-responsive">
+<table class="table table-striped">
+<thead class="thead-light">
+<tr>
+<th rowspan=2>Name</th>
+<th colspan=5>Columns of Table</th>
+</tr>
+<tr>
+<th>ID</th>
+<th>Login</th>
+<th>Password</th>
+<th>Firstname</th>
+<th>Lastname</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[% table_name %]</td>
+<td>[% single.field_id %]</td>
+<td>[% single.field_login %]</td>
+<td>[% single.field_passwd %]</td>
+<td>[% single.field_firstname %]</td>
+<td>[% single.field_lastname %]</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+	</div>
+</section>
+
+[% INCLUDE end.en %]

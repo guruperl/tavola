@@ -1,0 +1,22 @@
+{
+	"actions" : {
+		"startnew":{"groups":["member"],"options":["no_db", "no_method"]},
+		"insert"  :{"groups":["member"],"validate":["tableid"]},
+		"update"  :{"groups":["member"],"validate":["tableid","fkid"]},
+		"edit"    :{"groups":["member"],"validate":["tableid","fkid"]},
+		"topics"  :{"groups":["member"]},
+		"delete"  :{"groups":["member"],"validate":["tableid","fkid"]}
+	},
+
+    "fks" : {
+        "member" : ["tableid","tablemd5"]
+    },
+
+	"current_table"   : "user_table_fk",
+	"current_key"     : "fkid",
+	"current_id_auto" : "fkid",
+	"insert_pars"     : ["tableid","FKCOLUMN_NAME","PKTABLE_NAME","PKCOLUMN_NAME"],
+	"update_pars"     : ["tableid","FKCOLUMN_NAME","PKTABLE_NAME","PKCOLUMN_NAME","fkid"],
+	"edit_pars"       : ["tableid","FKCOLUMN_NAME","PKTABLE_NAME","PKCOLUMN_NAME","fkid"],
+	"topics_pars"     : ["tableid","FKCOLUMN_NAME","PKTABLE_NAME","PKCOLUMN_NAME","fkid"]
+}

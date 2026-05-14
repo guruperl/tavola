@@ -1,0 +1,80 @@
+<!-- Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginModalLabel">Tabilet Login and Logout APIs</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+<h5>Page Returns HTTP Status Code 401</h5>
+This means that the page is protected and a role login is required.
+The response will contain the following headers.
+<ul>
+<li> <em>WWW-Authenticate: Bearer realm="/app.php/ROLE/json/login", charset="UTF-8"</em><br/>
+where <em>realm</em> shows the login endpoint.</li>
+<li> <em>Tabilet-Error: CODE</em><br/>
+This customized header gives a specific error code assigned by Tabilet.</li>
+<li> <em>Tabilet-Error-Description: STRING</em><br/>
+This customized header gives detailed error description.</li>
+</ul>
+
+<h5>Login at the Endpoint</h5>
+To login, POST the credentials in body or in the Basic Authentication header
+to the endpoint:
+<p>
+<samp>http://WEBSITE/app.php/ROLE/json/login</samp>
+</p>
+<p>
+If the login fails, a HTTP 400 Status will be returned containing the following headers:
+<ul>
+<li> <em>Tabilet-Error: CODE</em>
+<li> <em>Tabilet-Error-Description: STRING</em>
+</ul>
+</p>
+If succeeds, the following raw JSON string will be returned:
+<p><code class="language-json">{
+	"token_type"   : "bearer",
+	"access_token" : STRING,
+	"expires_in"   : CODE
+}
+</code>
+</p>
+<p></p>
+<h5>Navigations to Protected Pages</h5>
+<p>
+Logins via POST, which is the cases for web browsers, will get the token
+in the Set-Cookie header as well, so the follow-up navigations will be seamless.
+</p>
+<p>
+In API, you can send the token either in the Authorization
+header or the POST body:
+<ul>
+<li> In header: <em>Authorization: Bearer [token]</em>
+<li> In POST body: <em>STRING=[token]</em><br/>
+where STRING is the name of the corresponding cookie, defined in <em>config.json</em>.
+</ul>
+
+<h5>Logout</h5>
+To visit this endpoint will trigger logout:
+<p>
+<samp>http://WEBSITE/app.php/ROLE/json/logout</samp>
+</p>
+The response body will be 
+<p><code class="language-json">{
+	"success":true
+}
+</code>
+</p>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+

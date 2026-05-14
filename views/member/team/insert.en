@@ -1,0 +1,10 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+    <h2 class="section-title">New Associate</h2>
+    <div class="section-block">
+New user [% group_login %] created.
+	</div>
+</section>
+
+[% INCLUDE end.en %]

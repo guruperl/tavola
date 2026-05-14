@@ -1,0 +1,12 @@
+[% INCLUDE start.en %]
+
+	<section class="doc-section">
+		<h2>Github Push</h2>
+		<div class="section-block">
+			Push is successful.
+Please check you Github repository.
+		</div>
+	</section>
+
+
+[% INCLUDE end.en %]

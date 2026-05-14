@@ -1,0 +1,10 @@
+  var letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+  var i=0;
+  $("#addrow").click(function(){
+[% IF (dbtype=='MySQL') %]
+    $("#mybody").append("<tr><td>"+(1+i)+", "+letters[i]+"</td><td><select class='form-control form-control-sm' name=type"+i+"><option>VARCHAR</option><option>INT</option><option>DOUBLE</option></select></td></tr>");
+[% ELSE %]
+    $("#mybody").append("<tr><td>"+(1+i)+", "+letters[i]+"</td><td><select class='form-control form-control-sm' name=type"+i+"><option>VARCHAR</option><option>INTEGER</option><option>REAL</option></select></td></tr>");
+[% END %]
+    i++;
+  });

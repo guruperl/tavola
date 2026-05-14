@@ -1,0 +1,7 @@
+[% INCLUDE start.gb %]
+
+<h2>项目开发</h2>
+
+删除项目成功。
+
+[% INCLUDE end.gb %]

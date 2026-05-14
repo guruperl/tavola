@@ -1,0 +1,101 @@
+[% INCLUDE start.en %]
+[% SET item=startnew.0 %]
+
+[% IF item %]
+
+
+	<section class="doc-section">
+		<h2>Landing Pages</h2>
+		<div class="section-block">
+<p>
+Endpoints requiring no component key to access (in PHP):
+</p>
+			<div class="table-responsive">
+				<table class="table table-striped table-sm">
+					<thead class="thead-light">
+						<tr>
+						<th>Role</th>
+						<th>Component</th>
+						<th>Action</th>
+						<th>Endpoint with <em>GET</em></th>
+						</tr>
+					</thead>
+					<tbody>
+[% FOREACH one IN p_list %]
+<tr>
+<td>p</td>
+<td><em>[% one.name_component %]</em></td>
+<td><em>[% one.action %]</em></td>
+<td>http://WEBSITE/app.php/p/html/[% one.name_component %]?action=[% one.action %]</td>
+</tr>[% END %]
+
+[% FOREACH one IN a_list %]
+<tr>
+<td>a</td>
+<td><em>[% one.name_component %]</em></td>
+<td><em>topics</em></td>
+<td>http://WEBSITE/app.php/a/html/[% one.name_component %]?action=topics</td>
+</tr>[% END %]
+
+[% FOREACH one IN r_list %]
+<tr>
+<td>[% one.name_role %]</td>
+<td><em>[% one.name_component %]</em></td>
+<td><em>[% one.action %]</em></td>
+<td>http://WEBSITE/app.php/[% one.name_role %]/html/[% one.name_component %]?action=[% one.action %]</td>
+</tr>[% END %]
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</section>
+
+	[% IF missing && missing.0 %]
+
+	<section class="doc-section">
+		<h2>Missing Lading Pages</h2>
+		<div class="section-block">
+			Please note those roles have no landing page: <ul>[% FOREACH one IN missing %]
+				<li>[% one %]
+			[% END %]</ul>
+			After assigning proper landing components and one of the actions 
+			<em>topics</em>, <em>startnew</em> or <em>edit</em>, you can download the package.
+
+    [% ELSE %]
+
+	<section class="doc-section">
+		<h2>Manage Software</h2>
+		<div class="section-block">
+			<p>
+				You can download the server code as a tar file, push to Github or start over again.
+			</p>
+			<h5>Download</h5>
+			<p>
+				<a class="btn btn-sm btn-primary" download href="../xtar/project?action=edit&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">Download</a> package.
+			</p>
+			<p>&nbsp;</p>
+[% INCLUDE landing_github.en %]
+    [% END %]
+
+			<p>&nbsp;</p>
+			<h5>Delete</h5>
+			<p>
+				Delete this project? <a onclick="return confirm('Do you really want to destroy the project. This action cannot be revoked.')" href="project?action=delete&projectid=[% item.projectid %]">Yes, delete.</a>
+			</p>
+		</div>
+	</section>
+
+
+[% ELSE %]
+
+
+    <section class="doc-section">
+        <h2>Project Initialization</h2>
+        <div class="section-block">
+            [% INCLUDE topics_createdb.en %]
+        </div>
+    </section>
+
+[% END %]
+
+[% INCLUDE end.en %]

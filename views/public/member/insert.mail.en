@@ -1,0 +1,7 @@
+Dear [% firstname %] [% lastname %]:
+
+Please click on the following verification link to continue:
+
+[% Server_url %][% Script %]/public/en/member?action=verify&tkt=[% tkt %]&memberid=[% memberid %]
+
+Tabilet Support

@@ -1,0 +1,176 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+
+<h2>Roles for Authentication</h2>
+<div class="section-block">
+
+<div class="table-responsive">
+<table class="table table-striped">
+	<thead class="thead-light">
+<tr>
+<th rowspan=2>Name</th>
+<th rowspan=2> </th>
+<th rowspan=2>ID</th>
+<th rowspan=2>Description</th>
+<th colspan=3>Database Table</th>
+<th rowspan=2></th>
+</tr>
+<tr>
+<th>Name</th>
+<th>Login</th>
+<th><em>where</em></th>
+</tr>
+</thead>
+<tbody>[% FOREACH item=topics %]
+<tr>
+<td><a href="role?action=edit&roleid=[% item.roleid %]&table_name=[% item.table_name %]&name_role=[% item.name_role %]&projectid=[% projectid %]&projectmd5=[% projectmd5 %]">[% item.name_role %]</a></td>
+<td><span class="badge badge-pill badge-primary">[% item.authen %]</span>[% IF item.is_auto==1 %] <span class="badge badge-pill badge-success">auto</span>[% END %][% IF item.is_admin==1 %] <span class="badge badge-pill badge-warning">admin</span>[% END %]</td>
+<td><em>[% item.field_id %]</em></td>
+<td>[% item.description %]</td>
+<!-- td>[% item.authen %]</td>
+<td>[% IF item.is_auto==1 %]&#9989;[% ELSE %]&#x2715;[% END %]</td -->
+<td>[% item.table_name %]</td>
+<td>[% item.field_login %]</td>
+<td><button type="button" class="btn btn-sm btn-blank" data-html="true" data-toggle="popover" title="[% item.table_name %]" data-content="<pre>[% item.restriction %]</pre>">click</button></td>
+<td>[% UNLESS item.name_role=='a' %]<a class="btn btn-sm btn-warning" href="role?action=delete&roleid=[% item.roleid %]&projectid=[% projectid %]&projectmd5=[% projectmd5 %]&is_auto=[% item.is_auto %]">DEL</a>[% END %]</td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>
+
+</div>
+</section>
+
+<section class="doc-section">
+
+<h2>Build New Role</h2>
+<div class="section-block">
+<div class="jumbotron text-left">
+
+<form class="form" action=role method=post>
+<input type=hidden name=action value='insert'>
+<input type=hidden name=csrf value='[% csrf %]'>
+<input type=hidden name=projectid value='[% projectid %]'>
+<input type=hidden name=projectmd5 value='[% projectmd5 %]'>
+<div class="form-group row">
+	<label for="inputRole" class="col-sm-3 col-form-label text-right">Role Name</label>
+	<div class="col-sm-3">
+		<input type="text" class="form-control" name=name_role id="inputRole" placeholder="letters only">
+	</div>
+	<label for="inputDesc" class="col-sm-3 col-form-label text-right">Description</label>
+	<div class="col-sm-3">
+		<input type="text" class="form-control" name=description id="inputDesc" placeholder="role description">
+   </div>
+</div>
+
+<!--
+<div class="form-group row">
+	<label for="input1c" class="col-sm-3 col-form-label text-right">Default Component</label>
+	<div class="col-sm-3">
+		<input type="text" class="form-control" name=default_component id="input1c" placeholder="component">
+	</div>
+	<label for="input1a" class="col-sm-3 col-form-label text-right">Default Action</label>
+	<div class="col-sm-3">
+		<input type="text" class="form-control" name=default_action id="input1a" placeholder="action">
+	</div>
+</div>
+-->
+
+<div class="form-group row">
+	<label for="inputAuthen" class="col-sm-3 col-form-label text-right">Authentication</label>
+	<div class="col-sm-3">
+		<select class="form-control" name=authen id="selectAuthen">
+<option value='db'>Database</option>
+<option value='google'>Google</option>
+<option value='facebook'>Facebook</option>
+<option value='zoom'>Zoom</option>
+</select>
+   </div>
+	<label for="inputAuto" class="col-sm-3 col-form-label text-right">Authen Table</label>
+	<div class="form-check form-check-inline">
+		<input class="form-check-input col-sm-3" id="is_auto" type=checkbox checked name='is_auto' value='1' >
+		<label class="form-check-label">Automatically
+	</div>
+	<div class="col-sm-3"></div>
+	<div class="col-sm-9">
+<small id="selectHelp" class="form-text text-muted">Using Login and Password for Authentication.</small>
+	</div>
+</div>
+
+<div id=user_table>
+
+<div class="form-group row">
+	<label class="col-sm-3 col-form-label text-right"></label>
+	<div class="col-sm-9">
+		<h5>Input your table information:</h5>
+	</div>
+</div>
+
+<div class="form-group row">
+	<label for="inputTable" class="col-sm-3 col-form-label text-right">Table Name</label>
+	<div class="col-sm-3">
+		<select name="tableid" class="form-control" id="selectTable"><option value="">-- SELECT --</option>
+[% FOREACH item=table_simple_topics %]<option value="[% item.tableid %]">[% item.table_name %]</option>[% END %]</select>
+	</div>
+	<label for="inputField" class="col-sm-3 col-form-label text-right">Column <em>ID</em></label>
+	<div class="col-sm-3">
+		<select class="form-control" name="field_id" id="inputFieldId"><option value="">-- SELECT --</option></option></select>
+	</div>
+</div>
+
+<div class="form-group row">
+	<label for="inputLogin" class="col-sm-3 col-form-label text-right">Column <em>Email</em></label>
+	<div class="col-sm-3">
+		<select class="form-control" name="field_login" id="inputLogin"><option value="">-- SELECT --</option></option></select>
+	</div>
+	<label for="inputPass" class="col-sm-3 col-form-label text-right">Column <em>Password</em></label>
+	<div class="col-sm-3">
+		<select class="form-control" name="field_passwd" id="inputPass"><option value="">-- SELECT --</option></option></select>
+	</div>
+</div>
+
+<div class="form-group row">
+	<label for="inputFirstname" class="col-sm-3 col-form-label text-right">Column <em>Firstname</em></label>
+	<div class="col-sm-3">
+		<select class="form-control" name="field_firstname" id="inputFirstname"><option value="">-- SELECT --</option></option></select>
+	</div>
+	<label for="inputLastname" class="col-sm-3 col-form-label text-right">Column <em>Lastname</em></label>
+	<div class="col-sm-3">
+		<select class="form-control" name="field_lastname" id="inputLastname"><option value="">-- SELECT --</option></option></select>
+	</div>
+</div>
+
+<div class="form-group row">
+	<label for="inputRestriction" class="col-sm-3 col-form-label text-right">Restriction <em>where</em></label>
+	<div class="col-sm-9">
+		<input class="form-control" type=text name='restriction' id="inputRestriction" placeholder="email=i_login AND passwd=i_passwd">
+		<small id="restrictionHelp" class="form-text text-muted">SQL to verify if the Login matches the Password. 
+<em>i_login</em> and <em>i_passwd</em> are placeholders which MUST appear 
+in the SQL. e.g. to use SA1 hash password with status field <em>status</em> 
+in MySQL, it could be:
+<p><em>
+email=i_login AND passwd=SHA1(CONCAT(i_login, i_passwd)) AND status="Yes"
+</em></p></small>
+	</div>
+</div>
+
+</div>
+
+<div class=row>
+	<div class="col-3"></div>
+	<div class="col-3">
+		<p></p>
+		<button type=submit class="btn btn-primary">Submit</button>
+	</div>
+</div>
+
+</form>
+</div>
+
+
+</div>
+</section>
+
+
+[% INCLUDE end.en %]

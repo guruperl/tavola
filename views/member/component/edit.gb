@@ -1,0 +1,126 @@
+[% INCLUDE start.gb %]
+  <style type="text/css" media="screen">
+	.ace_editor {
+		border: 1px solid lightgray; margin: auto; height: 200px; width: 100%;
+	}
+	.scrollmargin { height: 30px; text-align: center; }
+  </style>
+[% item=edit.0 %]
+<h3>分量编辑</h3>
+
+<form name=f1 method=post action="component">
+<input type=hidden name="action" value="update">
+<input type=hidden name="projectid" value="[% projectid %]">
+<input type=hidden name="projectmd5" value="[% projectmd5 %]">
+<input type=hidden name="componentid" value="[% item.componentid %]">
+
+  <div class="form-group">
+    <label for="nameComponent">名称</label>
+    <input class="form-control" id="nameComponent"  name="name_component" value="[% item.name_component %]">
+  </div>
+
+  <div class="form-group">
+    <label for="insertPars">Insert 参数</label>
+	<textarea class="form-control" name="insert_pars" aria-describedby="insertHelp" rows="3">[% item.insert_pars %]</textarea>
+    <small id="insertHelp" class="form-text text-muted">CREATE指令里需要的数据库变量</small>
+  </div>
+
+  <div class="form-group">
+    <label for="topicsPars">Topics 参数</label>
+	<textarea class="form-control" name="topics_pars" aria-describedby="topicsHelp" rows="3">[% item.topics_pars %]</textarea>
+    <small id="topicsHelp" class="form-text text-muted">LIST ALL指令里的数据库变量</small>
+  </div>
+
+  <div class="form-group">
+    <label for="editPars">Edit 参数</label>
+	<textarea class="form-control" name="edit_pars" aria-describedby="editHelp" rows="3">[% item.edit_pars %]</textarea>
+    <small id="editHelp" class="form-text text-muted">READ指令里的数据库变量</small>
+  </div>
+
+  <div class="form-group">
+    <label for="updatePars">Update 参数</label>
+	<textarea class="form-control" name="update_pars" aria-describedby="updateHelp" rows="3">[% item.update_pars %]</textarea>
+    <small id="updateHelp" class="form-text text-muted">UPDATE指令里的数据库变量</small>
+  </div>
+
+  <h4>生成多表格的LIST ALL指令</h4>
+
+  <div class="form-group">
+    <label for="currentTables">多表格JOIN用数组表示（目前表格是<em>[% item.table_name %]</em>）</label>
+	<textarea class="form-control" name="current_tables" aria-describedby="tablesHelp" rows="4">[% item.current_tables %]</textarea>
+    <small id="tablesHelp" class="form-text text-muted">数组的每个元素是图</small>
+  </div>
+
+  <div class="form-group">
+    <label for="tohashPars">返回表格列名称</label>
+	<textarea class="form-control" name="topics_hash" aria-describedby="tohashHelp" rows="4">[% item.topics_hash %]</textarea>
+    <small id="tophashHelp" class="form-text text-muted"></small>
+  </div>
+
+  <h4>指令执行权限 (ACL)</h4>
+
+<div class=row>
+    <div class="col-4">是否作为外网访客的缺省分量:</div>
+	<div class="col-1"><input class="form-control" type=checkbox name="pub_default" value=1></div>
+	<div class="col-1"> </div>
+    <div class="col-4">是否作为管理员的缺省分量:</div>
+	<div class="col-1"><input class="form-control" type=checkbox name="admin_default" value=1></div>
+</div>
+
+<div class="table-responsive">
+<table class="table table-sm">
+<thead>
+<tr>
+<th>角色</th>
+<th>开始页</th>
+<th>Create</th>
+<th>Read</th>
+<th>Update</th>
+<th>Delete</th>
+<th>List</th>
+<th>IN键</th>
+<th>IN签名</th>
+<th>OUT键</th>
+<th>OUT签名</th>
+</thead>
+<tbody>
+<tr>
+<td>外网</td>
+<td><input class="form-control" type=checkbox [% IF crud_insert %]checked[% END %] name="public" value="startnew"></td>
+<td><input class="form-control" type=checkbox [% IF crud_insert %]checked[% END %] name="public" value="insert"></td>
+<td><input class="form-control" type=checkbox [% IF crud_edit %]checked[% END %] name="public" value="edit"></td>
+<td><input class="form-control" type=checkbox [% IF crud_update %]checked[% END %] name="public" value="update"></td>
+<td><input class="form-control" type=checkbox [% IF crud_delete %]checked[% END %] name="public" value="delete"></td>
+<td><input class="form-control" type=checkbox [% IF crud_topics %]checked[% END %] name="public" value="topics"></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>[% FOREACH hash=item.role_acl %]<input type=hidden name="md5_[% hash.roleid %]" value="[% hash.rolemd5 %]">
+<tr>
+<td>[% hash.name_role %]</td>
+<td><input class="form-control" type=checkbox [% IF hash.startnew %]checked[% END %] name="crud_[% hash.roleid %]" value="startnew"></td>
+<td><input class="form-control" type=checkbox [% IF hash.insert %]checked[% END %] name="crud_[% hash.roleid %]" value="insert"></td>
+<td><input class="form-control" type=checkbox [% IF hash.edit %]checked[% END %] name="crud_[% hash.roleid %]" value="edit"></td>
+<td><input class="form-control" type=checkbox [% IF hash.update %]checked[% END %] name="crud_[% hash.roleid %]" value="update"></td>
+<td><input class="form-control" type=checkbox [% IF hash.delete %]checked[% END %] name="crud_[% hash.roleid %]" value="delete"></td>
+<td><input class="form-control" type=checkbox [% IF hash.topics %]checked[% END %] name="crud_[% hash.roleid %]" value="topics"></td>
+<td><input type=text class="form-control input-sm" name="inkey_[% hash.roleid %]"></td>
+<td><input type=text class="form-control input-sm" name="inmd5_[% hash.roleid %]"></td>
+<td><input type=text class="form-control input-sm" name="outkey_[% hash.roleid %]"></td>
+<td><input type=text class="form-control input-sm" name="outmd5_[% hash.roleid %]"></td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>
+
+<div class=row>
+    <div class="col-2"></div>
+    <div class="col-4">
+        <button type=submit class="btn btn-primary"> 提交更新 </button>
+    </div>
+</div>
+
+</form>
+
+[% INCLUDE end.gb %]

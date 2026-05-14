@@ -1,0 +1,56 @@
+{
+	"actions" : {
+		"startnew": {"groups":["member"],"method":["GET"]},
+		"insert"  : {"groups":["member"],"validate":["field_id","field_login","field_passwd","projectid"]},
+		"update"  : {"groups":["member"],"validate":["roleid","projectid"]},
+		"edit"    : {"groups":["member"],"validate":["roleid","projectid"]},
+		"topics"  : {"groups":["member"],"validate":["memberid"]},
+		"topics_check"  : {"groups":["member"], "method":["GET"], "validate":["tableid","projectid"]},
+		"delete"  : {"groups":["member"],"validate":["roleid","projectid"]}
+	},
+
+    "fks" : {
+        "member" : ["projectid","projectmd5","roleid","rolemd5"]
+    },
+
+    "oncepages" : {
+        "topics" : [
+            {"model":"table", "action":"simple_topics"}
+        ]
+    },
+
+	"current_table"   : "user_role",
+	"current_key"     : "roleid",
+	"current_id_auto" : "roleid",
+	"insert_pars"     : ["projectid","is_auto","is_admin","name_role","description","authen","tableid","default_component","default_action", "field_id","field_login","field_passwd","field_firstname","field_lastname","restriction","created"],
+	"update_pars"     : ["projectid","is_auto","is_admin","name_role","description","authen","tableid","default_component","default_action", "field_id","field_login","field_passwd","field_firstname","field_lastname","restriction","created","roleid"],
+	"edit_pars"       : ["projectid","is_auto","is_admin","name_role","description","authen","tableid","default_component","default_action", "field_id","field_login","field_passwd","field_firstname","field_lastname","restriction","created","roleid"],
+
+	"current_tables"  : [
+		{"name":"user_project", "alias":"j", "sortby":"r.roleid"},
+		{"name":"user_role", "alias":"r", "type":"INNER", "using":"projectid"},
+		{"name":"user_table", "alias":"t", "type":"LEFT", "on":"r.tableid=t.tableid"},
+		{"name":"user_procedure", "alias":"p", "type":"LEFT", "on":"t.tableid=p.tableid"}],
+    "topics_pars" : {
+        "t.table_name":"table_name",
+        "p.procedure_name":"procedure_name",
+        "t.statement":"statement",
+        "p.statement":"p_statement",
+        "r.projectid":"projectid",
+        "r.name_role":"name_role",
+        "r.description":"description",
+        "r.tableid":"tableid",
+        "r.is_auto":"is_auto",
+        "r.is_admin":"is_admin",
+        "r.authen":"authen",
+        "r.default_component":"default_component",
+        "r.default_action":"default_action",
+        "r.field_id":"field_id",
+        "r.field_login":"field_login",
+        "r.field_passwd":"field_passwd",
+        "r.field_firstname":"field_firstname",
+        "r.field_lastname":"field_lastname",
+        "r.restriction":"restriction",
+        "DATE_FORMAT(r.created,'%b %d')":"created",
+        "r.roleid":"roleid"}
+}

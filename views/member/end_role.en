@@ -1,0 +1,54 @@
+  $('#selectTable').on('change', function(e){
+	if (this.value != "") {
+    	$.ajax({
+			url:"../json/table",
+			tyep:'POST',
+			data:{action:"edit", tableid:this.value, projectid:"[% projectid %]", projectmd5:"[% projectmd5 %]"},
+		 	success:function(response) {
+				pars = JSON.parse(response.data[0].topics_pars);
+				var h = "";
+				pars.forEach(function(item, index) {
+					h += "<option>"+item+"</option>";
+				});
+				$("#inputFieldId").removeAttr('disabled').html(h);
+				$("#inputLogin").removeAttr('disabled').html(h);
+				$("#inputPass").removeAttr('disabled').html(h);
+				$("#inputFirstname").removeAttr('disabled').html(h);
+				$("#inputLastname").removeAttr('disabled').html(h);
+			}
+		});
+	} else {
+		$("#inputFieldId").attr('disabled','disabled').html("<option value=''>-- Field --</option>");
+		$("#inputLogin").attr('disabled','disabled').html("<option value=''>-- Field --</option>");
+		$("#inputPass").attr('disabled','disabled').html("<option value=''>-- Field --</option>");
+		$("#inputFirstname").attr('disabled','disabled').html("<option value=''>-- Field --</option>");
+		$("#inputLastname").attr('disabled','disabled').html("<option value=''>-- Field --</option>");
+	}
+  });
+
+  $('#selectAuthen').on('change', function(e){
+// console.log(this.value, this.options[this.selectedIndex].value, $(this).find("option:selected").val(),);
+	$('#user_table').hide();
+	$('#is_auto').prop("checked", true);
+	if (this.value=="facebook") {
+		$('#is_auto').attr("disabled", true);
+		$('#selectHelp').text("Using Facebook OAuth 2.0 for Authentication.");
+	} else if (this.value=="zoom") {
+		$('#is_auto').attr("disabled", true);
+		$('#selectHelp').text("Using Zoom OAuth 2.0 for Authentication.");
+	} else if (this.value=="google") {
+		$('#is_auto').attr("disabled", true);
+		$('#selectHelp').text("Using Google OAuth 2.0 for Authentication.");
+	} else if (this.value=="db") {
+		$('#is_auto').removeAttr("disabled");
+		$('#selectHelp').text("Using Login and Password for Authentication.");
+	}
+  });
+  $("#is_auto").change(function() {
+	if(this.checked) {
+		$('#user_table').hide();
+	} else {
+		$('#user_table').show();
+	}
+  });
+  $('#user_table').hide();

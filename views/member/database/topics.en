@@ -1,0 +1,166 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+
+<h2>Database Tables</h2>
+<div class="section-block">
+<p>If any change is made to the database, you should sync it to your
+workspace by clicking <a onclick="return confirm('Sync make take few minutes to complete. During the time please DO NOT refresh the page. Continue?')" class="btn btn-sm btn-primary" href="database?action=sync&projectid=[% projectid %]&projectmd5=[% projectmd5 %]">here</a>.
+</p>
+
+<div class="table-responsive">
+<table class="table table-striped">
+	<thead class="thead-light">
+<tr>
+<th>Name</th>
+<th>Serve</th>
+<th>Primary Key</th>
+<th>SQL</th>
+<th>On</th>
+<th></th>
+</tr>
+</thead>
+<tbody>[% FOREACH item=table_simple_topics %]
+<tr>
+<td><a href="database?action=edit&table_name=[% item.table_name %]&tableid=[% item.tableid %]&projectid=[% projectid %]&projectmd5=[% projectmd5 %]">[% item.table_name %]</a></td>
+<td>[% IF item.name_role || item.name_ip %]<span class="badge badge-pill badge-primary">[% item.name_role || item.name_ip %]</span>[% END %][% IF item.name_component %] <span class="badge badge-pill badge-warning">[% item.name_component %]</span>[% END %]</td>
+<td><em>[% item.current_key %]</em></td>
+<td><button type="button" class="btn btn-sm btn-blank" data-html="true" data-toggle="popover" title="[% item.table_name %]" data-content="<pre>[% item.statement %]</pre>">click</button></td>
+<td>[% item.created %]</td>
+<td><a class="btn btn-sm btn-warning" onclick="return confirm('This will delete any components associated with the table. Do you want to continue?')" href="database?action=delete&tableid=[% item.tableid %]&table_name=[% item.table_name %]&projectid=[% projectid %]&projectmd5=[% projectmd5 %]">DEL</a></td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>
+
+<h5>Stored Procedures</h5>
+<div class="table-responsive">
+<table class="table table-striped">
+	<thead class="thead-light">
+<tr>
+<th>Name</th>
+<th>Serve</th>
+<th>Role Table</th>
+<th>SQL</th>
+<th>On</th>
+</tr>
+</thead>
+<tbody>[% FOREACH item=stored_topics %]
+<td>[% item.procedure_name %]</td>
+<td>[% IF item.name_role %]<span class="badge badge-pill badge-primary">[% item.name_role %]</span>[% END %]</td>
+<td><a href="database?action=edit&table_name=[% item.table_name %]&tableid=[% item.tableid %]&projectid=[% projectid %]&projectmd5=[% projectmd5 %]">[% item.table_name %]</a></td>
+<td><button type="button" class="btn btn-sm btn-blank" data-html="true" data-toggle="popover" title="[% item.procedure_name %]" data-content="<pre>[% item.statement | html %]</pre>">click</button></td>
+<td>[% item.created %]</td>
+</tr>
+[% END %]</tbody>
+</table>
+</div>
+
+</div>
+</section>
+
+<section class="doc-section">
+<h2>Add New Table</h2>
+<div class="section-block">
+
+<div class="jumbotron text-left">
+<form name=f1 class="form" action=database method=post>
+	<div class=row>
+	<div class="col-7">
+<input type=hidden name=action value='insert'>
+<input type=hidden name=csrf value='[% csrf %]'>
+<input type=hidden name=projectid value='[% projectid %]'>
+<input type=hidden name=projectmd5 value='[% projectmd5 %]'>
+		<div class="form-group">
+			<label for="tableSQL">Creation SQL:</label>
+			<textarea class="form-control" id="tableSQL" rows=14 name=statement aria-describedby="stateHelp" placeholder="
+... full SQL statement to define tables, primary and foreign keys etc.
+"></textarea>
+			<small id="stateHelp" class="form-text text-muted">Single or multiple table creation SQL statement.</small>
+		</div>
+		<div class="form-group">
+			<label for="tableComment">Remarks:</label>
+			<input type=text class="form-control" id="tableComment" name=table_comment placeholder="optional">
+		</div>
+<p></p>
+<button type=submit class="btn btn-primary">Submit</button>
+	</div>
+	<div class="col-5">
+
+[% IF (dbtype=='MySQL') %]
+<h5>Example: single MySQL table</h5>
+<pre>CREATE TABLE IF NOT EXISTS my_friend (
+  fid int NOT NULL AUTO_INCREMENT,
+  user_id int unsigned NOT NULL,
+  name varchar(255) NOT NULL,
+  PRIMARY KEY (fid),
+  KEY (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;</pre>
+<p></p>
+<h5>Example: multiple MySQL tables</h5>
+<pre>DROP TABLE IF EXISTS poll_choice;
+DROP TABLE IF EXISTS poll_question;
+
+CREATE TABLE poll_question (
+	poll_id int NOT NULL AUTO_INCREMENT,
+	question varchar(255) NOT NULL,
+	created timestamp,
+	PRIMARY KEY (poll_id)
+);
+CREATE TABLE poll_choice (
+	choice_id int NOT NULL auto_increment,
+	poll_id int NOT NULL,
+	choice varchar(255) NOT NULL,
+	votes int NOT NULL default '0',
+	PRIMARY KEY  (choice_id),
+	FOREIGN KEY (poll_id) REFERENCES poll_question (poll_id) ON DELETE CASCADE
+);
+</pre>
+[% ELSIF (dbtype=='PostgreSQL') %]
+<h5>Example: single PostgreSQL table</h5>
+<pre>DROP TABLE IF EXISTS my_friend;
+CREATE TABLE "my_friend" (
+  fid serial NOT NULL PRIMARY KEY,
+  user_id integer NOT NULL,
+  name varchar(50) NOT NULL
+);</pre>
+<p></p>
+<h5>Example: multiple PostgreSQL tables</h5>
+<pre>BEGIN;
+CREATE TABLE "poll_choice" (
+    "choice_id" serial NOT NULL PRIMARY KEY,
+    "poll_id" integer NOT NULL,
+    "choice" varchar(200) NOT NULL,
+    "votes" integer NOT NULL
+);
+CREATE TABLE "poll_question" (
+    "poll_id" serial NOT NULL PRIMARY KEY,
+    "question" varchar(200) NOT NULL,
+    "created" timestamp with time zone NOT NULL
+);
+CREATE INDEX "poll_choice_7aa0f6ee" ON "poll_choice" ("poll_id");
+ALTER TABLE "poll_choice"
+  ADD CONSTRAINT "poll_choice_poll_id_246c99a640fbbd72_fk_poll_poll_id"
+    FOREIGN KEY ("poll_id")
+    REFERENCES "poll_question" ("poll_id")
+    DEFERRABLE INITIALLY DEFERRED;
+COMMIT;
+</pre>
+[% END %]
+
+	</div>
+</div>
+
+</form>
+</div>
+</div>
+</section>
+
+<section class="doc-section">
+<h2>Upload CSV</h2>
+<div class="section-block">
+[% INCLUDE topics_csv.en %]
+</div>
+</section>
+
+[% INCLUDE end.en %]

@@ -1,0 +1,10 @@
+[% INCLUDE start.en %]
+
+<section class="doc-section">
+	<h2 class="section-title">Database Table</h2>
+	<div class="section-block">
+The databas has just been synced.
+	</div>
+</section>
+
+[% INCLUDE end.en %]

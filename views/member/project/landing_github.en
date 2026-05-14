@@ -1,0 +1,25 @@
+	<h5>Push to Github</h5>
+
+[% IF item.git_login %]
+
+[% IF is_repo %]
+Your repository is found at: <a href="https://github.com/tabilet/[% login %]" target=_blank>https://github.com/tabilet/[% login %]</a>, in which you are the only collaborator.
+You may
+<ul>
+<li>Push the latest source package <a class="btn btn-sm btn-primary" onclick="return confirm('Please check your Github account after the push.')" href="../../../../cgi-bin/xtabi/member/en/project?action=xgit&is_coll=[% is_coll %]&is_repo=[% is_repo %]&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">Push</a>
+<li>Remove it <a onclick="return confirm('Do you want to remove the Github repository?')" href="project?action=xerase&projectid=[% item.projectid %]">here</a>.
+</ul>
+[% ELSE %]
+Push the latest source package to Github's <samp>https://github.com/tabilet/[% login %]</samp>, in which you are the only collaborator.
+<p>
+<a class="btn btn-sm btn-primary" onclick="return confirm('Please check your Github account after the push.')" href="../../../../cgi-bin/xtabi/member/en/project?action=xgit&is_coll=[% is_coll %]&is_repo=[% is_repo %]&projectid=[% item.projectid %]&projectmd5=[% item.projectmd5 %]">Push</a>
+</p>
+[% END %]
+
+[% ELSE %]
+
+You haven't linked to a Github account yet. 
+Please authorize from <!-- a href="github?go_uri=[% "project?action=startnew" | uri %]" --><a href="">here</a>.
+
+[% END %]
+
