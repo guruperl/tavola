@@ -288,12 +288,20 @@ sub get_tar {
 	$tar->add_data("logs/debug.log", "");
 	$tar->chmod("logs/debug.log", "777");
 	$tar->add_data("conf/config.json", $one->{config_json});
+	$tar->add_data("src/Application.php", $php->application());
+	$tar->add_data("src/Beacon.php", $php->project_beacon());
 	$tar->add_data("src/Filter.php", $one->{filter});
 	$tar->add_data("src/Model.php", $one->{model});
-	#$tar->add_data("src/beacon.php", $php->beacon());
 	for my $item (@{$one->{component_topics}}) {
 		my $c = $item->{name_component};
+		my $comp_php = Tabilet::Generator::PHP->new(
+			project   => $project,
+			logger    => $self->{LOGGER},
+			_config   => $self->{STORAGE}->{_CONFIG},
+			component => $item,
+		);
 		$tar->add_data("src/$c/component.json", $item->{component_json});
+		$tar->add_data("src/$c/Beacon.php", $comp_php->beacon());
 		$tar->add_data("src/$c/Filter.php", $item->{filter});
 		$tar->add_data("src/$c/Model.php", $item->{model});
 	}
