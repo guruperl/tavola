@@ -7,12 +7,10 @@ use Archive::Tar;
 use Cwd qw(getcwd);
 use Genelet::Utils;
 use Tabilet::Github;
+use Tabilet::Project::Exporter;
 use Tabilet::Schema;
 use Tabilet::SchemaDatabase;
 use Tabilet::Generator::PHP;
-use Tabilet::Template::Vue;
-use Tabilet::Template::Component;
-use Tabilet::Template::Role;
 use Tabilet::Filter;
 use vars qw(@ISA);
 
@@ -250,87 +248,12 @@ sub get_tar {
 	my $self = shift;
 	my ($tar, $form) = @_;
 
-	my $ARGS  = $self->{ARGS};
-    my $one   = $form->{LISTS}->[0];
-    my $other = $form->{OTHER};
-
-	return 3007 unless ($one->{def_component} && $one->{def_action});	
-	for my $role (@{$one->{"role_topics"}}) {
-		return [3008, $role->{name_role}] unless ($role->{default_component} && $role->{default_action});
-	}
-
-	my $cwd = getcwd();
-	chdir $self->{DOCUMENT_ROOT}."/../" or return $!;
-	my @all = $tar->add_files("www/genelet.js");
-	chdir $cwd or return $!;
-
-	my $str = "";
-	for my $hash (@{$one->{"table_topics"}}) {
-		$str .= "\nDROP TABLE IF EXISTS " . $hash->{table_name} . ";\n" . $hash->{statement} . ";\n\n";
-	}
-	for my $hash (@{$one->{"stored_topics"}}) {
-		$str .= "\nDROP PROCEDURE IF EXISTS " . $hash->{procedure_name} . ";\n"
-			. "DELIMITER //\n"
-			. $hash->{statement} . "//\n"
-			. "DELIMITER ;\n\n";
-	}
-	
-	my $project = {};
-	$project->{$_} = $one->{$_} for (qw(memberid filter model config_json Document_root Project Server_url Script Template Uploaddir Pubrole def_component def_action ds));
-	my $php = Tabilet::Generator::PHP->new(
-		project   =>$project,
-		logger=>$self->{LOGGER},
-		_config   =>$self->{STORAGE}->{_CONFIG},
-		components=>[map {$_->{name_component}} @{$one->{component_topics}}],
-		lists     => $one->{role_topics}
+	my $exporter = Tabilet::Project::Exporter->new(
+		config     => $self->{STORAGE}->{_CONFIG},
+		asset_root => $self->{DOCUMENT_ROOT} . "/..",
+		logger     => $self->{LOGGER},
 	);
-	$tar->add_data("conf/init.sql", $str);
-	$tar->add_data("composer.json", $php->composer());
-	$tar->add_data("www/index.html", Tabilet::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
-	$tar->add_data("www/app.php", $php->app());
-	$tar->add_data("logs/debug.log", "");
-	$tar->chmod("logs/debug.log", "777");
-	$tar->add_data("conf/config.json", $one->{config_json});
-	$tar->add_data("src/Application.php", $php->application());
-	$tar->add_data("src/Beacon.php", $php->project_beacon());
-	$tar->add_data("src/Filter.php", $one->{filter});
-	$tar->add_data("src/Model.php", $one->{model});
-	for my $item (@{$one->{component_topics}}) {
-		my $c = $item->{name_component};
-		my $comp_php = Tabilet::Generator::PHP->new(
-			project   => $project,
-			logger    => $self->{LOGGER},
-			_config   => $self->{STORAGE}->{_CONFIG},
-			component => $item,
-		);
-		$tar->add_data("src/$c/component.json", $item->{component_json});
-		$tar->add_data("src/$c/Beacon.php", $comp_php->beacon());
-		$tar->add_data("src/$c/Filter.php", $item->{filter});
-		$tar->add_data("src/$c/Model.php", $item->{model});
-	}
-
-	my ($html, $output, $twig) = Tabilet::Template::Role::vues($one, $self->{LOGGER});
-	$tar->add_data("www/app.html", Tabilet::Template::Base::app($html, "p", $one->{def_component}, $one->{def_action}));
-	$tar->add_data("views/$_/error.html", "<html><body>{{error_code}}:{{error_string}}</body></html>") for (keys %$output);
-	for my $role (%$output) {
-		my $item = $output->{$role};
-		for my $comp (%$item) {
-			my $obj = $item->{$comp};
-			my $web = $twig->{$role}->{$comp};
-			if (grep({$comp eq $_} (qw(header footer login)))) {
-				$tar->add_data("www/$role/$comp.vue", $obj);
-				$tar->add_data("views/$role/$comp.html", $web);
-			} else {
-				for my $k (keys %$obj) {
-					$tar->add_data("www/$role/$comp/$k.vue", $obj->{$k}) if $obj->{$k};
-				}
-				for my $k (keys %$web) {
-					$tar->add_data("views/$role/$comp/$k.html", $web->{$k}) if $web->{$k};
-				}
-			}
-		}
-	}
-	return;
+	return $exporter->add_to_tar($tar, $form);
 }
 
 sub set_report {

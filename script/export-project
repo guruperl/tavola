@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use FindBin qw($Bin);
+use lib "$Bin/../lib", "$Bin/../../perl";
+
+use Getopt::Long qw(GetOptions);
+use Tabilet::Project::Exporter;
+
+my $config = "$Bin/../conf/config.json";
+my $projectid;
+my $owner;
+my $project;
+my $out;
+my $tar;
+my $replace = 0;
+my $dry_run = 0;
+my $help = 0;
+
+GetOptions(
+	'config=s'     => \$config,
+	'project-id=i' => \$projectid,
+	'owner=s'      => \$owner,
+	'project=s'    => \$project,
+	'out=s'        => \$out,
+	'tar=s'        => \$tar,
+	'replace'      => \$replace,
+	'dry-run'      => \$dry_run,
+	'help'         => \$help,
+) or usage(2);
+
+usage(0) if $help;
+usage(2) unless $projectid || $owner || $project;
+usage(2) unless $dry_run || $out || $tar;
+
+my $exporter = Tabilet::Project::Exporter->new(
+	config_path => $config,
+	projectid   => $projectid,
+	owner       => $owner,
+	project     => $project,
+	asset_root  => "$Bin/..",
+);
+
+if ($dry_run) {
+	my $summary = $exporter->summary();
+	print "Dry run: export project $summary->{project} ($summary->{projectid})\n";
+	print "metadata: $summary->{roles} roles, $summary->{components} components, $summary->{tables} tables, $summary->{procedures} procedures\n";
+	exit 0;
+}
+
+$exporter->write_tar($tar) if $tar;
+$exporter->write_dir($out, $replace) if $out;
+
+exit 0;
+
+sub usage {
+	my $exit = shift;
+	print <<"USAGE";
+Usage: script/export-project (--project-id ID | --owner LOGIN [--project NAME] | --project NAME) [options]
+
+Options:
+  --config PATH      Tabilet metadata DB config. Defaults to conf/config.json.
+  --project-id ID    Export by projectid.
+  --owner LOGIN      Export the project owned by member login.
+  --project NAME     Export by project name, or disambiguate --owner.
+  --out PATH         Extract generated files into PATH.
+  --tar PATH         Write a generated tar archive to PATH.
+  --replace          Replace --out PATH if it already exists.
+  --dry-run          Validate project lookup and print export counts.
+  --help             Show this help.
+USAGE
+	exit $exit;
+}

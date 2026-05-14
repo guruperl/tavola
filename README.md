@@ -105,8 +105,20 @@ script/import-project-spec \
 
 The importer writes Tabilet metadata records only. The generated app still has
 its own runtime database, initialized from the exported app's `conf/init.sql`.
-After import, use the existing project export/generation path to produce the
-PHP app from the populated Tabilet records.
+After import, export the generated PHP app from the populated Tabilet records:
+
+```bash
+TABILET_DB_USER=... TABILET_DB_PASS=... \
+script/export-project \
+  --config conf/config.json \
+  --owner jenny \
+  --out ../jenny \
+  --replace
+```
+
+Use `--tar PATH` instead of `--out PATH` to write an archive without extracting
+it. The exporter is headless and does not require the Tabilet web UI, CGI
+entrypoints, or browser workflow.
 
 Custom generated-code files should be kept as explicit overlays referenced by
 the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).
@@ -122,6 +134,7 @@ done
 
 perl -Ilib -I../perl -c script/tabi
 perl -Ilib -I../perl -c script/import-project-spec
+perl -Ilib -I../perl -c script/export-project
 perl -Ilib -I../perl -c cgi-bin/tabi
 perl -Ilib -I../perl -c cgi-bin/xtabi
 ```
