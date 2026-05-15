@@ -1,9 +1,0 @@
-[% INCLUDE start.gb %]
-
-      <div class="py-5 text-center">
-        <h2>出错！</h2>
-        <p class="lead">[% errorstr %]</p>
-        <p class="lead">错误代码: [% error %]</p>
-      </div>
-
-[% INCLUDE end.gb %]

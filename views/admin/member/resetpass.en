@@ -1,5 +1,0 @@
-[% INCLUDE start.en %]
-
-Password reset.
-
-[% INCLUDE end.en %]

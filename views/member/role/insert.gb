@@ -1,7 +1,0 @@
-[% INCLUDE start.gb %]
-
-<h2>登录角色管理</h2>
-
-添加新角色成功。
-
-[% INCLUDE end.gb %]

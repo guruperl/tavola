@@ -25,6 +25,7 @@ sub new {
 		project     => $args{project},
 		lang        => lc($args{lang} || 'php'),
 		data        => $args{data},
+		web_ui      => exists $args{web_ui} ? ($args{web_ui} ? 1 : 0) : 1,
 		asset_root  => $args{asset_root} || '.',
 		logger      => $args{logger},
 	}, $class;
@@ -47,7 +48,7 @@ sub add_to_tar {
 		return [3008, $role->{name_role}] unless ($role->{default_component} && $role->{default_action});
 	}
 
-	$tar->add_data('www/genelet.js', $self->_read_asset('www/genelet.js'));
+	$tar->add_data('www/genelet.js', $self->_read_asset('assets/genelet.js')) if $self->{web_ui};
 
 	my $str = '';
 	for my $hash (@{$one->{table_topics}}) {
@@ -72,7 +73,6 @@ sub add_to_tar {
 	);
 
 	$tar->add_data('conf/init.sql', $str);
-	$tar->add_data('www/index.html', Tabilet::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
 	$tar->add_data('logs/debug.log', '');
 	$tar->chmod('logs/debug.log', '777');
 	$tar->add_data('conf/config.json', $one->{config_json});
@@ -80,6 +80,8 @@ sub add_to_tar {
 		? $self->_add_php_project($tar, $one, $project, $generator)
 		: $self->_add_perl_project($tar, $one, $project, $generator);
 
+	return unless $self->{web_ui};
+	$tar->add_data('www/index.html', Tabilet::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
 	my ($html, $output, $twig) = Tabilet::Template::Role::vues($one, $self->{logger});
 	$tar->add_data('www/app.html', Tabilet::Template::Base::app($html, 'p', $one->{def_component}, $one->{def_action}));
 	$tar->add_data("views/$_/error.html", '<html><body>{{error_code}}:{{error_string}}</body></html>') for (sort keys %$output);

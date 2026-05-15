@@ -1,7 +1,0 @@
-[% INCLUDE start.en %]
-
-<h2>Component</h2>
-
-Auto files generated.
-
-[% INCLUDE end.en %]

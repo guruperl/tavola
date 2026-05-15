@@ -17,6 +17,7 @@ my $out;
 my $tar;
 my $replace = 0;
 my $dry_run = 0;
+my $web_ui = 1;
 my $help = 0;
 
 GetOptions(
@@ -28,6 +29,7 @@ GetOptions(
 	'tar=s'        => \$tar,
 	'replace'      => \$replace,
 	'dry-run'      => \$dry_run,
+	'web-ui!'      => \$web_ui,
 	'help'         => \$help,
 ) or usage(2);
 
@@ -40,12 +42,14 @@ my $exporter = Tabilet::Project::Exporter->new(
 	projectid   => $projectid,
 	owner       => $owner,
 	project     => $project,
+	web_ui      => $web_ui,
 	asset_root  => "$Bin/..",
 );
 
 if ($dry_run) {
 	my $summary = $exporter->summary();
 	print "Dry run: export project $summary->{project} ($summary->{projectid})\n";
+	print "generated web UI: " . ($web_ui ? "yes" : "no") . "\n";
 	print "metadata: $summary->{roles} roles, $summary->{components} components, $summary->{tables} tables, $summary->{procedures} procedures\n";
 	exit 0;
 }
@@ -69,6 +73,8 @@ Options:
   --tar PATH         Write a generated tar archive to PATH.
   --replace          Replace --out PATH if it already exists.
   --dry-run          Validate project lookup and print export counts.
+  --web-ui           Generate app views, Vue files, app.html, and index.html. Default.
+  --no-web-ui        Generate backend/API files without app web UI templates.
   --help             Show this help.
 USAGE
 	exit $exit;

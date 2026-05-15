@@ -1,8 +1,0 @@
-[% INCLUDE start.gb %]
-        <h2>会员申请</h2>
-        <p class="lead">完成</p>
-
-
-<h3><a href="../../member/gb/project?action=topics">由此登录</a></h3>
-
-[% INCLUDE end.gb %]

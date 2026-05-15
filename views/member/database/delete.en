@@ -1,6 +1,0 @@
-[% INCLUDE start.en %]
-
-<h2>Tables in My Database</h2>
-<em>[% table_name %]</em> deleted.
-
-[% INCLUDE end.en %]

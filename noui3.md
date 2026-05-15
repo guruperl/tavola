@@ -8,13 +8,13 @@ remaining generator cleanup work. The important distinction is:
 - remove the Tabilet website and web workflow UI from `main`
 - keep generated application UI output supported by the generator
 
-The generated application UI is still part of the product. The Tabilet tool UI
-is the piece being retired from `main`.
+The generated application UI is still supported, but it is now optional. The
+Tabilet tool UI is the piece being retired from `main`.
 
 ## Template Boundary
 
-Keep `lib/Tabilet/Template/*` for now. These modules generate application files,
-including:
+Keep `lib/Tabilet/Template/*` for now. These modules generate optional
+application files, including:
 
 - generated app `views/`
 - Vue files
@@ -22,9 +22,16 @@ including:
 - `www/index.html`
 - role/component landing pages and related generated UI glue
 
-Those files belong to generated applications. They are not the Tabilet web UI
-that lives in `script/tabi`, `cgi-bin/*`, root `views/`, and root `www/`
-website assets.
+Those files belong to generated applications when `--web-ui` is enabled. They
+are not the Tabilet web UI that used to live in `script/tabi`, `cgi-bin/*`,
+root `views/`, and root `www/` website assets.
+
+`script/generate-project` and `script/export-project` now support:
+
+- `--web-ui`: default; generate app `views/`, Vue files, `www/app.html`,
+  `www/index.html`, and `www/genelet.js`.
+- `--no-web-ui`: generate backend/API files without the generated app web UI
+  templates.
 
 The template modules should only be removed or rewritten after direct JSON
 generation has replacement coverage for all generated app output.
@@ -36,11 +43,12 @@ After UI removal, the repo should read as a generator:
 - specs describe generated applications
 - importer and compatibility tools translate specs into metadata when needed
 - generator modules produce PHP/Perl application code
-- template modules produce generated application UI/runtime files
+- template modules produce generated application UI/runtime files when requested
 - no hosted Tabilet account/project editing UI remains on `main`
 
-This boundary allows Jenny and other generated apps to keep their browser-facing
-application pages while removing the Tabilet builder website itself.
+This boundary allows Jenny and other generated apps to choose whether to keep
+browser-facing application pages while removing the Tabilet builder website
+itself.
 
 ## Residual Issues
 
@@ -100,18 +108,20 @@ or tests. Remove schema dependencies from the primary generation path.
 
 ## Verification
 
-1. Generate Jenny through the current supported path.
-2. Verify generated app `views/`, Vue files, `www/app.html`, and
-   `www/index.html` are still present.
-3. Regenerate the same fixture twice and confirm deterministic output.
-4. Run PHP and Perl smoke fixtures.
-5. Confirm no root Tabilet tool UI files are required by the generator.
+1. Generate Jenny with default `--web-ui`.
+2. Verify generated app `views/`, Vue files, `www/app.html`,
+   `www/index.html`, and `www/genelet.js` are present.
+3. Generate the same fixture with `--no-web-ui`.
+4. Verify generated app web UI files are absent while backend/API files remain.
+5. Regenerate the same fixture twice and confirm deterministic output.
+6. Run PHP and Perl smoke fixtures.
+7. Confirm no root Tabilet tool UI files are required by the generator.
 
 ## Acceptance Criteria
 
 - The repo has a clear documented distinction between removed Tabilet UI and
-  supported generated-app UI.
+  optional generated-app UI.
 - `lib/Tabilet/Template/*` remains until replacement generator coverage exists.
 - Residual cleanup issues are tracked with concrete verification points.
-- Jenny regeneration keeps generated app UI support after the Tabilet tool UI is
-  gone.
+- Jenny regeneration can include or omit generated app UI after the Tabilet tool
+  UI is gone.

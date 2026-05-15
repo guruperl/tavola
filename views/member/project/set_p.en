@@ -1,7 +1,0 @@
-[% INCLUDE start.en %]
-
-<h2>Project</h2>
-
-Project updated.
-
-[% INCLUDE end.en %]

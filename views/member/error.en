@@ -1,7 +1,0 @@
-[% INCLUDE start.en %]
-
-<h3>Error code: [% error %]</h3>
-<h4>Error message: [% errorstr %]</h4>
-
-[% INCLUDE end.en %]
-
