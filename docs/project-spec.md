@@ -8,6 +8,9 @@ Start from `specs/project.template.json`. It contains a small app with a public
 role `p`, a non-public login role `u`, a login table, one login procedure, and
 one protected component.
 
+For specs generated from an existing database, use sqlmeta's
+`tavola-introspect` bridge. See [`sqlmeta-introspection.md`](sqlmeta-introspection.md).
+
 ## Top-Level Blocks
 
 - `version`: spec format version. Use `1`.
