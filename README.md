@@ -224,7 +224,17 @@ perl -Ilib -I../perl -c script/smoke-generated-project
 Run generated-output regression tests:
 
 ```bash
-prove -Ilib -I../perl t/generated-project.t
+prove -Ilib -I../perl t/generated-project.t t/db-export-parity.t
+```
+
+`t/db-export-parity.t` is skipped by default. Enable it only when a disposable
+Tabilet metadata database is configured; it imports `specs/smoke.project.json`
+with replace semantics, exports from the DB, and compares `api.json` against
+direct spec generation:
+
+```bash
+TABILET_RUN_DB_PARITY=1 TABILET_DB_USER=... TABILET_DB_PASS=... \
+prove -Ilib -I../perl t/db-export-parity.t
 ```
 
 Run the Genelet framework tests from this checkout when the sibling `../perl`
