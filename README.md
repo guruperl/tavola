@@ -31,7 +31,7 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 - Genelet framework modules available on `@INC`
 - DBI and the database driver for the configured database
 - JSON and Archive::Tar
-- Template Toolkit and XML::LibXML for generated-app template output
+- Template Toolkit for generated-app template output
 - A MySQL or PostgreSQL metadata database only when using the compatibility
   importer/exporter path
 

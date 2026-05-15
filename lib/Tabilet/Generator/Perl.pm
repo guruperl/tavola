@@ -117,7 +117,6 @@ use strict;
 use JSON;
 
 use DBI;
-use XML::LibXML;
 use LWP::UserAgent;
 
 use File::Find;
