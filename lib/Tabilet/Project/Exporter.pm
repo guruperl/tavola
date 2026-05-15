@@ -9,6 +9,7 @@ use DBI;
 use File::Path qw(make_path remove_tree);
 use File::Spec;
 use JSON qw(decode_json);
+use Tabilet::Project::APIManifest;
 use Tabilet::Generator::PHP;
 use Tabilet::Generator::Perl;
 use Tabilet::Template::Base;
@@ -76,6 +77,10 @@ sub add_to_tar {
 	$tar->add_data('logs/debug.log', '');
 	$tar->chmod('logs/debug.log', '777');
 	$tar->add_data('conf/config.json', $one->{config_json});
+	my $api = Tabilet::Project::APIManifest->new(one => $one, other => $other);
+	my $manifest = $api->manifest();
+	$tar->add_data('api.json', $api->encode());
+	$tar->add_data('docs/api.md', $api->docs($manifest));
 	$self->{lang} eq 'php'
 		? $self->_add_php_project($tar, $one, $project, $generator)
 		: $self->_add_perl_project($tar, $one, $project, $generator);
@@ -212,7 +217,7 @@ sub _load_export_data {
 	my $projectid = $one->{projectid};
 
 	$one->{role_topics} = $self->_selectall(
-		'SELECT * FROM user_role WHERE projectid=? ORDER BY roleid',
+		'SELECT r.*, p.procedure_name FROM user_role r LEFT JOIN user_procedure p ON (r.tableid=p.tableid) WHERE r.projectid=? ORDER BY r.roleid',
 		$projectid,
 	);
 	$one->{component_topics} = $self->_selectall(

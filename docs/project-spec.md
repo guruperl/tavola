@@ -48,6 +48,17 @@ metadata database. Values can use required environment placeholders:
 
 The generated app expands those placeholders at runtime.
 
+PHP output can also override the runtime database at process startup with:
+
+```text
+TABILET_DB_DSN
+TABILET_DB_USER
+TABILET_DB_PASSWORD
+```
+
+Those variables are for the generated application's database. The metadata
+import/export commands use the separate `conf/config.json` database settings.
+
 ## Tables And Actions
 
 Each table needs:
@@ -65,6 +76,8 @@ Use `autoKey` when the primary key is database-generated. Optional `fks`,
 
 A non-public role is a `roles[]` entry. For database login, use `authen: "db"`.
 The role must point at a login table and a procedure associated with that table.
+That table and procedure are part of the generated app's runtime database, so
+they must exist after you apply the generated `conf/init.sql`.
 
 Minimal shape:
 
@@ -104,6 +117,40 @@ Generated config maps role `u` to that SQL procedure under
 `Roles.u.Issuers.db.Sql`. Login requests are handled by the generated app
 against the generated app's runtime database.
 
+For the `u` role above, generated `conf/config.json` also maps:
+
+- `Roles.u.Id_name` to `fields.id`.
+- `Roles.u.Issuers.db.Credential` to `fields.login`, `fields.password`,
+  `direct`, and the role surface name.
+- `Roles.u.Issuers.db.In_pars` to the login and password fields.
+- `Roles.u.Issuers.db.Out_pars` to the role id, login, firstname, and lastname
+  attributes returned by the login procedure.
+
+The login endpoint shape is:
+
+```text
+<script>/<role>/json/login
+```
+
+For the template app:
+
+```text
+/example/app.php/u/json/login
+```
+
+Submit the login and password field names from `fields`, such as `email` and
+`passwd`. A successful login sets the generated Genelet role session/cookie.
+After that, the same client can call protected actions, for example:
+
+```text
+/example/app.php/u/json/item?action=topics
+/example/app.php/u/json/item?action=edit&item_id=1
+```
+
+The generator does not seed runtime users. Add seed data yourself or make the
+login procedure validate against whatever user table you deploy. The template
+procedure is intentionally minimal and should be replaced for a real app.
+
 `isAdmin` is optional role metadata. Non-admin roles are supported; component
 permissions are controlled by component action groups, not by the admin flag.
 
@@ -139,6 +186,14 @@ Examples:
 /example/app.php/p/json/item?action=topics
 /example/app.php/u/json/item?action=edit&item_id=1
 ```
+
+Each generated archive also includes:
+
+- `api.json`, a machine-readable Tabilet API manifest.
+- `docs/api.md`, generated endpoint documentation derived from `api.json`.
+
+These files are emitted for PHP and Perl output and are still generated when
+`--no-web-ui` is used.
 
 ## Overlays
 

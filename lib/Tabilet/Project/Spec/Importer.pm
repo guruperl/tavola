@@ -6,6 +6,7 @@ use warnings;
 use DBI;
 use JSON qw(decode_json encode_json);
 use Tabilet::Generator::PHP;
+use Tabilet::Project::ComponentJSON;
 use Tabilet::Project::Spec::Paths;
 
 sub new {
@@ -242,7 +243,10 @@ sub _insert_components {
 	for my $component (@$components) {
 		my $tableid = $self->{tableids}->{$component->{table}};
 		my $table = $self->_table_by_id($tableid);
-		my $component_json = $self->_component_json($component, $table);
+		my $component_json = Tabilet::Project::ComponentJSON->new(
+			spec => $self->{spec},
+			files => $self->{files},
+		)->encode($component, $table);
 		my $filter = $self->_overlay_text($component, 'filter')
 			|| Tabilet::Generator::PHP->new(project => { Project => $self->{spec}->{project}->{name} }, component => { name_component => $component->{name} })->filter();
 		my $model = $self->_overlay_text($component, 'model')
@@ -309,50 +313,6 @@ sub _insert_component_actions {
 		);
 	}
 	return;
-}
-
-sub _component_json {
-	my ($self, $component, $table) = @_;
-	if ($component->{componentJsonFile}) {
-		return $self->{files}->read_text($component->{componentJsonFile});
-	}
-	if ($component->{componentJson}) {
-		return ref($component->{componentJson})
-			? JSON->new->canonical->pretty->encode($component->{componentJson})
-			: $component->{componentJson};
-	}
-
-	my $actions = {};
-	for my $action (qw(startnew insert edit update delete topics)) {
-		$actions->{$action} = {};
-	}
-	if (my $public = $component->{public}) {
-		$actions->{$_} = { groups => [ $self->{spec}->{project}->{publicRole} ] } for @$public;
-	}
-	for my $role (keys %{$component->{roles} || {}}) {
-		my $cruds = ref($component->{roles}->{$role}) eq 'HASH'
-			? $component->{roles}->{$role}->{crud}
-			: $component->{roles}->{$role};
-		my @cruds = ref($cruds) eq 'ARRAY' ? @$cruds : split /\s*,\s*/, $cruds;
-		for my $crud (@cruds) {
-			push @{$actions->{$crud}->{groups}}, $role;
-		}
-	}
-	$actions->{startnew}->{options} = [ 'no_db', 'no_method' ] if $actions->{startnew}->{groups};
-
-	my $json = {
-		actions => $actions,
-		current_table => $component->{table},
-		current_key => $component->{primaryKey} || $table->{current_key},
-		edit_pars => $component->{edit} || $table->{edit_pars},
-		insert_pars => $component->{insert} || $table->{insert_pars},
-		update_pars => $component->{update} || $table->{update_pars},
-		topics_pars => $component->{topics} || $table->{topics_pars},
-	};
-	$json->{current_id_auto} = exists $component->{autoKey} ? $component->{autoKey} : $table->{current_id_auto}
-		if exists $component->{autoKey} || $table->{current_id_auto};
-
-	return JSON->new->canonical->pretty->encode($json);
 }
 
 sub _overlay_text {

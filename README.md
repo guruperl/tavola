@@ -89,6 +89,9 @@ The generator writes a complete application archive. The common files are:
 - `conf/config.json` contains generated runtime configuration for the app.
 - `conf/init.sql` contains table and stored procedure SQL from the project
   spec.
+- `api.json` contains a machine-readable Tabilet API manifest with roles,
+  login requirements, components, actions, parameters, and example endpoints.
+- `docs/api.md` contains generated API documentation derived from `api.json`.
 - `logs/debug.log` is an empty log file placeholder.
 - Component `component.json` files describe generated actions, roles, request
   parameters, and table metadata.
@@ -108,6 +111,13 @@ When generated app web UI is enabled, the archive also includes:
 
 These files are generated app UI, not the old hosted Tabilet builder UI. Use
 `--no-web-ui` when you only want backend/API output.
+
+Run the offline smoke harness to generate both language targets into a
+temporary directory and verify the backend/API archive layout:
+
+```bash
+script/smoke-generated-project --spec specs/project.template.json --lang all --no-web-ui
+```
 
 ## Generated Endpoint Pattern
 
@@ -207,6 +217,7 @@ done
 perl -Ilib -I../perl -c script/import-project-spec
 perl -Ilib -I../perl -c script/export-project
 perl -Ilib -I../perl -c script/generate-project
+perl -Ilib -I../perl -c script/smoke-generated-project
 ```
 
 Run the Genelet framework tests from this checkout when the sibling `../perl`

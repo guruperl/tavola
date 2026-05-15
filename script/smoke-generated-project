@@ -1,0 +1,159 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use FindBin qw($Bin);
+use lib "$Bin/../lib", "$Bin/../../perl";
+
+use Cwd qw(abs_path getcwd);
+use File::Find qw(find);
+use File::Spec;
+use File::Temp qw(tempdir);
+use Getopt::Long qw(GetOptions);
+use JSON qw(decode_json);
+use Tabilet::Project::Exporter;
+use Tabilet::Project::Spec;
+
+my $config = "$Bin/../conf/config.json";
+my $spec;
+my $lang = 'all';
+my $web_ui = 0;
+my $help = 0;
+
+GetOptions(
+	'config=s' => \$config,
+	'spec=s' => \$spec,
+	'lang=s' => \$lang,
+	'web-ui!' => \$web_ui,
+	'help' => \$help,
+) or usage(2);
+
+usage(0) if $help;
+usage(2) unless $spec;
+$lang = lc $lang;
+die "Unsupported --lang '$lang'. Use php, perl, or all.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'all';
+
+my @langs = $lang eq 'all' ? qw(php perl) : ($lang);
+my $root = tempdir('tabilet-smoke-XXXXXX', TMPDIR => 1, CLEANUP => 1);
+my $repo = abs_path("$Bin/..");
+
+my $loader = Tabilet::Project::Spec->new(
+	config_path => $config,
+	spec_path => $spec,
+);
+my ($one, $other) = $loader->export_data();
+
+for my $target (@langs) {
+	my $out = File::Spec->catdir($root, $target);
+	Tabilet::Project::Exporter->new(
+		config_path => $config,
+		lang => $target,
+		data => [ $one, $other ],
+		web_ui => $web_ui,
+		asset_root => $repo,
+	)->write_dir($out, 1);
+
+	verify_project($out, $target);
+	compile_generated_perl($out, $repo) if $target eq 'perl';
+	print "smoke $target ok: $out\n";
+}
+
+print "smoke complete: " . join(', ', @langs) . "\n";
+exit 0;
+
+sub verify_project {
+	my ($out, $target) = @_;
+
+	_require_file($out, 'api.json');
+	_require_file($out, 'docs/api.md');
+	_require_file($out, 'conf/config.json');
+	_require_file($out, 'conf/init.sql');
+	_require_file($out, 'logs/debug.log');
+
+	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
+	_read_json(File::Spec->catfile($out, 'conf/config.json'));
+	die "api.json missing project.name\n" unless $api->{project}->{name};
+	die "api.json missing components\n" unless ref($api->{components}) eq 'ARRAY' && @{$api->{components}};
+	die "docs/api.md is empty\n" unless -s File::Spec->catfile($out, 'docs/api.md');
+
+	if ($target eq 'php') {
+		_require_file($out, 'composer.json');
+		_require_file($out, 'www/app.php');
+		_require_file($out, 'src/Application.php');
+		for my $component (@{$api->{components}}) {
+			_read_json(File::Spec->catfile($out, 'src', $component->{name}, 'component.json'));
+		}
+	} elsif ($target eq 'perl') {
+		_require_file($out, 'script/app');
+		my $project = ucfirst $api->{project}->{name};
+		_require_file($out, "lib/$project/Filter.pm");
+		_require_file($out, "lib/$project/Model.pm");
+		for my $component (@{$api->{components}}) {
+			_read_json(File::Spec->catfile($out, 'lib', $project, ucfirst($component->{name}), 'component.json'));
+		}
+	}
+
+	if ($web_ui) {
+		_require_file($out, 'www/genelet.js');
+		_require_file($out, 'www/index.html');
+		_require_file($out, 'www/app.html');
+	}
+
+	return;
+}
+
+sub compile_generated_perl {
+	my ($out, $repo) = @_;
+	my @files;
+	find(
+		sub {
+			return unless -f $_;
+			push @files, $File::Find::name if /\.pm\z/;
+		},
+		File::Spec->catdir($out, 'lib'),
+	);
+	push @files, File::Spec->catfile($out, 'script', 'app');
+
+	my $cwd = getcwd();
+	chdir $out or die "Cannot chdir $out: $!\n";
+	for my $file (@files) {
+		my $rel = File::Spec->abs2rel($file, $out);
+		system($^X, '-Ilib', "-I$repo/lib", "-I$repo/../perl", '-c', $rel) == 0
+			or die "Generated Perl syntax check failed for $rel\n";
+	}
+	chdir $cwd or die "Cannot chdir $cwd: $!\n";
+	return;
+}
+
+sub _require_file {
+	my ($root, $relative) = @_;
+	my $path = File::Spec->catfile($root, split m{/}, $relative);
+	die "Missing generated file $relative\n" unless -f $path;
+	return $path;
+}
+
+sub _read_json {
+	my $path = shift;
+	open my $fh, '<', $path or die "Cannot open $path: $!\n";
+	local $/;
+	my $json = <$fh>;
+	close $fh or die "Cannot close $path: $!\n";
+	return decode_json($json);
+}
+
+sub usage {
+	my $exit = shift;
+	print <<"USAGE";
+Usage: script/smoke-generated-project --spec PATH [options]
+
+Options:
+  --config PATH  Tabilet generator config. Defaults to conf/config.json.
+  --spec PATH    JSON project spec.
+  --lang LANG    Output language: php, perl, or all. Defaults to all.
+  --web-ui       Include generated browser UI files in the smoke output.
+  --no-web-ui    Generate backend/API files only. Default.
+  --help         Show this help.
+USAGE
+	exit $exit;
+}
