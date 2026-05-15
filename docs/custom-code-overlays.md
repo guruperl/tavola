@@ -55,6 +55,19 @@ For this example:
 If an overlay is omitted, Tabilet writes its normal generated default for that
 file.
 
+`componentJson` and `componentJsonFile` overlays are validated during direct
+generation and metadata import. They must be JSON objects with:
+
+- `actions`: an object. Each action entry must be an object; optional `groups`
+  and `options` values must be arrays of strings.
+- `current_table`: the backing table name.
+- `current_key`: the primary key column.
+- `insert_pars`, `edit_pars`, `update_pars`, and `topics_pars`: arrays of
+  parameter names.
+
+Invalid overlay JSON fails generation/import early with the component name and
+the malformed field.
+
 ## Project Overlays
 
 The same pattern exists for project-level generated files:

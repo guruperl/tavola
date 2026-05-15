@@ -224,7 +224,7 @@ perl -Ilib -I../perl -c script/smoke-generated-project
 Run generated-output regression tests:
 
 ```bash
-prove -Ilib -I../perl t/generated-project.t t/db-export-parity.t
+prove -Ilib -I../perl t/*.t
 ```
 
 `t/db-export-parity.t` is skipped by default. Enable it only when a disposable
