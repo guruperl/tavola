@@ -27,30 +27,86 @@
         "primaryKey": "id",
         "autoKey": "id",
         "statement": "CREATE TABLE audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL)",
-        "insert": ["message"],
-        "edit": ["id", "message"],
-        "update": ["id", "message"],
-        "topics": ["id", "message"]
+        "insert": [
+          "message"
+        ],
+        "edit": [
+          "id",
+          "message"
+        ],
+        "update": [
+          "id",
+          "message"
+        ],
+        "topics": [
+          "id",
+          "message"
+        ]
       },
       {
         "name": "posts",
         "primaryKey": "id",
         "autoKey": "id",
         "statement": "CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_public_id TEXT NOT NULL, title TEXT NOT NULL, created TEXT)",
-        "insert": ["user_public_id", "title", "created"],
-        "edit": ["id", "user_public_id", "title", "created"],
-        "update": ["id", "user_public_id", "title", "created"],
-        "topics": ["id", "user_public_id", "title", "created"]
+        "insert": [
+          "user_public_id",
+          "title",
+          "created"
+        ],
+        "edit": [
+          "id",
+          "user_public_id",
+          "title",
+          "created"
+        ],
+        "update": [
+          "id",
+          "user_public_id",
+          "title",
+          "created"
+        ],
+        "topics": [
+          "id",
+          "user_public_id",
+          "title",
+          "created"
+        ]
       },
       {
         "name": "users",
         "primaryKey": "public_id",
         "autoKey": "id",
         "statement": "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, public_id TEXT NOT NULL UNIQUE, email TEXT NOT NULL, passwd TEXT NOT NULL, firstname TEXT, lastname TEXT)",
-        "insert": ["public_id", "email", "passwd", "firstname", "lastname"],
-        "edit": ["id", "public_id", "email", "passwd", "firstname", "lastname"],
-        "update": ["public_id", "email", "passwd", "firstname", "lastname"],
-        "topics": ["id", "public_id", "email", "passwd", "firstname", "lastname"]
+        "insert": [
+          "public_id",
+          "email",
+          "passwd",
+          "firstname",
+          "lastname"
+        ],
+        "edit": [
+          "id",
+          "public_id",
+          "email",
+          "passwd",
+          "firstname",
+          "lastname"
+        ],
+        "update": [
+          "public_id",
+          "email",
+          "passwd",
+          "firstname",
+          "lastname"
+        ],
+        "topics": [
+          "id",
+          "public_id",
+          "email",
+          "passwd",
+          "firstname",
+          "lastname"
+        ]
       }
     ],
     "procedures": []
@@ -82,24 +138,44 @@
       "name": "audit_log",
       "description": "audit_log records",
       "table": "audit_log",
-      "public": ["topics"]
+      "public": [
+        "topics"
+      ]
     },
     {
       "name": "posts",
       "description": "posts records",
       "table": "posts",
-      "public": ["topics"],
+      "public": [
+        "topics"
+      ],
       "roles": {
-        "u": ["startnew", "insert", "edit", "update", "delete", "topics"]
+        "u": [
+          "startnew",
+          "insert",
+          "edit",
+          "update",
+          "delete",
+          "topics"
+        ]
       }
     },
     {
       "name": "users",
       "description": "users records",
       "table": "users",
-      "public": ["topics"],
+      "public": [
+        "topics"
+      ],
       "roles": {
-        "u": ["startnew", "insert", "edit", "update", "delete", "topics"]
+        "u": [
+          "startnew",
+          "insert",
+          "edit",
+          "update",
+          "delete",
+          "topics"
+        ]
       }
     }
   ],
