@@ -65,7 +65,7 @@ sub build {
 			update_pars     => $self->_json($table->{update} || []),
 			topics_pars     => $self->_json($table->{topics} || []),
 			statement       => $self->{files}->statement($table),
-			is_tabilet      => $table->{isTabilet} || 0,
+			is_tavola      => $table->{isTavola} || 0,
 			table_comment   => $table->{comment},
 		};
 		push @{$one->{table_topics}}, $row;
@@ -82,7 +82,7 @@ sub build {
 			procedure_name => $procedure->{name},
 			statement      => $self->{files}->statement($procedure),
 			tableid        => $table ? $table->{tableid} : undef,
-			is_tabilet     => $procedure->{isTabilet} || 0,
+			is_tavola     => $procedure->{isTavola} || 0,
 		};
 		push @{$one->{stored_topics}}, $row;
 		$procedures_by_table{$row->{tableid}} = $row if $row->{tableid};

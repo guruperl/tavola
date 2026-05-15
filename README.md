@@ -12,7 +12,7 @@ metadata, generated runtime config, API docs, and OpenAPI are all derived from
 the same JSON project spec.
 
 Generated projects can expose REST-style endpoints and browser views from the
-same component definitions. The old hosted Tabilet builder UI is historical and
+same component definitions. The old hosted Tavola builder UI is historical and
 is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 
 ## Repository Layout
@@ -126,7 +126,7 @@ When generated app web UI is enabled, the archive also includes:
 - `www/index.html`, a generated route index for Twig and Vue entrypoints.
 - `www/genelet.js`, the browser helper copied from `assets/genelet.js`.
 
-These files are generated app UI, not the old hosted Tabilet builder UI. Use
+These files are generated app UI, not the old hosted Tavola builder UI. Use
 `--no-web-ui` when you only want backend/API output.
 
 Run the offline smoke harness to generate both language targets into a
@@ -218,7 +218,7 @@ script/export-project \
 
 Use `--tar PATH` instead of `--out PATH` to write an archive without extracting
 it. The direct generator and metadata exporter are headless and do not require
-the old hosted Tabilet web UI, CGI entrypoints, or browser workflow.
+the old hosted Tavola web UI, CGI entrypoints, or browser workflow.
 
 Custom generated-code files should be kept as explicit overlays referenced by
 the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).

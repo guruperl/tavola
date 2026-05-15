@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS tabilet_login_a (
+CREATE TABLE IF NOT EXISTS tavola_login_a (
   a_id int unsigned not null auto_increment,
   email varchar(32) NOT NULL DEFAULT '',
   passwd varchar(40) NOT NULL DEFAULT '',

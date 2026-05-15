@@ -32,10 +32,10 @@
   "schema": {
     "tables": [
       {
-        "name": "tabilet_login_a",
+        "name": "tavola_login_a",
         "primaryKey": "a_id",
         "autoKey": "a_id",
-        "statementFile": "jenny/sql/tabilet_login_a.sql",
+        "statementFile": "jenny/sql/tavola_login_a.sql",
         "insert": ["email", "passwd", "firstname", "lastname", "status", "created"],
         "edit": ["a_id", "email", "passwd", "firstname", "lastname", "status", "created"],
         "update": ["a_id", "email", "passwd", "firstname", "lastname", "status"],
@@ -45,10 +45,10 @@
         ]
       },
       {
-        "name": "tabilet_login_a_tabilet_ip",
+        "name": "tavola_login_a_tavola_ip",
         "primaryKey": "id",
         "autoKey": "id",
-        "statementFile": "jenny/sql/tabilet_login_a_tabilet_ip.sql",
+        "statementFile": "jenny/sql/tavola_login_a_tavola_ip.sql",
         "insert": ["ip", "login", "ret"],
         "edit": ["id", "ip", "login", "updated", "ret"],
         "update": ["id", "ip", "login", "ret"],
@@ -79,13 +79,13 @@
       },
       {
         "name": "Book3_csv",
-        "primaryKey": "tabilet_id",
-        "autoKey": "tabilet_id",
+        "primaryKey": "tavola_id",
+        "autoKey": "tavola_id",
         "statementFile": "jenny/sql/Book3_csv.sql",
         "insert": ["RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
-        "edit": ["tabilet_id", "RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
-        "update": ["tabilet_id", "RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
-        "topics": ["tabilet_id", "RECALL_NUMBER_NUM", "YEAR", "CATEGORY_ETXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "RECALL_DATE_DTE", "updated"]
+        "edit": ["tavola_id", "RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
+        "update": ["tavola_id", "RECALL_NUMBER_NUM", "YEAR", "MANUFACTURER_RECALL_NO_TXT", "CATEGORY_ETXT", "CATEGORY_FTXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "UNIT_AFFECTED_NBR", "SYSTEM_TYPE_ETXT", "SYSTEM_TYPE_FTXT", "NOTIFICATION_TYPE_ETXT", "NOTIFICATION_TYPE_FTXT", "COMMENT_ETXT", "COMMENT_FTXT", "RECALL_DATE_DTE", "updated"],
+        "topics": ["tavola_id", "RECALL_NUMBER_NUM", "YEAR", "CATEGORY_ETXT", "MAKE_NAME_NM", "MODEL_NAME_NM", "RECALL_DATE_DTE", "updated"]
       },
       {
         "name": "log_download",
@@ -101,7 +101,7 @@
     "procedures": [
       {
         "name": "proc_jenny_a",
-        "table": "tabilet_login_a",
+        "table": "tavola_login_a",
         "statementFile": "jenny/sql/proc_jenny_a.sql"
       }
     ]
@@ -113,7 +113,7 @@
       "authen": "db",
       "isAdmin": 1,
       "isAuto": 1,
-      "table": "tabilet_login_a",
+      "table": "tavola_login_a",
       "default": {
         "component": "car",
         "action": "topics"

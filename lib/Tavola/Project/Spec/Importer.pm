@@ -145,7 +145,7 @@ sub _insert_tables {
 
 	for my $table (@$tables) {
 		$dbh->do(
-			'INSERT INTO user_table (projectid,table_name,current_key,current_id_auto,insert_pars,edit_pars,update_pars,topics_pars,statement,is_tabilet,table_comment,created) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())',
+			'INSERT INTO user_table (projectid,table_name,current_key,current_id_auto,insert_pars,edit_pars,update_pars,topics_pars,statement,is_tavola,table_comment,created) VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())',
 			undef,
 			$projectid,
 			$table->{name},
@@ -156,7 +156,7 @@ sub _insert_tables {
 			$self->_json($table->{update} || []),
 			$self->_json($table->{topics} || []),
 			$self->{files}->statement($table),
-			$table->{isTabilet} || 0,
+			$table->{isTavola} || 0,
 			$table->{comment},
 		);
 		my $tableid = $dbh->last_insert_id(undef, undef, 'user_table', 'tableid');
@@ -188,10 +188,10 @@ sub _insert_procedures {
 	for my $procedure (@$procedures) {
 		my $tableid = $procedure->{table} ? $self->{tableids}->{$procedure->{table}} : undef;
 		$dbh->do(
-			'INSERT INTO user_procedure (projectid,is_tabilet,procedure_name,tableid,statement,created) VALUES (?,?,?,?,?,NOW())',
+			'INSERT INTO user_procedure (projectid,is_tavola,procedure_name,tableid,statement,created) VALUES (?,?,?,?,?,NOW())',
 			undef,
 			$projectid,
-			$procedure->{isTabilet} || 0,
+			$procedure->{isTavola} || 0,
 			$procedure->{name},
 			$tableid,
 			$self->{files}->statement($procedure),

@@ -1,5 +1,5 @@
 CREATE TABLE `Book3_csv` (
-  `tabilet_id` int(11) NOT NULL AUTO_INCREMENT,
+  `tavola_id` int(11) NOT NULL AUTO_INCREMENT,
   `RECALL_NUMBER_NUM` varchar(255) DEFAULT NULL,
   `YEAR` int(11) DEFAULT NULL,
   `MANUFACTURER_RECALL_NO_TXT` varchar(255) DEFAULT NULL,
@@ -15,5 +15,5 @@ CREATE TABLE `Book3_csv` (
   `COMMENT_ETXT` text,
   `COMMENT_FTXT` varchar(255) DEFAULT NULL,
   `RECALL_DATE_DTE` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`tabilet_id`)
+  PRIMARY KEY (`tavola_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1

@@ -26,10 +26,10 @@
   "schema": {
     "tables": [
       {
-        "name": "tabilet_login_a",
+        "name": "tavola_login_a",
         "primaryKey": "a_id",
         "autoKey": "a_id",
-        "statement": "CREATE TABLE tabilet_login_a (a_id int unsigned NOT NULL AUTO_INCREMENT, email varchar(255) NOT NULL, passwd varchar(255) NOT NULL, firstname varchar(255), lastname varchar(255), status enum('Yes','No') DEFAULT 'Yes', created datetime, PRIMARY KEY (a_id))",
+        "statement": "CREATE TABLE tavola_login_a (a_id int unsigned NOT NULL AUTO_INCREMENT, email varchar(255) NOT NULL, passwd varchar(255) NOT NULL, firstname varchar(255), lastname varchar(255), status enum('Yes','No') DEFAULT 'Yes', created datetime, PRIMARY KEY (a_id))",
         "insert": ["email", "passwd", "firstname", "lastname", "status", "created"],
         "edit": ["a_id", "email", "passwd", "firstname", "lastname", "status", "created"],
         "update": ["a_id", "email", "passwd", "firstname", "lastname", "status"],
@@ -49,7 +49,7 @@
     "procedures": [
       {
         "name": "proc_smoke_a",
-        "table": "tabilet_login_a",
+        "table": "tavola_login_a",
         "statement": "CREATE PROCEDURE proc_smoke_a(IN i_email varchar(255), IN i_passwd varchar(255), OUT a_id int unsigned, OUT email varchar(255), OUT a_firstname varchar(255), OUT a_lastname varchar(255)) BEGIN SELECT 1, i_email, '', '' INTO a_id, email, a_firstname, a_lastname; END"
       }
     ]
@@ -61,7 +61,7 @@
       "authen": "db",
       "isAdmin": 1,
       "isAuto": 1,
-      "table": "tabilet_login_a",
+      "table": "tavola_login_a",
       "default": {
         "component": "widget",
         "action": "topics"

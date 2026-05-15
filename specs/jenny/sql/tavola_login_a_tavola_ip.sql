@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS tabilet_login_a_tabilet_ip (
+CREATE TABLE IF NOT EXISTS tavola_login_a_tavola_ip (
   id int(10) unsigned NOT NULL AUTO_INCREMENT,
   ip int(10) unsigned NOT NULL,
   login VARCHAR(255) NOT NULL,

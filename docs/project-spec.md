@@ -62,9 +62,8 @@ TAVOLA_DB_USER
 TAVOLA_DB_PASSWORD
 ```
 
-Those variables are for the generated application's database. Generated PHP
-apps also accept the old `TABILET_DB_*` names as a compatibility fallback.
-Use PDO DSNs such as `mysql:host=...;dbname=...`,
+Those variables are for the generated application's database. Use PDO DSNs such
+as `mysql:host=...;dbname=...`,
 `pgsql:host=...;dbname=...`, or `sqlite:data/app.sqlite`.
 
 The metadata import/export commands use the separate `conf/config.json`

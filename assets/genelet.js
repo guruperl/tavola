@@ -171,10 +171,10 @@ console.log("start ajax..." + role + ", " + comp);
       if (this.readyState == 4) {
 		if (this.status == 401 && this.getResponseHeader("WWW-Authenticate") !== null) {
 console.log("Login please.");
-          that.names = {"error_code":this.getResponseHeader("Tabilet-Error"), "error_string":this.getResponseHeader("Tabilet-Error-Description")};
+          that.names = {"error_code":this.getResponseHeader("Tavola-Error"), "error_string":this.getResponseHeader("Tavola-Error-Description")};
           that.updateParameters(role, that.logins);
 		} else if (this.status == 400 && comp == that.logins) {
-          that.names = {"error_code":this.getResponseHeader("Tabilet-Error"), "error_string":this.getResponseHeader("Tabilet-Error-Description")};
+          that.names = {"error_code":this.getResponseHeader("Tavola-Error"), "error_string":this.getResponseHeader("Tavola-Error-Description")};
 console.log("ReLogin please.");
           that.updateParameters(role, that.logins);
         } else if (this.status == 200) {
