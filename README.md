@@ -43,7 +43,7 @@ TABILET_DB_PASS
 ```
 
 Generated application specs can still contain their own datasource placeholders,
-such as `${JENNY_DB_USER}` and `${JENNY_DB_PASSWORD}`.
+such as `${APP_DB_USER}` and `${APP_DB_PASSWORD}`.
 
 ## JSON Project Specs
 
@@ -51,6 +51,9 @@ Tabilet can generate an application directly from a JSON project spec. The JSON
 file is the source of truth for the records that the old UI collected: owner,
 project, datasource, tables, procedures, roles, components, action access,
 landing defaults, and optional custom generated-code overlays.
+
+For the spec format, role login setup, and component permission rules, see
+[Project Spec Reference](docs/project-spec.md).
 
 Start from the template, then edit the copied spec:
 
@@ -78,6 +81,78 @@ Use `--lang perl` for Perl output and `--tar PATH` instead of `--out PATH` to
 write an archive without extracting it. Generated app web UI files are included
 by default; add `--no-web-ui` to generate backend/API files without `views/`,
 Vue files, `www/app.html`, `www/index.html`, or `www/genelet.js`.
+
+## Generated Archive Contents
+
+The generator writes a complete application archive. The common files are:
+
+- `conf/config.json` contains generated runtime configuration for the app.
+- `conf/init.sql` contains table and stored procedure SQL from the project
+  spec.
+- `logs/debug.log` is an empty log file placeholder.
+- Component `component.json` files describe generated actions, roles, request
+  parameters, and table metadata.
+
+PHP archives include `composer.json`, `www/app.php`, project classes under
+`src/`, and component classes under `src/<component>/`. Perl archives include
+`script/app`, project modules under `lib/<Project>/`, and component modules
+under `lib/<Project>/<Component>/`.
+
+When generated app web UI is enabled, the archive also includes:
+
+- `views/` with server-rendered HTML templates for each role and component.
+- `www/<role>/*.vue` and `www/<role>/<component>/*.vue` with Vue components.
+- `www/app.html`, the browser app shell that loads Vue components.
+- `www/index.html`, a generated route index for Twig and Vue entrypoints.
+- `www/genelet.js`, the browser helper copied from `assets/genelet.js`.
+
+These files are generated app UI, not the old hosted Tabilet builder UI. Use
+`--no-web-ui` when you only want backend/API output.
+
+## Generated Endpoint Pattern
+
+Generated apps use one front controller and route requests by role, response
+tag, component, and action:
+
+```text
+<script>/<role>/<tag>/<component>?action=<action>
+```
+
+For PHP output, `<script>` is usually `www/app.php`. For Perl output, the
+generated executable is `script/app`; configure the web server so the spec's
+`project.script` URL is handled by that executable. Jenny's spec uses
+`/jenny/app.php`, so a Perl Jenny deployment can still expose:
+
+```text
+/jenny/app.php/p/json/car?action=topics
+/jenny/app.php/a/html/car?action=edit&car_id=123
+```
+
+The JSON API uses the `json` tag:
+
+```text
+/app.php/p/json/widget?action=topics
+/app.php/a/json/widget?action=edit&id=123
+```
+
+Server-rendered browser views use the `html` tag and the same role/component
+action model:
+
+```text
+/app.php/p/html/widget?action=topics
+/app.php/a/html/widget?action=startnew
+```
+
+`<role>` is the public role from `project.publicRole` or one of the named roles
+in the spec. `<component>` is a generated component name. `<action>` is an
+action allowed by that component's `component.json`, such as `topics`,
+`startnew`, `insert`, `edit`, `update`, or `delete`.
+
+The generated Vue shell at `www/app.html` uses hash routes such as
+`/app.html#/p/widget?action=topics`, then calls the JSON endpoint through
+`www/genelet.js`. API-only archives generated with `--no-web-ui` keep the same
+JSON endpoint pattern but omit the browser shell, Vue components, and HTML
+templates.
 
 ## Metadata DB Compatibility
 

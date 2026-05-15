@@ -1,33 +1,91 @@
 {
   "version": 1,
   "owner": {
-    "login": "jenny",
-    "email": "jenny@example.test",
+    "login": "example",
+    "email": "example@example.test",
     "typeid": 1
   },
   "project": {
-    "name": "Jenny",
-    "script": "/jenny/app.php",
+    "name": "ExampleApp",
+    "script": "/example/app.php",
     "publicRole": "p",
     "default": {
-      "component": "car",
+      "component": "item",
       "action": "topics"
     }
   },
   "datasource": {
     "type": "MySQL",
-    "nickname": "jenny",
-    "database": "jenny",
+    "nickname": "example",
+    "database": "example",
     "host": "127.0.0.1",
     "port": "3306",
-    "user": "${JENNY_DB_USER}",
-    "password": "${JENNY_DB_PASSWORD}"
+    "user": "${APP_DB_USER}",
+    "password": "${APP_DB_PASSWORD}"
   },
   "schema": {
-    "tables": [],
-    "procedures": []
+    "tables": [
+      {
+        "name": "app_user",
+        "primaryKey": "user_id",
+        "autoKey": "user_id",
+        "statement": "CREATE TABLE app_user (user_id int unsigned NOT NULL AUTO_INCREMENT, email varchar(255) NOT NULL, passwd varchar(255) NOT NULL, firstname varchar(255), lastname varchar(255), status enum('Yes','No') DEFAULT 'Yes', created datetime, PRIMARY KEY (user_id), UNIQUE KEY app_user_email (email))",
+        "insert": ["email", "passwd", "firstname", "lastname", "status", "created"],
+        "edit": ["user_id", "email", "passwd", "firstname", "lastname", "status", "created"],
+        "update": ["user_id", "email", "passwd", "firstname", "lastname", "status"],
+        "topics": ["user_id", "email", "firstname", "lastname", "status", "created"]
+      },
+      {
+        "name": "item",
+        "primaryKey": "item_id",
+        "autoKey": "item_id",
+        "statement": "CREATE TABLE item (item_id int unsigned NOT NULL AUTO_INCREMENT, title varchar(255) NOT NULL, owner_id int unsigned, created datetime, PRIMARY KEY (item_id))",
+        "insert": ["title", "owner_id", "created"],
+        "edit": ["item_id", "title", "owner_id", "created"],
+        "update": ["item_id", "title", "owner_id"],
+        "topics": ["item_id", "title", "owner_id", "created"]
+      }
+    ],
+    "procedures": [
+      {
+        "name": "proc_example_u",
+        "table": "app_user",
+        "statement": "CREATE PROCEDURE proc_example_u(IN i_email varchar(255), IN i_passwd varchar(255), OUT user_id int unsigned, OUT email varchar(255), OUT u_firstname varchar(255), OUT u_lastname varchar(255)) BEGIN SELECT 1, i_email, '', '' INTO user_id, email, u_firstname, u_lastname; END"
+      }
+    ]
   },
-  "roles": [],
-  "components": [],
+  "roles": [
+    {
+      "name": "u",
+      "description": "Example signed-in user",
+      "authen": "db",
+      "isAdmin": 0,
+      "isAuto": 1,
+      "table": "app_user",
+      "default": {
+        "component": "item",
+        "action": "topics"
+      },
+      "fields": {
+        "id": "user_id",
+        "login": "email",
+        "password": "passwd",
+        "firstname": "firstname",
+        "lastname": "lastname"
+      },
+      "restriction": "status IN (\"Yes\")"
+    }
+  ],
+  "components": [
+    {
+      "name": "item",
+      "description": "Example items",
+      "table": "item",
+      "public": ["topics"],
+      "roles": {
+        "u": ["startnew", "insert", "edit", "update", "topics"]
+      }
+    }
+  ],
   "overlays": {}
 }
