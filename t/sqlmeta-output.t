@@ -12,6 +12,7 @@ use Tavola::Project::Spec;
 use Tavola::Project::Spec::Validator;
 
 my $repo = abs_path("$Bin/..");
+my $scenario = 'manual_pk_fk';
 my $spec = _read_json("$repo/specs/sqlmeta.project.json");
 
 ok(eval { Tavola::Project::Spec::Validator->validate($spec); 1 }, 'sqlmeta-generated project spec validates');
@@ -66,7 +67,7 @@ is_deeply($config->{Roles}->{u}->{Attributes}, [ qw(public_id email u_firstname 
 ok(ref($other->{r_list}) eq 'ARRAY', 'landing list is generated from consumed spec');
 
 SKIP: {
-	my $fixture_path = "$repo/../sqlmeta/xmeta/testdata/contracts/manual_pk_fk.expanded_app_spec.json";
+	my $fixture_path = "$repo/../sqlmeta/xmeta/testdata/contracts/$scenario.expanded_app_spec.json";
 	skip 'sqlmeta sibling contract fixtures are not checked out', 3 unless -f $fixture_path;
 	my $fixture = _read_json($fixture_path);
 	is($fixture->{Spec}->{Name}, 'Manual PK/FK', 'sqlmeta manual PK/FK contract fixture is readable');
