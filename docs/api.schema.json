@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tabilet.local/schema/api.schema.json",
-  "title": "Tabilet API Manifest",
+  "$id": "https://tavola.local/schema/api.schema.json",
+  "title": "Tavola API Manifest",
   "type": "object",
   "required": [
     "format",
@@ -15,7 +15,7 @@
   "additionalProperties": false,
   "properties": {
     "format": {
-      "const": "tabilet-api-manifest"
+      "const": "tavola-api-manifest"
     },
     "version": {
       "const": 1

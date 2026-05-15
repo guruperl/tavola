@@ -215,12 +215,12 @@ final class Application
         self::ensureDir(\$config->{"Uploaddir"});
         self::ensureDir(dirname(\$config->{"Log"}->{"Filename"}));
 
-        \$dsn = getenv("TABILET_DB_DSN");
+        \$dsn = getenv("TAVOLA_DB_DSN") ?: getenv("TABILET_DB_DSN");
         if (\$dsn !== false && \$dsn !== "") {
             \$config->{"Db"} = [
                 \$dsn,
-                getenv("TABILET_DB_USER") ?: "",
-                getenv("TABILET_DB_PASSWORD") ?: "",
+                getenv("TAVOLA_DB_USER") ?: (getenv("TABILET_DB_USER") ?: ""),
+                getenv("TAVOLA_DB_PASSWORD") ?: (getenv("TABILET_DB_PASSWORD") ?: ""),
             ];
         }
 

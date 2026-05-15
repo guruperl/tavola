@@ -1,11 +1,11 @@
 {
   "Custom": {
     "USER_domain": "localhost",
-    "USER_root": "/tmp/tabilet/generated"
+    "USER_root": "/tmp/tavola/generated"
   },
   "Db": [
-    "dbi:mysql:database=tabilet;host=localhost;port=3306",
-    "${TABILET_DB_USER}",
-    "${TABILET_DB_PASS}"
+    "dbi:mysql:database=tavola;host=localhost;port=3306",
+    "${TAVOLA_DB_USER}",
+    "${TAVOLA_DB_PASS}"
   ]
 }

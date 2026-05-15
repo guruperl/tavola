@@ -14,7 +14,7 @@ sub project_paths {
 	my ($self, $project, $owner) = @_;
 	my $custom = ($self->{config} && $self->{config}->{Custom}) ? $self->{config}->{Custom} : {};
 	my $root = $project->{root}
-		|| ($custom->{USER_root} ? "$custom->{USER_root}/$owner->{login}" : "/home/user/tabilet/$owner->{login}");
+		|| ($custom->{USER_root} ? "$custom->{USER_root}/$owner->{login}" : "/home/user/tavola/$owner->{login}");
 
 	return {
 		document_root => $project->{documentRoot} || "$root/www",

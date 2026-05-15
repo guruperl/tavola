@@ -40,7 +40,7 @@ sub manifest {
 	my @components = map { $self->_component_manifest($_, $script, $public) } @{$one->{component_topics} || []};
 
 	return {
-		format => 'tabilet-api-manifest',
+		format => 'tavola-api-manifest',
 		version => 1,
 		project => {
 			name => $one->{Project},

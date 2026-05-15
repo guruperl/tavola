@@ -1,19 +1,19 @@
-# Tabilet
+# Tavola
 
-Tabilet is a headless generator for database-backed web projects and API
+Tavola is a headless generator for database-backed web projects and API
 services. It builds on the Genelet framework and models an application as
 projects, roles, database tables, components, actions, and templates.
 
-Tabilet converts user intent into a deployable API-backed application and
+Tavola converts user intent into a deployable API-backed application and
 publishes the generated app's API as OpenAPI.
 
-Tabilet is app-spec native: roles, login fields, component actions, database
+Tavola is app-spec native: roles, login fields, component actions, database
 metadata, generated runtime config, API docs, and OpenAPI are all derived from
 the same JSON project spec.
 
 Generated projects can expose REST-style endpoints and browser views from the
-same component definitions. The old hosted Tabilet builder UI is not part of
-`main`; keep using the `ui` branch for that historical web app.
+same component definitions. The old hosted Tabilet builder UI is historical and
+is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 
 ## Repository Layout
 
@@ -45,8 +45,8 @@ for compatibility import/export. Direct JSON generation can run without a
 metadata database, but DB-backed commands require:
 
 ```text
-TABILET_DB_USER
-TABILET_DB_PASS
+TAVOLA_DB_USER
+TAVOLA_DB_PASS
 ```
 
 Generated application specs can still contain their own datasource placeholders,
@@ -54,7 +54,7 @@ such as `${APP_DB_USER}` and `${APP_DB_PASSWORD}`.
 
 ## JSON Project Specs
 
-Tabilet can generate an application directly from a JSON project spec. The JSON
+Tavola can generate an application directly from a JSON project spec. The JSON
 file is the source of truth for the records that the old UI collected: owner,
 project, datasource, tables, procedures, roles, components, action access,
 landing defaults, and optional custom generated-code overlays.
@@ -84,6 +84,9 @@ script/generate-project \
   --replace
 ```
 
+`jenny` is used here as the generated app name and output path. It marks an app
+produced by Tavola; it is not a Tavola subsystem or package.
+
 Use `--lang perl` for Perl output and `--tar PATH` instead of `--out PATH` to
 write an archive without extracting it. Generated app web UI files are included
 by default; add `--no-web-ui` to generate backend/API files without `views/`,
@@ -96,11 +99,11 @@ The generator writes a complete application archive. The common files are:
 - `conf/config.json` contains generated runtime configuration for the app.
 - `conf/init.sql` contains table and stored procedure SQL from the project
   spec.
-- `api.json` contains a machine-readable Tabilet API manifest with roles,
+- `api.json` contains a machine-readable Tavola API manifest with roles,
   login requirements, components, actions, parameters, and example endpoints.
 - `openapi.json` contains an OpenAPI 3.0 document derived from `api.json` for
-  tooling that expects OpenAPI. Tabilet-specific action details are preserved
-  in `x-tabilet-*` extensions.
+  tooling that expects OpenAPI. Tavola-specific action details are preserved
+  in `x-tavola-*` extensions.
 - `docs/api.md` contains generated API documentation derived from `api.json`.
 - `docs/api.schema.json` contains the JSON Schema used to validate `api.json`.
 - `logs/debug.log` is an empty log file placeholder.
@@ -141,8 +144,9 @@ tag, component, and action:
 
 For PHP output, `<script>` is usually `www/app.php`. For Perl output, the
 generated executable is `script/app`; configure the web server so the spec's
-`project.script` URL is handled by that executable. Jenny's spec uses
-`/jenny/app.php`, so a Perl Jenny deployment can still expose:
+`project.script` URL is handled by that executable. The Jenny spec uses
+`/jenny/app.php` to identify the generated app, so a Perl Jenny deployment can
+still expose:
 
 ```text
 /jenny/app.php/p/json/car?action=topics
@@ -180,28 +184,28 @@ templates.
 The metadata database path is still available for compatibility and migration
 checks.
 
-Initialize the Tabilet metadata database:
+Initialize the Tavola metadata database:
 
 ```bash
-mysql -u root tabilet < conf/init.sql
+mysql -u root tavola < conf/init.sql
 ```
 
 Import or replace a project in the metadata database:
 
 ```bash
-TABILET_DB_USER=... TABILET_DB_PASS=... \
+TAVOLA_DB_USER=... TAVOLA_DB_PASS=... \
 script/import-project-spec \
   --config conf/config.json \
   --spec specs/jenny.project.json \
   --replace
 ```
 
-The importer writes Tabilet metadata records only. The generated app still has
+The importer writes Tavola metadata records only. The generated app still has
 its own runtime database, initialized from the exported app's `conf/init.sql`.
-After import, export the generated app from the populated Tabilet records:
+After import, export the generated app from the populated Tavola records:
 
 ```bash
-TABILET_DB_USER=... TABILET_DB_PASS=... \
+TAVOLA_DB_USER=... TAVOLA_DB_PASS=... \
 script/export-project \
   --config conf/config.json \
   --owner jenny \
@@ -211,7 +215,7 @@ script/export-project \
 
 Use `--tar PATH` instead of `--out PATH` to write an archive without extracting
 it. The direct generator and metadata exporter are headless and do not require
-the Tabilet web UI, CGI entrypoints, or browser workflow.
+the old hosted Tabilet web UI, CGI entrypoints, or browser workflow.
 
 Custom generated-code files should be kept as explicit overlays referenced by
 the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).
@@ -238,12 +242,12 @@ prove -Ilib -I../perl t/*.t
 ```
 
 `t/db-export-parity.t` is skipped by default. Enable it only when a disposable
-Tabilet metadata database is configured; it imports `specs/smoke.project.json`
+Tavola metadata database is configured; it imports `specs/smoke.project.json`
 with replace semantics, exports from the DB, and compares `api.json` against
 direct spec generation:
 
 ```bash
-TABILET_RUN_DB_PARITY=1 TABILET_DB_USER=... TABILET_DB_PASS=... \
+TAVOLA_RUN_DB_PARITY=1 TAVOLA_DB_USER=... TAVOLA_DB_PASS=... \
 prove -Ilib -I../perl t/db-export-parity.t
 ```
 

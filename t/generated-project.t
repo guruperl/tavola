@@ -15,7 +15,7 @@ use Tabilet::Project::JSONSchema;
 use Tabilet::Project::Spec;
 
 my $repo = abs_path("$Bin/..");
-my $tmp = tempdir('tabilet-generated-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
+my $tmp = tempdir('tavola-generated-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $schema = _read_json("$repo/docs/api.schema.json");
 
 for my $lang (qw(php perl)) {
@@ -60,7 +60,7 @@ sub _generate {
 sub _assert_api_manifest {
 	my ($api, $lang) = @_;
 
-	is($api->{format}, 'tabilet-api-manifest', "$lang api format");
+	is($api->{format}, 'tavola-api-manifest', "$lang api format");
 	is($api->{version}, 1, "$lang api version");
 	is($api->{project}->{name}, 'ExampleApp', "$lang project name");
 	is($api->{project}->{script}, '/example/app.php', "$lang script");
@@ -126,20 +126,20 @@ sub _assert_openapi {
 
 	is($openapi->{openapi}, '3.0.3', "$lang OpenAPI version");
 	is($openapi->{info}->{title}, 'ExampleApp API', "$lang OpenAPI title");
-	is($openapi->{'x-tabilet-source'}, 'api.json', "$lang OpenAPI source extension");
-	is($openapi->{'x-tabilet-endpoint-pattern'}, '<script>/<role>/<tag>/<component>?action=<action>', "$lang OpenAPI endpoint pattern extension");
+	is($openapi->{'x-tavola-source'}, 'api.json', "$lang OpenAPI source extension");
+	is($openapi->{'x-tavola-endpoint-pattern'}, '<script>/<role>/<tag>/<component>?action=<action>', "$lang OpenAPI endpoint pattern extension");
 
 	my $login = $openapi->{paths}->{'/example/app.php/{role}/json/login'}->{post};
 	ok($login, "$lang OpenAPI login path");
 	is_deeply($login->{parameters}->[0]->{schema}->{enum}, [ 'u' ], "$lang OpenAPI login roles");
-	is_deeply($login->{'x-tabilet-logins'}->[0]->{credentials}, [ qw(email passwd) ], "$lang OpenAPI login credentials");
+	is_deeply($login->{'x-tavola-logins'}->[0]->{credentials}, [ qw(email passwd) ], "$lang OpenAPI login credentials");
 
 	my $component = $openapi->{paths}->{'/example/app.php/{role}/json/item'}->{get};
 	ok($component, "$lang OpenAPI component path");
 	is_deeply($component->{parameters}->[0]->{schema}->{enum}, [ qw(p u) ], "$lang OpenAPI component roles");
 	is_deeply($component->{parameters}->[1]->{schema}->{enum}, [ qw(topics startnew insert edit update) ], "$lang OpenAPI action enum");
-	is($component->{'x-tabilet-component'}->{primary_key}, 'item_id', "$lang OpenAPI component primary key");
-	my %actions = map { $_->{name} => $_ } @{$component->{'x-tabilet-actions'}};
+	is($component->{'x-tavola-component'}->{primary_key}, 'item_id', "$lang OpenAPI component primary key");
+	my %actions = map { $_->{name} => $_ } @{$component->{'x-tavola-actions'}};
 	is_deeply(_sorted($actions{topics}->{allowed_groups}), [ qw(p u) ], "$lang OpenAPI topics groups");
 	is_deeply($actions{insert}->{request_params}, [ qw(title owner_id created) ], "$lang OpenAPI insert params");
 }

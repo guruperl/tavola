@@ -1,6 +1,6 @@
 # Custom Code Overlays
 
-Tabilet project specs keep generated app structure in JSON and allow explicit
+Tavola project specs keep generated app structure in JSON and allow explicit
 custom-code overlays for files that should not be regenerated from defaults.
 Use overlays when a component needs hand-written behavior in its generated
 `Filter.php` or `Model.php`.
@@ -52,7 +52,7 @@ For this example:
 - `filterFile` replaces the generated `src/car/Filter.php`.
 - `modelFile` replaces the generated `src/car/Model.php`.
 
-If an overlay is omitted, Tabilet writes its normal generated default for that
+If an overlay is omitted, Tavola writes its normal generated default for that
 file.
 
 `componentJson` and `componentJsonFile` overlays are validated during direct
@@ -112,9 +112,11 @@ Then reference them with paths relative to the spec file:
 }
 ```
 
-Jenny currently references files from `../jenny/src/car/` to preserve the
-existing custom implementation during migration. For newer projects, keeping
-overlays inside `specs/` makes the JSON source-of-truth package more portable.
+Jenny is an example generated app name used in this repository to mark output
+created by Tavola; it is not part of Tavola itself. It currently references
+files from `../jenny/src/car/` to preserve the existing custom implementation
+during migration. For newer projects, keeping overlays inside `specs/` makes
+the JSON source-of-truth package more portable.
 
 ## Rules For Overlay Code
 
@@ -127,7 +129,7 @@ overlays inside `specs/` makes the JSON source-of-truth package more portable.
 - Do not put secrets, deployment paths, or runtime credentials in overlay code.
   Use generated config and environment variables instead.
 - Keep static assets separate from metadata overlays. Jenny's `www/cars/`
-  assets are copied during regeneration; they are not stored in the Tabilet
+  assets are copied during regeneration; they are not stored in the Tavola
   metadata database.
 
 ## Regeneration Checklist
@@ -136,6 +138,6 @@ overlays inside `specs/` makes the JSON source-of-truth package more portable.
 2. Update SQL fragments for schema/procedure changes.
 3. Update overlay files for custom PHP behavior.
 4. Run `script/import-project-spec --dry-run --spec specs/my.project.json`.
-5. Import with `--replace` into a disposable Tabilet metadata database.
+5. Import with `--replace` into a disposable Tavola metadata database.
 6. Export the generated app and verify Composer, PHP lint, generated SQL import,
    and any custom routes named in `componentJsonFile`.

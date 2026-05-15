@@ -10,7 +10,7 @@
     "script": "/jenny/app.php",
     "publicRole": "p",
     "root": "/home/peter/jenny",
-    "serverUrl": "https://www.tabilet.com",
+    "serverUrl": "https://www.tavola.local",
     "ds": "remote",
     "adminRole": "a",
     "adminUser": "admin",

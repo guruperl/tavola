@@ -75,7 +75,7 @@ sub usage {
 Usage: script/generate-project --lang php|perl --spec PATH [options]
 
 Options:
-  --config PATH  Tabilet generator config. Defaults to conf/config.json.
+  --config PATH  Tavola generator config. Defaults to conf/config.json.
   --lang LANG    Output language: php or perl. Defaults to php.
   --spec PATH    JSON project spec.
   --out PATH     Extract generated files into PATH.

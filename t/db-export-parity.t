@@ -13,13 +13,13 @@ use Test::More;
 use Tabilet::Project::Exporter;
 use Tabilet::Project::Spec;
 
-plan skip_all => 'set TABILET_RUN_DB_PARITY=1 to run metadata DB import/export parity test'
-	unless $ENV{TABILET_RUN_DB_PARITY};
+plan skip_all => 'set TAVOLA_RUN_DB_PARITY=1 to run metadata DB import/export parity test'
+	unless $ENV{TAVOLA_RUN_DB_PARITY};
 
 my $repo = abs_path("$Bin/..");
-my $config = $ENV{TABILET_DB_PARITY_CONFIG} || "$repo/conf/config.json";
-my $spec_path = $ENV{TABILET_DB_PARITY_SPEC} || "$repo/specs/smoke.project.json";
-my $tmp = tempdir('tabilet-db-parity-XXXXXX', TMPDIR => 1, CLEANUP => 1);
+my $config = $ENV{TAVOLA_DB_PARITY_CONFIG} || "$repo/conf/config.json";
+my $spec_path = $ENV{TAVOLA_DB_PARITY_SPEC} || "$repo/specs/smoke.project.json";
+my $tmp = tempdir('tavola-db-parity-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $spec = _read_json($spec_path);
 
 my $direct = File::Spec->catdir($tmp, 'direct');

@@ -1,6 +1,6 @@
 # Project Spec Reference
 
-Tabilet project specs describe the generated application. The JSON spec is the
+Tavola project specs describe the generated application. The JSON spec is the
 source of truth for runtime config, database metadata, roles, components,
 allowed actions, and optional generated-code overlays.
 
@@ -36,7 +36,7 @@ browser UI starts.
 
 ## Datasource
 
-`datasource` configures the generated app's runtime database, not the Tabilet
+`datasource` configures the generated app's runtime database, not the Tavola
 metadata database. Values can use required environment placeholders:
 
 ```json
@@ -51,13 +51,15 @@ The generated app expands those placeholders at runtime.
 PHP output can also override the runtime database at process startup with:
 
 ```text
-TABILET_DB_DSN
-TABILET_DB_USER
-TABILET_DB_PASSWORD
+TAVOLA_DB_DSN
+TAVOLA_DB_USER
+TAVOLA_DB_PASSWORD
 ```
 
-Those variables are for the generated application's database. The metadata
-import/export commands use the separate `conf/config.json` database settings.
+Those variables are for the generated application's database. Generated PHP
+apps also accept the old `TABILET_DB_*` names as a compatibility fallback. The
+metadata import/export commands use the separate `conf/config.json` database
+settings.
 
 ## Tables And Actions
 
@@ -189,9 +191,9 @@ Examples:
 
 Each generated archive also includes:
 
-- `api.json`, a machine-readable Tabilet API manifest.
+- `api.json`, a machine-readable Tavola API manifest.
 - `openapi.json`, an OpenAPI 3.0 document derived from `api.json` for external
-  tooling. Tabilet-specific action details are kept in `x-tabilet-*`
+  tooling. Tavola-specific action details are kept in `x-tavola-*`
   extensions.
 - `docs/api.md`, generated endpoint documentation derived from `api.json`.
 

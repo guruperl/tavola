@@ -41,7 +41,7 @@ sub usage {
 Usage: script/import-project-spec --spec specs/jenny.project.json [options]
 
 Options:
-  --config PATH  Tabilet metadata DB config. Defaults to conf/config.json.
+  --config PATH  Tavola metadata DB config. Defaults to conf/config.json.
   --replace      Delete the owner's existing project before importing.
   --dry-run      Validate and print the planned inserts without DB writes.
   --help         Show this help.

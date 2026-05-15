@@ -39,19 +39,19 @@ sub document {
 		info => {
 			title => "$project->{name} API",
 			version => '1.0.0',
-			description => 'Derived from Tabilet api.json. Tabilet action details are preserved in x-tabilet-* extensions.',
+			description => 'Derived from Tavola api.json. Tavola action details are preserved in x-tavola-* extensions.',
 		},
 		paths => $paths,
 		components => {
 			schemas => {
-				TabiletResponse => {
+				TavolaResponse => {
 					type => 'object',
 					additionalProperties => JSON::true,
 				},
 			},
 		},
-		'x-tabilet-source' => 'api.json',
-		'x-tabilet-endpoint-pattern' => $manifest->{endpoint_pattern},
+		'x-tavola-source' => 'api.json',
+		'x-tavola-endpoint-pattern' => $manifest->{endpoint_pattern},
 	};
 }
 
@@ -66,7 +66,7 @@ sub _login_path {
 	return {
 		post => {
 			summary => 'Log in as a protected role',
-			operationId => 'tabiletLogin',
+			operationId => 'tavolaLogin',
 			parameters => [
 				{
 					name => 'role',
@@ -87,7 +87,7 @@ sub _login_path {
 				},
 			},
 			responses => $self->_responses(),
-			'x-tabilet-logins' => [
+			'x-tavola-logins' => [
 				map {
 					{
 						role => $_->{name},
@@ -137,12 +137,12 @@ sub _component_path {
 				} sort keys %params,
 			],
 			responses => $self->_responses(),
-			'x-tabilet-component' => {
+			'x-tavola-component' => {
 				name => $component->{name},
 				table => $component->{table},
 				primary_key => $component->{primary_key},
 			},
-			'x-tabilet-actions' => [
+			'x-tavola-actions' => [
 				map {
 					{
 						name => $_->{name},
@@ -161,11 +161,11 @@ sub _component_path {
 sub _responses {
 	return {
 		'200' => {
-			description => 'Tabilet JSON response',
+			description => 'Tavola JSON response',
 			content => {
 				'application/json' => {
 					schema => {
-						'$ref' => '#/components/schemas/TabiletResponse',
+						'$ref' => '#/components/schemas/TavolaResponse',
 					},
 				},
 			},
@@ -176,7 +176,7 @@ sub _responses {
 sub _operation_id {
 	my ($component, $seen) = @_;
 	$component =~ s/[^A-Za-z0-9_]+/_/g;
-	my $base = 'tabilet' . ucfirst($component) . 'Action';
+	my $base = 'tavola' . ucfirst($component) . 'Action';
 	my $count = ++$seen->{$base};
 	return $count == 1 ? $base : "${base}_$count";
 }

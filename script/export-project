@@ -65,7 +65,7 @@ sub usage {
 Usage: script/export-project (--project-id ID | --owner LOGIN [--project NAME] | --project NAME) [options]
 
 Options:
-  --config PATH      Tabilet metadata DB config. Defaults to conf/config.json.
+  --config PATH      Tavola metadata DB config. Defaults to conf/config.json.
   --project-id ID    Export by projectid.
   --owner LOGIN      Export the project owned by member login.
   --project NAME     Export by project name, or disambiguate --owner.

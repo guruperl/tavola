@@ -36,18 +36,18 @@ like($docs, qr/\| `vehicle` \| `years` \|  \| `\/example\/app\.php\/u\/json\/veh
 my $openapi = Tabilet::Project::OpenAPI->new(manifest => $manifest)->document();
 my $vehicle_path = $openapi->{paths}->{'/example/app.php/{role}/json/vehicle'}->{get};
 is_deeply($vehicle_path->{parameters}->[1]->{schema}->{enum}, [ qw(topics insert makes years) ], 'OpenAPI action enum includes custom actions');
-my %openapi_actions = map { $_->{name} => $_ } @{$vehicle_path->{'x-tabilet-actions'}};
+my %openapi_actions = map { $_->{name} => $_ } @{$vehicle_path->{'x-tavola-actions'}};
 ok($openapi_actions{years}, 'OpenAPI extension includes custom action');
 is_deeply($openapi_actions{years}->{request_params}, [], 'OpenAPI custom action has empty request params');
 
 is(
 	$openapi->{paths}->{'/example/app.php/{role}/json/a-b'}->{get}->{operationId},
-	'tabiletA_bAction',
+	'tavolaA_bAction',
 	'first sanitized OpenAPI operationId is stable',
 );
 is(
 	$openapi->{paths}->{'/example/app.php/{role}/json/a_b'}->{get}->{operationId},
-	'tabiletA_bAction_2',
+	'tavolaA_bAction_2',
 	'colliding sanitized OpenAPI operationId gets deterministic suffix',
 );
 
