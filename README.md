@@ -92,6 +92,7 @@ The generator writes a complete application archive. The common files are:
 - `api.json` contains a machine-readable Tabilet API manifest with roles,
   login requirements, components, actions, parameters, and example endpoints.
 - `docs/api.md` contains generated API documentation derived from `api.json`.
+- `docs/api.schema.json` contains the JSON Schema used to validate `api.json`.
 - `logs/debug.log` is an empty log file placeholder.
 - Component `component.json` files describe generated actions, roles, request
   parameters, and table metadata.

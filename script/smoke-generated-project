@@ -13,6 +13,7 @@ use File::Temp qw(tempdir);
 use Getopt::Long qw(GetOptions);
 use JSON qw(decode_json);
 use Tabilet::Project::Exporter;
+use Tabilet::Project::JSONSchema;
 use Tabilet::Project::Spec;
 
 my $config = "$Bin/../conf/config.json";
@@ -37,6 +38,7 @@ die "Unsupported --lang '$lang'. Use php, perl, or all.\n" unless $lang eq 'php'
 my @langs = $lang eq 'all' ? qw(php perl) : ($lang);
 my $root = tempdir('tabilet-smoke-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $repo = abs_path("$Bin/..");
+my $api_schema = _read_json(File::Spec->catfile($repo, 'docs', 'api.schema.json'));
 
 my $loader = Tabilet::Project::Spec->new(
 	config_path => $config,
@@ -54,7 +56,7 @@ for my $target (@langs) {
 		asset_root => $repo,
 	)->write_dir($out, 1);
 
-	verify_project($out, $target);
+	verify_project($out, $target, $api_schema);
 	compile_generated_perl($out, $repo) if $target eq 'perl';
 	print "smoke $target ok: $out\n";
 }
@@ -63,15 +65,19 @@ print "smoke complete: " . join(', ', @langs) . "\n";
 exit 0;
 
 sub verify_project {
-	my ($out, $target) = @_;
+	my ($out, $target, $api_schema) = @_;
 
 	_require_file($out, 'api.json');
 	_require_file($out, 'docs/api.md');
+	_require_file($out, 'docs/api.schema.json');
 	_require_file($out, 'conf/config.json');
 	_require_file($out, 'conf/init.sql');
 	_require_file($out, 'logs/debug.log');
 
 	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
+	my @schema_errors = Tabilet::Project::JSONSchema->new(schema => $api_schema)->validate($api);
+	die "api.json failed schema validation:\n" . join("\n", map { "  $_" } @schema_errors) . "\n"
+		if @schema_errors;
 	_read_json(File::Spec->catfile($out, 'conf/config.json'));
 	die "api.json missing project.name\n" unless $api->{project}->{name};
 	die "api.json missing components\n" unless ref($api->{components}) eq 'ARRAY' && @{$api->{components}};

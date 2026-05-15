@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tabilet.local/schema/api.schema.json",
+  "title": "Tabilet API Manifest",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "project",
+    "endpoint_pattern",
+    "auth_requirements",
+    "roles",
+    "components"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "tabilet-api-manifest"
+    },
+    "version": {
+      "const": 1
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name",
+        "script",
+        "public_role",
+        "default"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "script": {
+          "type": "string"
+        },
+        "public_role": {
+          "type": "string"
+        },
+        "default": {
+          "type": "object",
+          "required": [
+            "component",
+            "action"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "component": {
+              "type": "string"
+            },
+            "action": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "endpoint_pattern": {
+      "const": "<script>/<role>/<tag>/<component>?action=<action>"
+    },
+    "auth_requirements": {
+      "type": "object",
+      "required": [
+        "public_role",
+        "protected_roles",
+        "login_endpoint_pattern",
+        "session_effect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "public_role": {
+          "type": "string"
+        },
+        "protected_roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "login_endpoint_pattern": {
+          "const": "<script>/<role>/json/login"
+        },
+        "session_effect": {
+          "type": "string"
+        }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "public",
+          "auth_required",
+          "default"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "auth_required": {
+            "type": "boolean"
+          },
+          "authen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_admin": {
+            "type": "boolean"
+          },
+          "is_auto": {
+            "type": "boolean"
+          },
+          "default": {
+            "type": "object",
+            "required": [
+              "component",
+              "action"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "component": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "action": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "fields": {
+            "type": "object",
+            "required": [
+              "id",
+              "login",
+              "password",
+              "firstname",
+              "lastname"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "login": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "password": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "firstname": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lastname": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "restriction": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "login": {
+            "type": "object",
+            "required": [
+              "method",
+              "endpoint",
+              "credentials",
+              "sql"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "method": {
+                "type": "string"
+              },
+              "endpoint": {
+                "type": "string"
+              },
+              "credentials": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sql": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "table",
+          "primary_key",
+          "actions"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "table": {
+            "type": "string"
+          },
+          "primary_key": {
+            "type": "string"
+          },
+          "current_id_auto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "allowed_groups",
+                "public",
+                "options",
+                "request_params",
+                "primary_key",
+                "examples"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "enum": [
+                    "topics",
+                    "startnew",
+                    "insert",
+                    "edit",
+                    "update",
+                    "delete"
+                  ]
+                },
+                "allowed_groups": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "public": {
+                  "type": "boolean"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "request_params": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "primary_key": {
+                  "type": "string"
+                },
+                "examples": {
+                  "type": "object",
+                  "required": [
+                    "json",
+                    "html"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "json": {
+                      "type": "string"
+                    },
+                    "html": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

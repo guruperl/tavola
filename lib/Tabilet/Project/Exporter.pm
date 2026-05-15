@@ -81,6 +81,7 @@ sub add_to_tar {
 	my $manifest = $api->manifest();
 	$tar->add_data('api.json', $api->encode());
 	$tar->add_data('docs/api.md', $api->docs($manifest));
+	$tar->add_data('docs/api.schema.json', $self->_read_asset('docs/api.schema.json'));
 	$self->{lang} eq 'php'
 		? $self->_add_php_project($tar, $one, $project, $generator)
 		: $self->_add_perl_project($tar, $one, $project, $generator);
