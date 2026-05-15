@@ -221,6 +221,12 @@ perl -Ilib -I../perl -c script/generate-project
 perl -Ilib -I../perl -c script/smoke-generated-project
 ```
 
+Run generated-output regression tests:
+
+```bash
+prove -Ilib -I../perl t/generated-project.t
+```
+
 Run the Genelet framework tests from this checkout when the sibling `../perl`
 repository is present:
 
