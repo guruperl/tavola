@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKSPACE="$(cd "$ROOT/.." && pwd)"
-CONTRACT_SCENARIO="manual_pk_fk"
 
 go_env=(
   GIT_CONFIG_COUNT=1
@@ -27,9 +26,14 @@ run_go() {
 check_contract_drift() {
   local stale=()
   local paths=(
-    "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/${CONTRACT_SCENARIO}.expanded_app_spec.json"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/${CONTRACT_SCENARIO}.project.json"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/${CONTRACT_SCENARIO}.warnings.txt"
+    "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/manual_pk_fk.expanded_app_spec.json"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/manual_pk_fk.project.json"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/manual_pk_fk.warnings.txt"
+    "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/invalid_overrides.expanded_app_spec.json"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/invalid_overrides.project.json"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/invalid_overrides.warnings.txt"
+    "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/missing_auth_table.expand_error.txt"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/missing_auth_table.tavola_error.txt"
     "$ROOT/specs/sqlmeta.project.json"
   )
 

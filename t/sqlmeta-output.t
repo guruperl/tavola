@@ -75,6 +75,27 @@ SKIP: {
 	is($fixture->{TableGrants}->[0]->{TraversalJoins}->[0]->{ChildColumn}, 'user_public_id', 'contract fixture records manual FK traversal');
 }
 
+SKIP: {
+	my $project_path = "$repo/../sqlmeta/tavola/testdata/contracts/invalid_overrides.project.json";
+	my $warnings_path = "$repo/../sqlmeta/tavola/testdata/contracts/invalid_overrides.warnings.txt";
+	skip 'sqlmeta sibling invalid override fixtures are not checked out', 8 unless -f $project_path && -f $warnings_path;
+	my $invalid = _read_json($project_path);
+	ok(eval { Tavola::Project::Spec::Validator->validate($invalid); 1 }, 'invalid override project fixture validates');
+	open my $fh, '<', $warnings_path or die "Cannot open $warnings_path: $!";
+	local $/;
+	my $warnings = <$fh>;
+	close $fh or die "Cannot close $warnings_path: $!";
+	$warnings =~ s/\s+\z//;
+	is($warnings, join("\n", @{$invalid->{introspection}->{warnings}}), 'invalid override warning snapshot matches project JSON');
+	like($warnings, qr/missing_public_id/, 'invalid manual PK warning is preserved');
+	like($warnings, qr/ambiguous table name matched archive\.teams, public\.teams/, 'ambiguous table warning is preserved');
+	like($warnings, qr/composite columns; skipped role scope edge/, 'composite manual FK warning is preserved');
+	like($warnings, qr/missing_user_id/, 'invalid manual FK warning is preserved');
+	my %invalid_components = map { $_->{table} => $_ } @{$invalid->{components}};
+	ok($invalid_components{users}->{roles}->{u} && $invalid_components{posts}->{roles}->{u}, 'valid auth-scope tables receive protected grants');
+	ok(!$invalid_components{audit_log}->{roles} && !$invalid_components{memberships}->{roles}, 'unrelated and skipped-FK tables receive no protected grants');
+}
+
 done_testing();
 
 sub _read_json {
