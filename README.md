@@ -33,17 +33,16 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 - PDO and the PDO driver for generated PHP apps
 - JSON and Archive::Tar
 - Template Toolkit for generated-app template output
-- A MySQL metadata database only when using the compatibility
-  importer/exporter path
 
 For local framework tests, the sibling Genelet repository can run its default
 SQLite-backed test suite without a service database.
 
 ## Configuration
 
-`conf/config.json` provides generator defaults and the metadata DB connection
-for compatibility import/export. Direct JSON generation can run without a
-metadata database, but DB-backed commands require:
+`conf/config.json` provides generator defaults and the legacy metadata DB
+connection used only by the compatibility import/export commands. Direct JSON
+generation can run without a metadata database. DB-backed compatibility commands
+require:
 
 ```text
 TAVOLA_DB_USER
@@ -184,8 +183,18 @@ templates.
 
 ## Metadata DB Compatibility
 
-The metadata database path is still available for compatibility and migration
-checks.
+The metadata database path is legacy compatibility for the old hosted
+multi-project builder. It is not needed for normal direct JSON generation.
+
+Use this path only when migrating or testing the old DB-backed workflow:
+
+```text
+JSON spec -> import-project-spec -> Tavola metadata DB -> export-project
+```
+
+`conf/init.sql` initializes that Tavola metadata database. It does not create
+the generated app's runtime schema or add authentication tables to an existing
+application database.
 
 Initialize the Tavola metadata database:
 
