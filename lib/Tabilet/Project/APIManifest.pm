@@ -99,11 +99,40 @@ sub docs {
 		next unless $role->{login};
 		my $fields = join(', ', map { "`$_`" } @{$role->{login}->{credentials} || []});
 		push @lines, "";
-		push @lines, "Example `$role->{name}` login:";
+		push @lines, "### Role `$role->{name}` Login";
+		push @lines, "";
+		push @lines, "- Endpoint: `$role->{login}->{endpoint}`";
+		push @lines, "- Method: `$role->{login}->{method}`";
+		push @lines, "- Request parameters: $fields";
+		push @lines, "- Login procedure: `" . ($role->{login}->{sql} || '') . "`";
+		push @lines, "";
+		push @lines, "| Role Field | Runtime Value |";
+		push @lines, "| --- | --- |";
+		for my $field (qw(id login password firstname lastname)) {
+			my $value = defined $role->{fields}->{$field} ? $role->{fields}->{$field} : '';
+			push @lines, "| `$field` | `$value` |";
+		}
+		push @lines, "";
+		push @lines, "Login request:";
 		push @lines, "";
 		push @lines, "```text";
-		push @lines, "$role->{login}->{endpoint}  ($fields)";
+		push @lines, $self->_login_request_example($role);
 		push @lines, "```";
+		my @protected = $self->_protected_actions($manifest, $role->{name});
+		if (@protected) {
+			push @lines, "";
+			push @lines, "After login, call protected actions with the returned session/cookie:";
+			push @lines, "";
+			push @lines, "| Component | Action | Request Params | JSON Example |";
+			push @lines, "| --- | --- | --- | --- |";
+			for my $item (@protected) {
+				my $params = @{$item->{action}->{request_params} || []}
+					? join(', ', map { "`$_`" } @{$item->{action}->{request_params}})
+					: '';
+				my $example = $self->_example($script, $role->{name}, 'json', $item->{component}, $item->{action}->{name});
+				push @lines, "| `$item->{component}` | `$item->{action}->{name}` | $params | `$example` |";
+			}
+		}
 	}
 	push @lines, "";
 	push @lines, "## Components";
@@ -203,6 +232,27 @@ sub _request_params {
 sub _example {
 	my ($self, $script, $role, $tag, $component, $action) = @_;
 	return "$script/$role/$tag/$component?action=$action";
+}
+
+sub _login_request_example {
+	my ($self, $role) = @_;
+	my @params = map { "$_=<$_>" } @{$role->{login}->{credentials} || []};
+	return $role->{login}->{endpoint} . (@params ? '?' . join('&', @params) : '');
+}
+
+sub _protected_actions {
+	my ($self, $manifest, $role_name) = @_;
+	my @items;
+	for my $component (@{$manifest->{components} || []}) {
+		for my $action (@{$component->{actions} || []}) {
+			next unless grep { $_ eq $role_name } @{$action->{allowed_groups} || []};
+			push @items, {
+				component => $component->{name},
+				action => $action,
+			};
+		}
+	}
+	return @items;
 }
 
 sub _json {

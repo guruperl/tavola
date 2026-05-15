@@ -29,6 +29,7 @@ for my $lang (qw(php perl)) {
 	ok(-s "$out/conf/config.json", "$lang generated conf/config.json");
 
 	_assert_api_manifest($api, $lang);
+	_assert_api_docs(_read_text("$out/docs/api.md"), $lang);
 	_assert_config(_read_json("$out/conf/config.json"), $lang);
 	_assert_component_json(_component_json_path($out, $lang), $lang);
 }
@@ -117,6 +118,22 @@ sub _assert_config {
 	is_deeply($issuer->{Out_pars}, [ qw(user_id email u_firstname u_lastname) ], "$lang config db output params");
 }
 
+sub _assert_api_docs {
+	my ($docs, $lang) = @_;
+
+	like($docs, qr/### Role `u` Login/, "$lang docs include role login heading");
+	like($docs, qr/- Endpoint: `\/example\/app\.php\/u\/json\/login`/, "$lang docs include login endpoint");
+	like($docs, qr/- Request parameters: `email`, `passwd`/, "$lang docs include login request params");
+	like($docs, qr/- Login procedure: `proc_example_u`/, "$lang docs include login procedure");
+	like($docs, qr/\| `login` \| `email` \|/, "$lang docs include login field mapping");
+	like($docs, qr/\| `password` \| `passwd` \|/, "$lang docs include password field mapping");
+	like($docs, qr/\/example\/app\.php\/u\/json\/login\?email=<email>&passwd=<passwd>/, "$lang docs include login request example");
+	like($docs, qr/After login, call protected actions with the returned session\/cookie:/, "$lang docs include protected action flow");
+	like($docs, qr/\| `item` \| `topics` \| `item_id`, `title`, `owner_id`, `created` \| `\/example\/app\.php\/u\/json\/item\?action=topics` \|/, "$lang docs include protected topics example");
+	like($docs, qr/\| `item` \| `insert` \| `title`, `owner_id`, `created` \| `\/example\/app\.php\/u\/json\/item\?action=insert` \|/, "$lang docs include protected insert example");
+	like($docs, qr/\| `item` \| `update` \| `item_id`, `title`, `owner_id` \| `\/example\/app\.php\/u\/json\/item\?action=update` \|/, "$lang docs include protected update example");
+}
+
 sub _assert_component_json {
 	my ($path, $lang) = @_;
 	my $component = _read_json($path);
@@ -146,6 +163,15 @@ sub _read_json {
 	my $json = <$fh>;
 	close $fh or die "Cannot close $path: $!";
 	return decode_json($json);
+}
+
+sub _read_text {
+	my $path = shift;
+	open my $fh, '<', $path or die "Cannot open $path: $!";
+	local $/;
+	my $text = <$fh>;
+	close $fh or die "Cannot close $path: $!";
+	return $text;
 }
 
 sub _sorted {
