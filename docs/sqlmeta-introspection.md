@@ -54,3 +54,16 @@ GOWORK=off go run ./cmd/tavola-introspect \
 - `introspection.warnings` is the review surface for synthesized DDL, manual
   override decisions, missing login procedures, skipped relationships, and other
   introspection caveats.
+
+## Local Verification
+
+Until the packages are ready for release CI, run the local cross-repo workflow
+from this repo:
+
+```bash
+script/verify-sqlmeta-workflow
+```
+
+The script checks the canonical `sqlmeta` tests, the Docker-backed
+`molecule/rdb` and `golet/genesis` harnesses, `golet` vet, and Tavola's
+`t/sqlmeta-output.t` consumer test against the shared manual PK/FK contract.

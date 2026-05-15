@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WORKSPACE="$(cd "$ROOT/.." && pwd)"
+
+go_env=(
+  GIT_CONFIG_COUNT=1
+  GIT_CONFIG_KEY_0=url.git@github.com:.insteadOf
+  GIT_CONFIG_VALUE_0=https://github.com/
+  GOWORK=off
+  GOPRIVATE=github.com/genelet/*
+  GONOSUMDB=github.com/genelet/*
+  GOPROXY=direct
+)
+
+run_go() {
+  local dir="$1"
+  shift
+  (
+    cd "$dir"
+    env "${go_env[@]}" "$@"
+  )
+}
+
+run_go "$WORKSPACE/sqlmeta" go test ./...
+run_go "$WORKSPACE/molecule" env MOLECULE_MYSQL_PORT="${MOLECULE_MYSQL_PORT:-3330}" MOLECULE_POSTGRES_PORT="${MOLECULE_POSTGRES_PORT:-5456}" ./scripts/harness-test.sh ./...
+run_go "$WORKSPACE/golet" env GOLET_MYSQL_PORT="${GOLET_MYSQL_PORT:-3331}" GOLET_POSTGRES_PORT="${GOLET_POSTGRES_PORT:-5457}" ./scripts/harness-test.sh ./...
+run_go "$WORKSPACE/golet" go vet ./...
+
+(
+  cd "$ROOT"
+  prove -Ilib -I../perl t/sqlmeta-output.t
+)
