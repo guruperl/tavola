@@ -65,8 +65,9 @@ script/verify-sqlmeta-workflow
 ```
 
 The script first runs `../sqlmeta/script/refresh-contract-fixtures`, which
-refreshes the canonical `manual_pk_fk` ExpandedAppSpec fixture and syncs
-`specs/sqlmeta.project.json`. It then checks the canonical `sqlmeta` tests, the
-Docker-backed `molecule/rdb` and `golet/genesis` harnesses, `golet` vet, and
-Tavola's `t/sqlmeta-output.t` consumer test against the shared manual PK/FK
-contract.
+refreshes the canonical `manual_pk_fk` green fixture, the `invalid_overrides`
+warning fixture, and the `missing_auth_table` error snapshots. Only
+`manual_pk_fk` is synced to `specs/sqlmeta.project.json`. The workflow then
+checks fixture drift, canonical `sqlmeta` tests, Docker-backed `molecule/rdb`
+and `golet/genesis` harnesses, `golet` vet, and Tavola's
+`t/sqlmeta-output.t` consumer test against the shared contract fixtures.
