@@ -23,7 +23,39 @@ run_go() {
   )
 }
 
+check_contract_drift() {
+  local stale=()
+  local paths=(
+    "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/manual_pk_fk.expanded_app_spec.json"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/manual_pk_fk.project.json"
+    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/manual_pk_fk.warnings.txt"
+    "$ROOT/specs/sqlmeta.project.json"
+  )
+
+  for path in "${paths[@]}"; do
+    local repo
+    repo="$(git -C "$(dirname "$path")" rev-parse --show-toplevel)"
+    local rel
+    rel="$(git -C "$repo" ls-files --full-name "$path")"
+    if [[ -z "$rel" ]]; then
+      stale+=("$path")
+      continue
+    fi
+    if ! git -C "$repo" diff --quiet -- "$rel"; then
+      stale+=("$path")
+    fi
+  done
+
+  if ((${#stale[@]} > 0)); then
+    printf 'Contract fixtures are stale. Run `../sqlmeta/script/refresh-contract-fixtures` and commit the generated files.\n' >&2
+    printf 'Stale generated files:\n' >&2
+    printf '  %s\n' "${stale[@]}" >&2
+    return 1
+  fi
+}
+
 run_go "$WORKSPACE/sqlmeta" ./script/refresh-contract-fixtures
+check_contract_drift
 run_go "$WORKSPACE/sqlmeta" go test ./...
 run_go "$WORKSPACE/molecule" env MOLECULE_MYSQL_PORT="${MOLECULE_MYSQL_PORT:-3330}" MOLECULE_POSTGRES_PORT="${MOLECULE_POSTGRES_PORT:-5456}" ./scripts/harness-test.sh ./...
 run_go "$WORKSPACE/golet" env GOLET_MYSQL_PORT="${GOLET_MYSQL_PORT:-3331}" GOLET_POSTGRES_PORT="${GOLET_POSTGRES_PORT:-5457}" ./scripts/harness-test.sh ./...
