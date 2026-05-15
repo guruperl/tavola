@@ -191,7 +191,7 @@ sub _component_manifest {
 	my ($self, $component, $script, $public) = @_;
 	my $json = decode_json($component->{component_json});
 	my @actions;
-	for my $name (qw(topics startnew insert edit update delete)) {
+	for my $name ($self->_action_names($json->{actions} || {})) {
 		my $action = $json->{actions}->{$name} || {};
 		my $groups = $action->{groups} || [];
 		next unless @$groups;
@@ -216,6 +216,14 @@ sub _component_manifest {
 		current_id_auto => $json->{current_id_auto},
 		actions => \@actions,
 	};
+}
+
+sub _action_names {
+	my ($self, $actions) = @_;
+	my @standard = qw(topics startnew insert edit update delete);
+	my %standard = map { $_ => 1 } @standard;
+	my @custom = grep { !$standard{$_} } sort keys %$actions;
+	return ((grep { exists $actions->{$_} } @standard), @custom);
 }
 
 sub _request_params {

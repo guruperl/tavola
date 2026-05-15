@@ -4,6 +4,13 @@ Tabilet is a headless generator for database-backed web projects and API
 services. It builds on the Genelet framework and models an application as
 projects, roles, database tables, components, actions, and templates.
 
+Tabilet converts user intent into a deployable API-backed application and
+publishes the generated app's API as OpenAPI.
+
+Tabilet is app-spec native: roles, login fields, component actions, database
+metadata, generated runtime config, API docs, and OpenAPI are all derived from
+the same JSON project spec.
+
 Generated projects can expose REST-style endpoints and browser views from the
 same component definitions. The old hosted Tabilet builder UI is not part of
 `main`; keep using the `ui` branch for that historical web app.

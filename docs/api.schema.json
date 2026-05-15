@@ -282,14 +282,7 @@
               "additionalProperties": false,
               "properties": {
                 "name": {
-                  "enum": [
-                    "topics",
-                    "startnew",
-                    "insert",
-                    "edit",
-                    "update",
-                    "delete"
-                  ]
+                  "type": "string"
                 },
                 "allowed_groups": {
                   "type": "array",

@@ -29,8 +29,9 @@ sub document {
 	if (@protected) {
 		$paths->{"$script/{role}/json/login"} = $self->_login_path(\@protected);
 	}
+	my %operation_ids;
 	for my $component (@{$manifest->{components} || []}) {
-		$paths->{"$script/{role}/json/$component->{name}"} = $self->_component_path($component, \@roles);
+		$paths->{"$script/{role}/json/$component->{name}"} = $self->_component_path($component, \@roles, \%operation_ids);
 	}
 
 	return {
@@ -102,7 +103,7 @@ sub _login_path {
 }
 
 sub _component_path {
-	my ($self, $component, $roles) = @_;
+	my ($self, $component, $roles, $operation_ids) = @_;
 	my @actions = map { $_->{name} } @{$component->{actions} || []};
 	my %params;
 	for my $action (@{$component->{actions} || []}) {
@@ -112,7 +113,7 @@ sub _component_path {
 	return {
 		get => {
 			summary => "$component->{name} component action",
-			operationId => _operation_id($component->{name}),
+			operationId => _operation_id($component->{name}, $operation_ids),
 			parameters => [
 				{
 					name => 'role',
@@ -173,9 +174,11 @@ sub _responses {
 }
 
 sub _operation_id {
-	my $component = shift;
+	my ($component, $seen) = @_;
 	$component =~ s/[^A-Za-z0-9_]+/_/g;
-	return 'tabilet' . ucfirst($component) . 'Action';
+	my $base = 'tabilet' . ucfirst($component) . 'Action';
+	my $count = ++$seen->{$base};
+	return $count == 1 ? $base : "${base}_$count";
 }
 
 1;
