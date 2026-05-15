@@ -1,4 +1,4 @@
-package Tabilet::Project::ComponentJSON;
+package Tavola::Project::ComponentJSON;
 
 use strict;
 use warnings;

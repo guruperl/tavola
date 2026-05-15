@@ -1,12 +1,12 @@
-package Tabilet::Project::Spec::MetadataBuilder;
+package Tavola::Project::Spec::MetadataBuilder;
 
 use strict;
 use warnings;
 
 use JSON qw(decode_json encode_json);
-use Tabilet::Generator::PHP;
-use Tabilet::Project::ComponentJSON;
-use Tabilet::Project::Spec::Paths;
+use Tavola::Generator::PHP;
+use Tavola::Project::ComponentJSON;
+use Tavola::Project::Spec::Paths;
 
 sub new {
 	my ($class, %args) = @_;
@@ -14,7 +14,7 @@ sub new {
 		spec  => $args{spec},
 		config=> $args{config} || {},
 		files => $args{files},
-		paths => $args{paths} || Tabilet::Project::Spec::Paths->new(config => $args{config}),
+		paths => $args{paths} || Tavola::Project::Spec::Paths->new(config => $args{config}),
 	}, $class;
 }
 
@@ -129,14 +129,14 @@ sub build {
 			update_pars     => decode_json($table->{update_pars} || '[]'),
 			topics_pars     => decode_json($table->{topics_pars} || '[]'),
 		};
-		my $component_json = Tabilet::Project::ComponentJSON->new(
+		my $component_json = Tavola::Project::ComponentJSON->new(
 			spec => $self->{spec},
 			files => $self->{files},
 		)->encode($component, $table_for_json);
 		my $filter = $self->_overlay_text($component, 'filter')
-			|| Tabilet::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->filter();
+			|| Tavola::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->filter();
 		my $model = $self->_overlay_text($component, 'model')
-			|| Tabilet::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->model();
+			|| Tavola::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->model();
 
 		my $row = {
 			componentid     => $componentid++,
@@ -188,7 +188,7 @@ sub build {
 	$one->{role_pub_acl} ||= [];
 	$one->{role_role_acl} ||= [];
 
-	my $php = Tabilet::Generator::PHP->new(
+	my $php = Tavola::Generator::PHP->new(
 		_config => $self->{config} || {},
 		project => $one,
 		roles   => $one->{role_topics},

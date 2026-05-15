@@ -7,8 +7,8 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib", "$Bin/../../perl";
 
 use Getopt::Long qw(GetOptions);
-use Tabilet::Project::Exporter;
-use Tabilet::Project::Spec;
+use Tavola::Project::Exporter;
+use Tavola::Project::Spec;
 
 my $config = "$Bin/../conf/config.json";
 my $lang = 'php';
@@ -38,7 +38,7 @@ usage(2) unless $dry_run || $out || $tar;
 $lang = lc $lang;
 die "Unsupported --lang '$lang'. Use php or perl.\n" unless $lang eq 'php' || $lang eq 'perl';
 
-my $loader = Tabilet::Project::Spec->new(
+my $loader = Tavola::Project::Spec->new(
 	config_path => $config,
 	spec_path   => $spec,
 );
@@ -56,7 +56,7 @@ if ($dry_run) {
 	exit 0;
 }
 
-my $exporter = Tabilet::Project::Exporter->new(
+my $exporter = Tavola::Project::Exporter->new(
 	config_path => $config,
 	lang        => $lang,
 	data        => [$one, $other],

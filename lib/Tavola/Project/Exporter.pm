@@ -1,4 +1,4 @@
-package Tabilet::Project::Exporter;
+package Tavola::Project::Exporter;
 
 use strict;
 use warnings;
@@ -9,12 +9,12 @@ use DBI;
 use File::Path qw(make_path remove_tree);
 use File::Spec;
 use JSON qw(decode_json);
-use Tabilet::Project::APIManifest;
-use Tabilet::Generator::PHP;
-use Tabilet::Generator::Perl;
-use Tabilet::Project::OpenAPI;
-use Tabilet::Template::Base;
-use Tabilet::Template::Role;
+use Tavola::Project::APIManifest;
+use Tavola::Generator::PHP;
+use Tavola::Generator::Perl;
+use Tavola::Project::OpenAPI;
+use Tavola::Template::Base;
+use Tavola::Template::Role;
 
 sub new {
 	my ($class, %args) = @_;
@@ -78,10 +78,10 @@ sub add_to_tar {
 	$tar->add_data('logs/debug.log', '');
 	$tar->chmod('logs/debug.log', '777');
 	$tar->add_data('conf/config.json', $one->{config_json});
-	my $api = Tabilet::Project::APIManifest->new(one => $one, other => $other);
+	my $api = Tavola::Project::APIManifest->new(one => $one, other => $other);
 	my $manifest = $api->manifest();
 	$tar->add_data('api.json', $api->encode());
-	$tar->add_data('openapi.json', Tabilet::Project::OpenAPI->new(manifest => $manifest)->encode());
+	$tar->add_data('openapi.json', Tavola::Project::OpenAPI->new(manifest => $manifest)->encode());
 	$tar->add_data('docs/api.md', $api->docs($manifest));
 	$tar->add_data('docs/api.schema.json', $self->_read_asset('docs/api.schema.json'));
 	$self->{lang} eq 'php'
@@ -89,9 +89,9 @@ sub add_to_tar {
 		: $self->_add_perl_project($tar, $one, $project, $generator);
 
 	return unless $self->{web_ui};
-	$tar->add_data('www/index.html', Tabilet::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
-	my ($html, $output, $twig) = Tabilet::Template::Role::vues($one, $self->{logger});
-	$tar->add_data('www/app.html', Tabilet::Template::Base::app($html, 'p', $one->{def_component}, $one->{def_action}));
+	$tar->add_data('www/index.html', Tavola::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
+	my ($html, $output, $twig) = Tavola::Template::Role::vues($one, $self->{logger});
+	$tar->add_data('www/app.html', Tavola::Template::Base::app($html, 'p', $one->{def_component}, $one->{def_action}));
 	$tar->add_data("views/$_/error.html", '<html><body>{{error_code}}:{{error_string}}</body></html>') for (sort keys %$output);
 	for my $role (sort keys %$output) {
 		my $item = $output->{$role};
@@ -165,7 +165,7 @@ sub _add_perl_project {
 sub _generator {
 	my ($self, %args) = @_;
 	die "Unsupported language '$self->{lang}'\n" unless $self->{lang} eq 'php' || $self->{lang} eq 'perl';
-	my $class = $self->{lang} eq 'perl' ? 'Tabilet::Generator::Perl' : 'Tabilet::Generator::PHP';
+	my $class = $self->{lang} eq 'perl' ? 'Tavola::Generator::Perl' : 'Tavola::Generator::PHP';
 	return $class->new(%args);
 }
 

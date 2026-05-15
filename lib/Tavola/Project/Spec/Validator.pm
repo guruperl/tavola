@@ -1,4 +1,4 @@
-package Tabilet::Project::Spec::Validator;
+package Tavola::Project::Spec::Validator;
 
 use strict;
 use warnings;

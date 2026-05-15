@@ -7,7 +7,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib", "$Bin/../../perl";
 
 use Getopt::Long qw(GetOptions);
-use Tabilet::Project::Exporter;
+use Tavola::Project::Exporter;
 
 my $config = "$Bin/../conf/config.json";
 my $projectid;
@@ -37,7 +37,7 @@ usage(0) if $help;
 usage(2) unless $projectid || $owner || $project;
 usage(2) unless $dry_run || $out || $tar;
 
-my $exporter = Tabilet::Project::Exporter->new(
+my $exporter = Tavola::Project::Exporter->new(
 	config_path => $config,
 	projectid   => $projectid,
 	owner       => $owner,

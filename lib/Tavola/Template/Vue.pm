@@ -1,9 +1,9 @@
-package Tabilet::Template::Vue;
+package Tavola::Template::Vue;
 
 use strict;
-use Tabilet::Template::Base;
+use Tavola::Template::Base;
 use vars qw($AUTOLOAD @ISA);
-@ISA = qw(Tabilet::Template::Base);
+@ISA = qw(Tavola::Template::Base);
 
 sub login {
 	my $self = shift;

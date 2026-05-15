@@ -10,9 +10,9 @@ use File::Temp qw(tempdir);
 use JSON qw(decode_json);
 use Test::More;
 
-use Tabilet::Project::Exporter;
-use Tabilet::Project::JSONSchema;
-use Tabilet::Project::Spec;
+use Tavola::Project::Exporter;
+use Tavola::Project::JSONSchema;
+use Tavola::Project::Spec;
 
 my $repo = abs_path("$Bin/..");
 my $tmp = tempdir('tavola-generated-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
@@ -22,7 +22,7 @@ for my $lang (qw(php perl)) {
 	my $out = _generate($lang);
 	my $api = _read_json("$out/api.json");
 	my $openapi = _read_json("$out/openapi.json");
-	my @errors = Tabilet::Project::JSONSchema->new(schema => $schema)->validate($api);
+	my @errors = Tavola::Project::JSONSchema->new(schema => $schema)->validate($api);
 	is_deeply(\@errors, [], "$lang api.json matches schema");
 
 	ok(-s "$out/openapi.json", "$lang generated openapi.json");
@@ -42,12 +42,12 @@ done_testing();
 sub _generate {
 	my $lang = shift;
 	my $out = File::Spec->catdir($tmp, $lang);
-	my $loader = Tabilet::Project::Spec->new(
+	my $loader = Tavola::Project::Spec->new(
 		config_path => "$repo/conf/config.json",
 		spec_path => "$repo/specs/project.template.json",
 	);
 	my ($one, $other) = $loader->export_data();
-	Tabilet::Project::Exporter->new(
+	Tavola::Project::Exporter->new(
 		config_path => "$repo/conf/config.json",
 		lang => $lang,
 		data => [ $one, $other ],

@@ -1,4 +1,4 @@
-package Tabilet::Template::Base;
+package Tavola::Template::Base;
 
 use strict;
 use Genelet::Accessor;

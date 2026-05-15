@@ -7,7 +7,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib", "$Bin/../../perl";
 
 use Getopt::Long qw(GetOptions);
-use Tabilet::Project::Spec;
+use Tavola::Project::Spec;
 
 my $config = "$Bin/../conf/config.json";
 my $spec;
@@ -26,7 +26,7 @@ GetOptions(
 usage(0) if $help;
 usage(2) unless $spec;
 
-Tabilet::Project::Spec->new(
+Tavola::Project::Spec->new(
 	config_path => $config,
 	spec_path   => $spec,
 	replace     => $replace,

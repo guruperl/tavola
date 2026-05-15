@@ -7,7 +7,7 @@ use lib "$Bin/../lib", "$Bin/../../perl";
 use JSON qw(decode_json encode_json);
 use Test::More;
 
-use Tabilet::Project::ComponentJSON;
+use Tavola::Project::ComponentJSON;
 
 {
 	package Local::Files;
@@ -46,7 +46,7 @@ my $component = {
 	},
 };
 
-my $builder = Tabilet::Project::ComponentJSON->new(spec => $spec, files => Local::Files->new());
+my $builder = Tavola::Project::ComponentJSON->new(spec => $spec, files => Local::Files->new());
 my $generated = decode_json($builder->encode($component, $table));
 is($generated->{current_table}, 'widget', 'generated component JSON validates and encodes');
 is_deeply($generated->{insert_pars}, [ qw(name created) ], 'generated component JSON preserves params');
@@ -64,12 +64,12 @@ my $override = {
 	topics_pars => [ qw(widget_id name created) ],
 };
 
-my $inline = Tabilet::Project::ComponentJSON->new(spec => $spec, files => Local::Files->new())
+my $inline = Tavola::Project::ComponentJSON->new(spec => $spec, files => Local::Files->new())
 	->encode({ %$component, componentJson => $override }, $table);
 is_deeply(decode_json($inline), $override, 'valid inline componentJson hash is accepted');
 
 my $file_text = JSON->new->canonical->pretty->encode($override);
-my $file = Tabilet::Project::ComponentJSON->new(
+my $file = Tavola::Project::ComponentJSON->new(
 	spec => $spec,
 	files => Local::Files->new('component.json' => $file_text),
 )->encode({ %$component, componentJsonFile => 'component.json' }, $table);
@@ -99,7 +99,7 @@ like(
 	'invalid inline JSON string is rejected',
 );
 
-my $bad_file_builder = Tabilet::Project::ComponentJSON->new(
+my $bad_file_builder = Tavola::Project::ComponentJSON->new(
 	spec => $spec,
 	files => Local::Files->new('bad.json' => encode_json({ %$override, topics_pars => {} })),
 );
@@ -114,7 +114,7 @@ done_testing();
 sub _error_for {
 	my $component = shift;
 	my $error = eval {
-		Tabilet::Project::ComponentJSON->new(spec => $spec, files => Local::Files->new())
+		Tavola::Project::ComponentJSON->new(spec => $spec, files => Local::Files->new())
 			->encode($component, $table);
 		1;
 	} ? '' : $@;

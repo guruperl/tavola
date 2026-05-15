@@ -1,9 +1,9 @@
-package Tabilet::Template::Role;
+package Tavola::Template::Role;
 
 use strict;
-use Tabilet::Template::Component;
-use Tabilet::Template::Vue;
-use Tabilet::Template::PHP;
+use Tavola::Template::Component;
+use Tavola::Template::Vue;
+use Tavola::Template::PHP;
 
 use Genelet::Accessor;
 use vars qw(@ISA);
@@ -43,8 +43,8 @@ sub code {
 	my $self = shift;
 	my $r    = shift;
 	my $pubrole = shift;
-	my $vue  = Tabilet::Template::Vue->new(r=>$r);
-	my $php  = Tabilet::Template::PHP->new(r=>$r);
+	my $vue  = Tavola::Template::Vue->new(r=>$r);
+	my $php  = Tavola::Template::PHP->new(r=>$r);
 	
 	my $outp = {};
 	my $hash = {};
@@ -117,15 +117,15 @@ sub vues {
 
 	my $input = {};
 	# role p
-	$input->{p} = Tabilet::Template::Role->new(default=>[$one->{def_component}, $one->{def_action}], logger=>$logger);
+	$input->{p} = Tavola::Template::Role->new(default=>[$one->{def_component}, $one->{def_action}], logger=>$logger);
 
     for my $item (@$lists_role) {    # all roles including a. no p
-		my $role = Tabilet::Template::Role->new(default=>[$item->{default_component}, $item->{default_action}, $item->{field_login}, $item->{field_passwd}, $item->{field_firstname}, $item->{field_lastname}], logger=>$logger);
+		my $role = Tavola::Template::Role->new(default=>[$item->{default_component}, $item->{default_action}, $item->{field_login}, $item->{field_passwd}, $item->{field_firstname}, $item->{field_lastname}], logger=>$logger);
 		$input->{$item->{name_role}} = $role;
     }
 
     for my $item (@$lists_component) { # all components, for a only
-		my $comp = Tabilet::Template::Component->new(
+		my $comp = Tavola::Template::Component->new(
 			yes => {
 				topics  =>strToPars($item->{topics_pars}),
 				insert  =>strToPars($item->{insert_pars}),
@@ -150,7 +150,7 @@ sub vues {
 				$yes->{$v} = strToPars($item->{$v."_pars"});
 			}
         }
-		my $comp = Tabilet::Template::Component->new(yes=>$yes, uid=>$item->{current_key}, logger => $logger);
+		my $comp = Tavola::Template::Component->new(yes=>$yes, uid=>$item->{current_key}, logger => $logger);
         $input->{$item->{name_role}}->{COMPS}->{$item->{name_component}} = $comp;
     }
 

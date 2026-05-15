@@ -1,4 +1,4 @@
-package Tabilet::Project::Spec::Files;
+package Tavola::Project::Spec::Files;
 
 use strict;
 use warnings;

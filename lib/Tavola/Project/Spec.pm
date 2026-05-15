@@ -1,13 +1,13 @@
-package Tabilet::Project::Spec;
+package Tavola::Project::Spec;
 
 use strict;
 use warnings;
 
-use Tabilet::Project::Spec::Files;
-use Tabilet::Project::Spec::Importer;
-use Tabilet::Project::Spec::MetadataBuilder;
-use Tabilet::Project::Spec::Paths;
-use Tabilet::Project::Spec::Validator;
+use Tavola::Project::Spec::Files;
+use Tavola::Project::Spec::Importer;
+use Tavola::Project::Spec::MetadataBuilder;
+use Tavola::Project::Spec::Paths;
+use Tavola::Project::Spec::Validator;
 
 sub new {
 	my ($class, %args) = @_;
@@ -35,7 +35,7 @@ sub run {
 	die "Missing --config\n" unless $self->{config_path};
 	$self->{config} = $self->_files->read_json($self->{config_path});
 
-	Tabilet::Project::Spec::Importer->new(
+	Tavola::Project::Spec::Importer->new(
 		spec    => $self->{spec},
 		config  => $self->{config},
 		files   => $self->_files,
@@ -52,7 +52,7 @@ sub export_data {
 	$self->_load_spec();
 	$self->{config} = $self->_files->read_json($self->{config_path}) if $self->{config_path};
 
-	return Tabilet::Project::Spec::MetadataBuilder->new(
+	return Tavola::Project::Spec::MetadataBuilder->new(
 		spec   => $self->{spec},
 		config => $self->{config},
 		files  => $self->_files,
@@ -77,19 +77,19 @@ sub _load_spec {
 	my $self = shift;
 
 	$self->{spec} = $self->_files->read_json($self->{spec_path});
-	Tabilet::Project::Spec::Validator->validate($self->{spec});
+	Tavola::Project::Spec::Validator->validate($self->{spec});
 	return;
 }
 
 sub _files {
 	my $self = shift;
-	$self->{files} ||= Tabilet::Project::Spec::Files->new(spec_path => $self->{spec_path});
+	$self->{files} ||= Tavola::Project::Spec::Files->new(spec_path => $self->{spec_path});
 	return $self->{files};
 }
 
 sub _paths {
 	my $self = shift;
-	return Tabilet::Project::Spec::Paths->new(config => $self->{config});
+	return Tavola::Project::Spec::Paths->new(config => $self->{config});
 }
 
 sub _print_plan {

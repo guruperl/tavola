@@ -1,4 +1,4 @@
-package Tabilet::Project::Spec::Paths;
+package Tavola::Project::Spec::Paths;
 
 use strict;
 use warnings;

@@ -1,4 +1,4 @@
-package Tabilet::Generator::Config;
+package Tavola::Generator::Config;
 
 use strict;
 use JSON qw(decode_json);

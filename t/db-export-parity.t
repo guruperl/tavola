@@ -10,8 +10,8 @@ use File::Temp qw(tempdir);
 use JSON qw(decode_json);
 use Test::More;
 
-use Tabilet::Project::Exporter;
-use Tabilet::Project::Spec;
+use Tavola::Project::Exporter;
+use Tavola::Project::Spec;
 
 plan skip_all => 'set TAVOLA_RUN_DB_PARITY=1 to run metadata DB import/export parity test'
 	unless $ENV{TAVOLA_RUN_DB_PARITY};
@@ -25,12 +25,12 @@ my $spec = _read_json($spec_path);
 my $direct = File::Spec->catdir($tmp, 'direct');
 my $db_export = File::Spec->catdir($tmp, 'db-export');
 
-my ($one, $other) = Tabilet::Project::Spec->new(
+my ($one, $other) = Tavola::Project::Spec->new(
 	config_path => $config,
 	spec_path => $spec_path,
 )->export_data();
 
-Tabilet::Project::Exporter->new(
+Tavola::Project::Exporter->new(
 	config_path => $config,
 	lang => 'php',
 	data => [ $one, $other ],
@@ -39,14 +39,14 @@ Tabilet::Project::Exporter->new(
 )->write_dir($direct, 1);
 
 _quiet(sub {
-	Tabilet::Project::Spec->new(
+	Tavola::Project::Spec->new(
 		config_path => $config,
 		spec_path => $spec_path,
 		replace => 1,
 	)->run();
 });
 
-Tabilet::Project::Exporter->new(
+Tavola::Project::Exporter->new(
 	config_path => $config,
 	owner => $spec->{owner}->{login},
 	project => $spec->{project}->{name},

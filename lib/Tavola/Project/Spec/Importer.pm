@@ -1,13 +1,13 @@
-package Tabilet::Project::Spec::Importer;
+package Tavola::Project::Spec::Importer;
 
 use strict;
 use warnings;
 
 use DBI;
 use JSON qw(decode_json encode_json);
-use Tabilet::Generator::PHP;
-use Tabilet::Project::ComponentJSON;
-use Tabilet::Project::Spec::Paths;
+use Tavola::Generator::PHP;
+use Tavola::Project::ComponentJSON;
+use Tavola::Project::Spec::Paths;
 
 sub new {
 	my ($class, %args) = @_;
@@ -17,7 +17,7 @@ sub new {
 		dbh         => $args{dbh},
 		files       => $args{files},
 		replace     => $args{replace} ? 1 : 0,
-		paths       => $args{paths} || Tabilet::Project::Spec::Paths->new(config => $args{config}),
+		paths       => $args{paths} || Tavola::Project::Spec::Paths->new(config => $args{config}),
 		tableids    => {},
 		roleids     => {},
 		componentids=> {},
@@ -243,14 +243,14 @@ sub _insert_components {
 	for my $component (@$components) {
 		my $tableid = $self->{tableids}->{$component->{table}};
 		my $table = $self->_table_by_id($tableid);
-		my $component_json = Tabilet::Project::ComponentJSON->new(
+		my $component_json = Tavola::Project::ComponentJSON->new(
 			spec => $self->{spec},
 			files => $self->{files},
 		)->encode($component, $table);
 		my $filter = $self->_overlay_text($component, 'filter')
-			|| Tabilet::Generator::PHP->new(project => { Project => $self->{spec}->{project}->{name} }, component => { name_component => $component->{name} })->filter();
+			|| Tavola::Generator::PHP->new(project => { Project => $self->{spec}->{project}->{name} }, component => { name_component => $component->{name} })->filter();
 		my $model = $self->_overlay_text($component, 'model')
-			|| Tabilet::Generator::PHP->new(project => { Project => $self->{spec}->{project}->{name} }, component => { name_component => $component->{name} })->model();
+			|| Tavola::Generator::PHP->new(project => { Project => $self->{spec}->{project}->{name} }, component => { name_component => $component->{name} })->model();
 
 		$dbh->do(
 			'INSERT INTO user_component (projectid,name_component,description,tableid,current_key,current_id_auto,current_tables,topics_hash,insert_pars,edit_pars,update_pars,topics_pars,component_json,filter,model,created) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())',
@@ -336,7 +336,7 @@ sub _update_generated_project_code {
 		$projectid,
 	);
 	my $roles = $self->_role_config_rows($projectid);
-	my $php = Tabilet::Generator::PHP->new(
+	my $php = Tavola::Generator::PHP->new(
 		_config => $self->{config},
 		project => $project,
 		roles => $roles,

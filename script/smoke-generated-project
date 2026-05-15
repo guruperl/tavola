@@ -12,9 +12,9 @@ use File::Spec;
 use File::Temp qw(tempdir);
 use Getopt::Long qw(GetOptions);
 use JSON qw(decode_json);
-use Tabilet::Project::Exporter;
-use Tabilet::Project::JSONSchema;
-use Tabilet::Project::Spec;
+use Tavola::Project::Exporter;
+use Tavola::Project::JSONSchema;
+use Tavola::Project::Spec;
 
 my $config = "$Bin/../conf/config.json";
 my $spec;
@@ -40,7 +40,7 @@ my $root = tempdir('tavola-smoke-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $repo = abs_path("$Bin/..");
 my $api_schema = _read_json(File::Spec->catfile($repo, 'docs', 'api.schema.json'));
 
-my $loader = Tabilet::Project::Spec->new(
+my $loader = Tavola::Project::Spec->new(
 	config_path => $config,
 	spec_path => $spec,
 );
@@ -48,7 +48,7 @@ my ($one, $other) = $loader->export_data();
 
 for my $target (@langs) {
 	my $out = File::Spec->catdir($root, $target);
-	Tabilet::Project::Exporter->new(
+	Tavola::Project::Exporter->new(
 		config_path => $config,
 		lang => $target,
 		data => [ $one, $other ],
@@ -77,7 +77,7 @@ sub verify_project {
 
 	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
 	my $openapi = _read_json(File::Spec->catfile($out, 'openapi.json'));
-	my @schema_errors = Tabilet::Project::JSONSchema->new(schema => $api_schema)->validate($api);
+	my @schema_errors = Tavola::Project::JSONSchema->new(schema => $api_schema)->validate($api);
 	die "api.json failed schema validation:\n" . join("\n", map { "  $_" } @schema_errors) . "\n"
 		if @schema_errors;
 	die "openapi.json missing openapi version\n" unless $openapi->{openapi};

@@ -20,9 +20,9 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 - `script/` contains generator and metadata compatibility commands.
 - `assets/` contains static assets copied into generated applications.
 - `conf/` contains application configuration and database seed SQL.
-- `lib/Tabilet/Generator/` contains language-specific generators.
-- `lib/Tabilet/Project/` contains JSON spec loading and export orchestration.
-- `lib/Tabilet/Template/` contains generated-app UI templates.
+- `lib/Tavola/Generator/` contains language-specific generators.
+- `lib/Tavola/Project/` contains JSON spec loading and export orchestration.
+- `lib/Tavola/Template/` contains generated-app UI templates.
 - `specs/` contains JSON project specs and fixture SQL.
 
 ## Requirements

@@ -1,4 +1,4 @@
-package Tabilet::Template::Component;
+package Tavola::Template::Component;
 
 use strict;
 use Genelet::Accessor;
@@ -35,8 +35,8 @@ __PACKAGE__->setup_accessors(
 #                    action1=>content_action1.vue
 #                    action2=>content_action2.vue
 
-			#my $vue = Tabilet::Vue->new(r=>$r, c=>$c, uid=>$self->{UID});
-			#my $php = Tabilet::PHP->new(r=>$r, c=>$c, uid=>$self->{UID});
+			#my $vue = Tavola::Vue->new(r=>$r, c=>$c, uid=>$self->{UID});
+			#my $php = Tavola::PHP->new(r=>$r, c=>$c, uid=>$self->{UID});
 sub code {
 	my $self = shift;
 	my $r    = shift;

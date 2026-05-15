@@ -1,4 +1,4 @@
-package Tabilet::Project::OpenAPI;
+package Tavola::Project::OpenAPI;
 
 use strict;
 use warnings;

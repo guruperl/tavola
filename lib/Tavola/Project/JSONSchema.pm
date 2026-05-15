@@ -1,4 +1,4 @@
-package Tabilet::Project::JSONSchema;
+package Tavola::Project::JSONSchema;
 
 use strict;
 use warnings;

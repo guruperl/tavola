@@ -1,9 +1,9 @@
-package Tabilet::Generator::PHP;
+package Tavola::Generator::PHP;
 
 use strict;
-use Tabilet::Generator::Config;
+use Tavola::Generator::Config;
 use vars qw($AUTOLOAD @ISA);
-@ISA = qw(Tabilet::Generator::Config);
+@ISA = qw(Tavola::Generator::Config);
 
 __PACKAGE__->setup_accessors(
 	components => undef, # component names only

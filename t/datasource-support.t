@@ -10,46 +10,46 @@ use File::Temp qw(tempdir);
 use JSON qw(decode_json encode_json);
 use Test::More;
 
-use Tabilet::Generator::PHP;
-use Tabilet::Generator::Perl;
-use Tabilet::Project::Exporter;
-use Tabilet::Project::Spec;
-use Tabilet::Project::Spec::Validator;
+use Tavola::Generator::PHP;
+use Tavola::Generator::Perl;
+use Tavola::Project::Exporter;
+use Tavola::Project::Spec;
+use Tavola::Project::Spec::Validator;
 
 my $repo = abs_path("$Bin/..");
 
 is(
-	Tabilet::Generator::PHP->new(project => _project(dbtype => 'MySQL'))->config_hash()->{Db}->[0],
+	Tavola::Generator::PHP->new(project => _project(dbtype => 'MySQL'))->config_hash()->{Db}->[0],
 	'mysql:host=127.0.0.1;port=3306;dbname=app',
 	'MySQL datasource creates PDO mysql DSN',
 );
 
 is(
-	Tabilet::Generator::PHP->new(project => _project(dbtype => 'PostgreSQL', port => 5432))->config_hash()->{Db}->[0],
+	Tavola::Generator::PHP->new(project => _project(dbtype => 'PostgreSQL', port => 5432))->config_hash()->{Db}->[0],
 	'pgsql:host=127.0.0.1;port=5432;dbname=app',
 	'PostgreSQL datasource creates PDO pgsql DSN',
 );
 
 is(
-	Tabilet::Generator::PHP->new(project => _project(dbtype => 'SQLite3', dbname => 'data/app.sqlite'))->config_hash()->{Db}->[0],
+	Tavola::Generator::PHP->new(project => _project(dbtype => 'SQLite3', dbname => 'data/app.sqlite'))->config_hash()->{Db}->[0],
 	'sqlite:data/app.sqlite',
 	'SQLite3 datasource creates PDO sqlite DSN',
 );
 
 like(
-	Tabilet::Generator::Perl->new(project => _project(dbtype => 'PostgreSQL'))->project_model(),
+	Tavola::Generator::Perl->new(project => _project(dbtype => 'PostgreSQL'))->project_model(),
 	qr/use Genelet::Pg;/,
 	'PostgreSQL Perl output uses Genelet::Pg',
 );
 
 like(
-	Tabilet::Generator::Perl->new(project => _project(dbtype => 'SQLite'))->project_model(),
+	Tavola::Generator::Perl->new(project => _project(dbtype => 'SQLite'))->project_model(),
 	qr/use Genelet::SQLite;/,
 	'SQLite Perl output uses Genelet::SQLite',
 );
 
 my $sqlite_spec = _sqlite_spec();
-ok(eval { Tabilet::Project::Spec::Validator->validate($sqlite_spec); 1 }, 'SQLite datasource validates without host/user/password');
+ok(eval { Tavola::Project::Spec::Validator->validate($sqlite_spec); 1 }, 'SQLite datasource validates without host/user/password');
 
 like(
 	_error_for({ %$sqlite_spec, datasource => { type => 'Oracle', nickname => 'bad', database => 'x' } }),
@@ -61,14 +61,14 @@ my $tmp = tempdir('tavola-datasource-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $spec_path = File::Spec->catfile($tmp, 'sqlite.project.json');
 _write_text($spec_path, JSON->new->canonical->pretty->encode($sqlite_spec));
 
-my ($one, $other) = Tabilet::Project::Spec->new(
+my ($one, $other) = Tavola::Project::Spec->new(
 	config_path => "$repo/conf/config.json",
 	spec_path => $spec_path,
 )->export_data();
 
 for my $lang (qw(php perl)) {
 	my $out = File::Spec->catdir($tmp, $lang);
-	Tabilet::Project::Exporter->new(
+	Tavola::Project::Exporter->new(
 		config_path => "$repo/conf/config.json",
 		lang => $lang,
 		data => [ $one, $other ],
@@ -165,7 +165,7 @@ sub _sqlite_spec {
 sub _error_for {
 	my $spec = shift;
 	return eval {
-		Tabilet::Project::Spec::Validator->validate($spec);
+		Tavola::Project::Spec::Validator->validate($spec);
 		1;
 	} ? '' : $@;
 }

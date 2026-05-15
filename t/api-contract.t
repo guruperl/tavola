@@ -8,14 +8,14 @@ use Cwd qw(abs_path);
 use JSON qw(decode_json encode_json);
 use Test::More;
 
-use Tabilet::Project::APIManifest;
-use Tabilet::Project::JSONSchema;
-use Tabilet::Project::OpenAPI;
+use Tavola::Project::APIManifest;
+use Tavola::Project::JSONSchema;
+use Tavola::Project::OpenAPI;
 
 my $repo = abs_path("$Bin/..");
-my $manifest = Tabilet::Project::APIManifest->new(one => _synthetic_project())->manifest();
+my $manifest = Tavola::Project::APIManifest->new(one => _synthetic_project())->manifest();
 my $schema = _read_json("$repo/docs/api.schema.json");
-my @errors = Tabilet::Project::JSONSchema->new(schema => $schema)->validate($manifest);
+my @errors = Tavola::Project::JSONSchema->new(schema => $schema)->validate($manifest);
 is_deeply(\@errors, [], 'custom action api manifest matches schema');
 
 my ($vehicle) = grep { $_->{name} eq 'vehicle' } @{$manifest->{components}};
@@ -29,11 +29,11 @@ is_deeply($actions{years}->{request_params}, [], 'custom years action has no inf
 ok(!$actions{years}->{public}, 'custom years action is protected');
 ok(!$actions{history}, 'custom action without groups is omitted');
 
-my $docs = Tabilet::Project::APIManifest->new(one => _synthetic_project())->docs($manifest);
+my $docs = Tavola::Project::APIManifest->new(one => _synthetic_project())->docs($manifest);
 like($docs, qr/\| `vehicle` \| `years` \| `u` \|  \| `\/example\/app\.php\/u\/json\/vehicle\?action=years` \|/, 'docs include custom action component row');
 like($docs, qr/\| `vehicle` \| `years` \|  \| `\/example\/app\.php\/u\/json\/vehicle\?action=years` \|/, 'docs include custom action protected example');
 
-my $openapi = Tabilet::Project::OpenAPI->new(manifest => $manifest)->document();
+my $openapi = Tavola::Project::OpenAPI->new(manifest => $manifest)->document();
 my $vehicle_path = $openapi->{paths}->{'/example/app.php/{role}/json/vehicle'}->{get};
 is_deeply($vehicle_path->{parameters}->[1]->{schema}->{enum}, [ qw(topics insert makes years) ], 'OpenAPI action enum includes custom actions');
 my %openapi_actions = map { $_->{name} => $_ } @{$vehicle_path->{'x-tavola-actions'}};
