@@ -86,16 +86,17 @@ sub get_lb_ip {
 
 sub project_model {
 	my $self = shift;
-    my $project = ucfirst $self->{PROJECT}->{Project};
+	my $project = ucfirst $self->{PROJECT}->{Project};
+	my $adapter = $self->perl_db_adapter();
 
-    return qq~package ~.$project.qq~::Model;
+	return qq~package ~.$project.qq~::Model;
 
 use strict;
 use Genelet::Model;
-use Genelet::Mysql;
+use Genelet::$adapter;
 
 use vars qw(\@ISA);
-\@ISA = qw(Genelet::Model Genelet::Mysql);
+\@ISA = qw(Genelet::Model Genelet::$adapter);
 
 __PACKAGE__->setup_accessors(
     'total_force' => 1,
@@ -106,7 +107,7 @@ __PACKAGE__->setup_accessors(
 
 sub app {
 	my $self = shift;
-    my $json = shift;
+	my $json = shift;
 	my $lib  = shift;
 
 	return qq~#!/usr/bin/perl
@@ -129,9 +130,55 @@ use Template;
 
 use Genelet::Dispatch;
 
-Genelet::Dispatch::run("$json","$lib", ["~.join('","', map {ucfirst} @{$self->{COMPONENTS}}).qq~"]);
+my \$config = _config("$json");
+Genelet::Dispatch::run(\$config, "$lib", ["~.join('","', map {ucfirst} @{$self->{COMPONENTS}}).qq~"]);
 
 exit;
+
+sub _config {
+	my \$path = shift;
+	open my \$fh, '<', \$path or die "Cannot open \$path: \$!";
+	local \$/;
+	my \$config = JSON->new->utf8(0)->decode(<\$fh>);
+	close \$fh or die "Cannot close \$path: \$!";
+	\$config = _expand_env(\$config);
+	\$config->{Db} = _dbi_db(\$config->{Db}) if ref(\$config->{Db}) eq 'ARRAY';
+	return \$config;
+}
+
+sub _expand_env {
+	my \$value = shift;
+	if (ref(\$value) eq 'HASH') {
+		\$value->{\$_} = _expand_env(\$value->{\$_}) for keys %\$value;
+		return \$value;
+	}
+	if (ref(\$value) eq 'ARRAY') {
+		\$value->[\$_] = _expand_env(\$value->[\$_]) for 0 .. \$#\$value;
+		return \$value;
+	}
+	if (defined(\$value) && !ref(\$value) && \$value =\~ /^\\\$\\{([A-Z_][A-Z0-9_]*)\\}\$/) {
+		die "Missing required environment variable \$1" unless exists \$ENV{\$1};
+		return \$ENV{\$1};
+	}
+	return \$value;
+}
+
+sub _dbi_db {
+	my \$db = shift;
+	return [ map { _dbi_db(\$_) } \@\$db ] if ref(\$db->[0]) eq 'ARRAY';
+	my \@copy = \@\$db;
+	\$copy[0] = _dbi_dsn(\$copy[0]);
+	return \\\@copy;
+}
+
+sub _dbi_dsn {
+	my \$dsn = shift || '';
+	return \$dsn if \$dsn =\~ /^dbi:/i;
+	return "dbi:mysql:\$1" if \$dsn =\~ /^mysql:(.*)\$/i;
+	return "dbi:Pg:\$1" if \$dsn =\~ /^pgsql:(.*)\$/i;
+	return "dbi:SQLite:dbname=\$1" if \$dsn =\~ /^sqlite:(.*)\$/i;
+	return \$dsn;
+}
 ~;
 }
 

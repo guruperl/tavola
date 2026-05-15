@@ -30,9 +30,10 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 - Perl 5
 - Genelet framework modules available on `@INC`
 - DBI and the database driver for the configured database
+- PDO and the PDO driver for generated PHP apps
 - JSON and Archive::Tar
 - Template Toolkit for generated-app template output
-- A MySQL or PostgreSQL metadata database only when using the compatibility
+- A MySQL metadata database only when using the compatibility
   importer/exporter path
 
 For local framework tests, the sibling Genelet repository can run its default
@@ -51,6 +52,8 @@ TAVOLA_DB_PASS
 
 Generated application specs can still contain their own datasource placeholders,
 such as `${APP_DB_USER}` and `${APP_DB_PASSWORD}`.
+Generated runtime datasources can target MySQL, PostgreSQL, or SQLite when the
+spec supplies matching SQL and the generated app has the needed DBI/PDO driver.
 
 ## JSON Project Specs
 

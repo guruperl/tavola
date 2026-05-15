@@ -30,11 +30,7 @@ sub config_hash {
 		$config->{$item} = $PROJECT->{$item};
 	}
 	$config->{Secret} = Genelet::Utils::randomhex(100);
-	$config->{Db} = [
-		lc($PROJECT->{dbtype}) . ':host=' . $PROJECT->{host} . ';dbname=' . $PROJECT->{dbname},
-		$PROJECT->{dbuser},
-		$PROJECT->{dbpass},
-	];
+	$config->{Db} = [ $self->_pdo_dsn($PROJECT), $PROJECT->{dbuser} || '', $PROJECT->{dbpass} || '' ];
 	$config->{Log} = {
 		Filename => $PROJECT->{Log_file},
 		Level => 'info',
@@ -52,6 +48,40 @@ sub config_hash {
 	}
 
 	return $config;
+}
+
+sub _db_family {
+	my ($self, $type) = @_;
+	my $normalized = lc($type || 'mysql');
+	$normalized =~ s/[^a-z0-9]//g;
+	return 'mysql' if $normalized eq 'mysql' || $normalized eq 'mariadb';
+	return 'postgresql' if $normalized eq 'postgresql' || $normalized eq 'postgres' || $normalized eq 'pgsql';
+	return 'sqlite' if $normalized eq 'sqlite' || $normalized eq 'sqlite3';
+	die "Unsupported datasource type '$type'. Use MySQL, PostgreSQL, or SQLite.\n";
+}
+
+sub _pdo_dsn {
+	my ($self, $project) = @_;
+	my $family = $self->_db_family($project->{dbtype});
+	my $dbname = $project->{dbname} || $project->{database} || '';
+
+	return 'sqlite:' . $dbname if $family eq 'sqlite';
+
+	my $driver = $family eq 'postgresql' ? 'pgsql' : 'mysql';
+	my @parts;
+	push @parts, 'host=' . $project->{host} if defined($project->{host}) && length($project->{host});
+	push @parts, 'port=' . $project->{port} if defined($project->{port}) && length($project->{port});
+	push @parts, 'dbname=' . $dbname;
+	return $driver . ':' . join(';', @parts);
+}
+
+sub perl_db_adapter {
+	my $self = shift;
+	my $family = $self->_db_family($self->{PROJECT}->{dbtype});
+	return 'Mysql' if $family eq 'mysql';
+	return 'Pg' if $family eq 'postgresql';
+	return 'SQLite' if $family eq 'sqlite';
+	die "Unsupported datasource type '$self->{PROJECT}->{dbtype}'\n";
 }
 
 sub _facebook_hash {

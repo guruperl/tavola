@@ -37,7 +37,12 @@ browser UI starts.
 ## Datasource
 
 `datasource` configures the generated app's runtime database, not the Tavola
-metadata database. Values can use required environment placeholders:
+metadata database. `type` supports `MySQL`, `PostgreSQL`, `SQLite`, or
+`SQLite3`. MySQL and PostgreSQL datasources use `database`, `host`, `port`,
+`user`, and `password`. SQLite datasources use `database` or `path` for the
+database file and do not require host or credentials.
+
+Values can use required environment placeholders:
 
 ```json
 {
@@ -46,7 +51,8 @@ metadata database. Values can use required environment placeholders:
 }
 ```
 
-The generated app expands those placeholders at runtime.
+The generated app expands those placeholders at runtime. For SQLite, use a path
+such as `data/app.sqlite` or `:memory:`.
 
 PHP output can also override the runtime database at process startup with:
 
@@ -57,9 +63,14 @@ TAVOLA_DB_PASSWORD
 ```
 
 Those variables are for the generated application's database. Generated PHP
-apps also accept the old `TABILET_DB_*` names as a compatibility fallback. The
-metadata import/export commands use the separate `conf/config.json` database
-settings.
+apps also accept the old `TABILET_DB_*` names as a compatibility fallback.
+Use PDO DSNs such as `mysql:host=...;dbname=...`,
+`pgsql:host=...;dbname=...`, or `sqlite:data/app.sqlite`.
+
+The metadata import/export commands use the separate `conf/config.json`
+database settings. Table and procedure SQL in `schema` is copied into generated
+`conf/init.sql` as provided, so use SQL syntax that matches the selected
+runtime database.
 
 ## Tables And Actions
 

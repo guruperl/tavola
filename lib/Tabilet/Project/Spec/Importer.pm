@@ -133,8 +133,8 @@ sub _insert_datasource {
 	$self->{dbh}->do(
 		'INSERT INTO user_ds (projectid,dbtype,nickname,dbname,host,port,dbuser,dbpass,is_connected,created) VALUES (?,?,?,?,?,?,?,?,?,NOW())',
 		undef,
-		$projectid, $ds->{type}, $ds->{nickname}, $ds->{database}, $ds->{host}, $ds->{port},
-		$ds->{user}, $ds->{password}, $ds->{connected} || 'No',
+		$projectid, $ds->{type}, $ds->{nickname}, $ds->{database} || $ds->{path}, $ds->{host} || '', $ds->{port} || '',
+		$ds->{user} || '', $ds->{password} || '', $ds->{connected} || 'No',
 	);
 	return;
 }

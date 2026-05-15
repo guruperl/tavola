@@ -14,7 +14,7 @@ sub validate {
 	_required($spec->{owner}, qw(login email typeid));
 	_required($spec->{project}, qw(name script publicRole default));
 	_required($spec->{project}->{default}, qw(component action));
-	_required($spec->{datasource}, qw(type nickname database host port user password));
+	_validate_datasource($spec->{datasource});
 
 	die "schema.tables must be an array\n" unless ref($spec->{schema}->{tables}) eq 'ARRAY';
 	die "schema.procedures must be an array\n" unless ref($spec->{schema}->{procedures}) eq 'ARRAY';
@@ -68,6 +68,28 @@ sub _required {
 	for my $key (@keys) {
 		die "Missing required field '$key'\n" unless exists $hash->{$key} && defined $hash->{$key};
 	}
+}
+
+sub _validate_datasource {
+	my $ds = shift;
+	_required($ds, qw(type nickname));
+	my $family = _db_family($ds->{type});
+	if ($family eq 'sqlite') {
+		die "SQLite datasource needs 'database' or 'path'\n" unless $ds->{database} || $ds->{path};
+		return;
+	}
+	_required($ds, qw(database host port user password));
+	return;
+}
+
+sub _db_family {
+	my $type = shift;
+	my $normalized = lc($type || '');
+	$normalized =~ s/[^a-z0-9]//g;
+	return 'mysql' if $normalized eq 'mysql' || $normalized eq 'mariadb';
+	return 'postgresql' if $normalized eq 'postgresql' || $normalized eq 'postgres' || $normalized eq 'pgsql';
+	return 'sqlite' if $normalized eq 'sqlite' || $normalized eq 'sqlite3';
+	die "Unsupported datasource type '$type'. Use MySQL, PostgreSQL, or SQLite.\n";
 }
 
 sub _assert_array {

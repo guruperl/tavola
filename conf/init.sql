@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `user_project` (
 CREATE TABLE IF NOT EXISTS `user_ds` (
   dsid int unsigned not null auto_increment,
   projectid int unsigned not null,
-  dbtype enum('MySQL', 'PostgreSQL', 'Redshift', 'Snowflake') not null default 'MySQL',
+  dbtype enum('MySQL', 'PostgreSQL', 'SQLite', 'Redshift', 'Snowflake') not null default 'MySQL',
   nickname varchar(255) not null, 
   dbname varchar(255) not null, 
   host varchar(255) not null, 

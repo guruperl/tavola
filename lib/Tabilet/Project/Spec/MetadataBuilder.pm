@@ -44,11 +44,11 @@ sub build {
 		admin_pass     => $spec->{project}->{adminPass} || $self->_random_hex(8),
 		Log_file       => $paths->{log_file},
 		dbtype         => $spec->{datasource}->{type},
-		dbname         => $spec->{datasource}->{database},
-		dbuser         => $spec->{datasource}->{user},
-		dbpass         => $spec->{datasource}->{password},
-		host           => $spec->{datasource}->{host},
-		port           => $spec->{datasource}->{port},
+		dbname         => $spec->{datasource}->{database} || $spec->{datasource}->{path},
+		dbuser         => $spec->{datasource}->{user} || '',
+		dbpass         => $spec->{datasource}->{password} || '',
+		host           => $spec->{datasource}->{host} || '',
+		port           => $spec->{datasource}->{port} || '',
 	};
 
 	my (%tables_by_name, %tables_by_id, %procedures_by_table);
