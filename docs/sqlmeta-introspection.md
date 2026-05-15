@@ -64,6 +64,9 @@ from this repo:
 script/verify-sqlmeta-workflow
 ```
 
-The script checks the canonical `sqlmeta` tests, the Docker-backed
-`molecule/rdb` and `golet/genesis` harnesses, `golet` vet, and Tavola's
-`t/sqlmeta-output.t` consumer test against the shared manual PK/FK contract.
+The script first runs `../sqlmeta/script/refresh-contract-fixtures`, which
+refreshes the canonical `manual_pk_fk` ExpandedAppSpec fixture and syncs
+`specs/sqlmeta.project.json`. It then checks the canonical `sqlmeta` tests, the
+Docker-backed `molecule/rdb` and `golet/genesis` harnesses, `golet` vet, and
+Tavola's `t/sqlmeta-output.t` consumer test against the shared manual PK/FK
+contract.
