@@ -68,6 +68,7 @@ sub verify_project {
 	my ($out, $target, $api_schema) = @_;
 
 	_require_file($out, 'api.json');
+	_require_file($out, 'openapi.json');
 	_require_file($out, 'docs/api.md');
 	_require_file($out, 'docs/api.schema.json');
 	_require_file($out, 'conf/config.json');
@@ -75,9 +76,12 @@ sub verify_project {
 	_require_file($out, 'logs/debug.log');
 
 	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
+	my $openapi = _read_json(File::Spec->catfile($out, 'openapi.json'));
 	my @schema_errors = Tabilet::Project::JSONSchema->new(schema => $api_schema)->validate($api);
 	die "api.json failed schema validation:\n" . join("\n", map { "  $_" } @schema_errors) . "\n"
 		if @schema_errors;
+	die "openapi.json missing openapi version\n" unless $openapi->{openapi};
+	die "openapi.json missing paths\n" unless ref($openapi->{paths}) eq 'HASH' && keys %{$openapi->{paths}};
 	_read_json(File::Spec->catfile($out, 'conf/config.json'));
 	die "api.json missing project.name\n" unless $api->{project}->{name};
 	die "api.json missing components\n" unless ref($api->{components}) eq 'ARRAY' && @{$api->{components}};

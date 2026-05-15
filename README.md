@@ -91,6 +91,9 @@ The generator writes a complete application archive. The common files are:
   spec.
 - `api.json` contains a machine-readable Tabilet API manifest with roles,
   login requirements, components, actions, parameters, and example endpoints.
+- `openapi.json` contains an OpenAPI 3.0 document derived from `api.json` for
+  tooling that expects OpenAPI. Tabilet-specific action details are preserved
+  in `x-tabilet-*` extensions.
 - `docs/api.md` contains generated API documentation derived from `api.json`.
 - `docs/api.schema.json` contains the JSON Schema used to validate `api.json`.
 - `logs/debug.log` is an empty log file placeholder.

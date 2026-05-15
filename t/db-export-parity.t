@@ -57,8 +57,11 @@ Tabilet::Project::Exporter->new(
 
 my $direct_api = _read_json("$direct/api.json");
 my $db_api = _read_json("$db_export/api.json");
+my $direct_openapi = _read_json("$direct/openapi.json");
+my $db_openapi = _read_json("$db_export/openapi.json");
 
 is_deeply($db_api, $direct_api, 'DB-backed export api.json matches direct spec generation');
+is_deeply($db_openapi, $direct_openapi, 'DB-backed export openapi.json matches direct spec generation');
 
 done_testing();
 

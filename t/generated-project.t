@@ -21,14 +21,17 @@ my $schema = _read_json("$repo/docs/api.schema.json");
 for my $lang (qw(php perl)) {
 	my $out = _generate($lang);
 	my $api = _read_json("$out/api.json");
+	my $openapi = _read_json("$out/openapi.json");
 	my @errors = Tabilet::Project::JSONSchema->new(schema => $schema)->validate($api);
 	is_deeply(\@errors, [], "$lang api.json matches schema");
 
+	ok(-s "$out/openapi.json", "$lang generated openapi.json");
 	ok(-s "$out/docs/api.md", "$lang generated docs/api.md");
 	ok(-s "$out/docs/api.schema.json", "$lang generated docs/api.schema.json");
 	ok(-s "$out/conf/config.json", "$lang generated conf/config.json");
 
 	_assert_api_manifest($api, $lang);
+	_assert_openapi($openapi, $lang);
 	_assert_api_docs(_read_text("$out/docs/api.md"), $lang);
 	_assert_config(_read_json("$out/conf/config.json"), $lang);
 	_assert_component_json(_component_json_path($out, $lang), $lang);
@@ -118,6 +121,29 @@ sub _assert_config {
 	is_deeply($issuer->{Out_pars}, [ qw(user_id email u_firstname u_lastname) ], "$lang config db output params");
 }
 
+sub _assert_openapi {
+	my ($openapi, $lang) = @_;
+
+	is($openapi->{openapi}, '3.0.3', "$lang OpenAPI version");
+	is($openapi->{info}->{title}, 'ExampleApp API', "$lang OpenAPI title");
+	is($openapi->{'x-tabilet-source'}, 'api.json', "$lang OpenAPI source extension");
+	is($openapi->{'x-tabilet-endpoint-pattern'}, '<script>/<role>/<tag>/<component>?action=<action>', "$lang OpenAPI endpoint pattern extension");
+
+	my $login = $openapi->{paths}->{'/example/app.php/{role}/json/login'}->{post};
+	ok($login, "$lang OpenAPI login path");
+	is_deeply($login->{parameters}->[0]->{schema}->{enum}, [ 'u' ], "$lang OpenAPI login roles");
+	is_deeply($login->{'x-tabilet-logins'}->[0]->{credentials}, [ qw(email passwd) ], "$lang OpenAPI login credentials");
+
+	my $component = $openapi->{paths}->{'/example/app.php/{role}/json/item'}->{get};
+	ok($component, "$lang OpenAPI component path");
+	is_deeply($component->{parameters}->[0]->{schema}->{enum}, [ qw(p u) ], "$lang OpenAPI component roles");
+	is_deeply($component->{parameters}->[1]->{schema}->{enum}, [ qw(topics startnew insert edit update) ], "$lang OpenAPI action enum");
+	is($component->{'x-tabilet-component'}->{primary_key}, 'item_id', "$lang OpenAPI component primary key");
+	my %actions = map { $_->{name} => $_ } @{$component->{'x-tabilet-actions'}};
+	is_deeply(_sorted($actions{topics}->{allowed_groups}), [ qw(p u) ], "$lang OpenAPI topics groups");
+	is_deeply($actions{insert}->{request_params}, [ qw(title owner_id created) ], "$lang OpenAPI insert params");
+}
+
 sub _assert_api_docs {
 	my ($docs, $lang) = @_;
 
@@ -132,6 +158,7 @@ sub _assert_api_docs {
 	like($docs, qr/\| `item` \| `topics` \| `item_id`, `title`, `owner_id`, `created` \| `\/example\/app\.php\/u\/json\/item\?action=topics` \|/, "$lang docs include protected topics example");
 	like($docs, qr/\| `item` \| `insert` \| `title`, `owner_id`, `created` \| `\/example\/app\.php\/u\/json\/item\?action=insert` \|/, "$lang docs include protected insert example");
 	like($docs, qr/\| `item` \| `update` \| `item_id`, `title`, `owner_id` \| `\/example\/app\.php\/u\/json\/item\?action=update` \|/, "$lang docs include protected update example");
+	like($docs, qr/primary machine-readable contract.*`api\.json`.*derived OpenAPI document.*`openapi\.json`/, "$lang docs mention api and OpenAPI files");
 }
 
 sub _assert_component_json {

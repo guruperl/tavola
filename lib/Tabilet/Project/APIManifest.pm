@@ -149,7 +149,7 @@ sub docs {
 		}
 	}
 	push @lines, "";
-	push @lines, "The machine-readable contract for these endpoints is generated at `api.json`.";
+	push @lines, "The primary machine-readable contract is generated at `api.json`; a derived OpenAPI document is generated at `openapi.json`.";
 	push @lines, "";
 
 	return join("\n", @lines);

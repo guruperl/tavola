@@ -190,6 +190,9 @@ Examples:
 Each generated archive also includes:
 
 - `api.json`, a machine-readable Tabilet API manifest.
+- `openapi.json`, an OpenAPI 3.0 document derived from `api.json` for external
+  tooling. Tabilet-specific action details are kept in `x-tabilet-*`
+  extensions.
 - `docs/api.md`, generated endpoint documentation derived from `api.json`.
 
 These files are emitted for PHP and Perl output and are still generated when

@@ -12,6 +12,7 @@ use JSON qw(decode_json);
 use Tabilet::Project::APIManifest;
 use Tabilet::Generator::PHP;
 use Tabilet::Generator::Perl;
+use Tabilet::Project::OpenAPI;
 use Tabilet::Template::Base;
 use Tabilet::Template::Role;
 
@@ -80,6 +81,7 @@ sub add_to_tar {
 	my $api = Tabilet::Project::APIManifest->new(one => $one, other => $other);
 	my $manifest = $api->manifest();
 	$tar->add_data('api.json', $api->encode());
+	$tar->add_data('openapi.json', Tabilet::Project::OpenAPI->new(manifest => $manifest)->encode());
 	$tar->add_data('docs/api.md', $api->docs($manifest));
 	$tar->add_data('docs/api.schema.json', $self->_read_asset('docs/api.schema.json'));
 	$self->{lang} eq 'php'
