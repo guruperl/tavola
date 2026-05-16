@@ -149,7 +149,7 @@ the JSON source-of-truth package more portable.
 1. Update the JSON spec for metadata changes.
 2. Update SQL fragments for schema/procedure changes.
 3. Update overlay files for custom PHP behavior.
-4. Run `script/import-project-spec --dry-run --spec specs/my.project.json`.
-5. Import with `--replace` into a disposable Tavola metadata database.
-6. Export the generated app and verify Composer, PHP lint, generated SQL import,
+4. Run `script/generate-project --dry-run --lang php --spec specs/my.project.json`.
+5. Generate into a disposable output directory with `--replace`.
+6. Verify Composer, PHP lint, generated SQL import,
    and any custom routes named in `componentJsonFile`.

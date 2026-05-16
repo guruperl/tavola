@@ -95,7 +95,7 @@ packages.
 `smoke-sqlite-init` regenerates a PHP package, executes the full generated
 `conf/init.sql` in an in-memory SQLite database, compares that schema against
 `specs/supportdesk/schema.sql`, and inserts linked rows through the generated
-foreign keys. SQLite does not support stored procedure DDL, so the exporter
+foreign keys. SQLite does not support stored procedure DDL, so the generator
 emits comments for those procedures in SQLite init SQL while preserving the
 login procedure binding in generated config and API metadata.
 

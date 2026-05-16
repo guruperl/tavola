@@ -17,22 +17,20 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 
 ## Repository Layout
 
-- `script/` contains generator and metadata compatibility commands.
+- `cmd/tavola-generate/` contains the Go generator CLI.
+- `script/` contains compatibility wrappers and smoke checks.
 - `assets/` contains static assets copied into generated applications.
 - `conf/` contains application configuration and database seed SQL.
-- `lib/Tavola/Generator/` contains language-specific generators.
-- `lib/Tavola/Project/` contains JSON spec loading and export orchestration.
-- `lib/Tavola/Template/` contains generated-app UI templates.
+- `lib/Tavola/Project/` contains remaining Perl JSON/schema helpers.
 - `specs/` contains JSON project specs and fixture SQL.
 
 ## Requirements
 
 - Perl 5
-- Genelet framework modules available on `@INC`
-- DBI and the database driver for the configured database
-- PDO and the PDO driver for generated PHP apps
-- JSON and Archive::Tar
-- Template Toolkit for generated-app template output
+- Go 1.25+
+- JSON
+- PDO and the PDO driver for generated PHP apps, when running generated PHP
+- Genelet dependencies for generated Perl/Go apps, when running those outputs
 - Go 1.22+ for generated Go apps
 
 For local framework tests, the sibling Genelet repository can run its default
@@ -92,10 +90,10 @@ produced by Tavola; it is not a Tavola subsystem or package.
 
 Use `--lang perl` for Perl output, `--lang go` for Go/Genelet output, and
 `--tar PATH` instead of `--out PATH` to write an archive without extracting it.
-Generated app web UI files are included by default; add `--no-web-ui` to
-generate backend/API files without app templates. PHP and Perl include the Vue
-browser shell at `www/app.html` and `www/genelet.js`; Go includes a small
-server-rendered template set under `views/` plus `www/index.html`.
+The legacy Perl generator has been removed; `script/generate-project` now
+delegates to the Go `cmd/tavola-generate` implementation. The compatibility
+`--no-web-ui` flag is accepted by the wrapper, but the Go generator currently
+emits backend/API archives.
 
 ## Generated Archive Contents
 
@@ -198,62 +196,23 @@ shell, Vue components, and HTML templates.
 
 ## Metadata DB Compatibility
 
-The metadata database path is legacy compatibility for the old hosted
-multi-project builder. It is not needed for normal direct JSON generation.
-
-Use this path only when migrating or testing the old DB-backed workflow:
-
-```text
-JSON spec -> import-project-spec -> Tavola metadata DB -> export-project
-```
-
-Use an existing compatible metadata database when exercising this path. The
-generated app's runtime schema is still emitted into the exported app's own
-`conf/init.sql`; that generated file is separate from the legacy metadata DB.
-
-Import or replace a project in the metadata database:
-
-```bash
-TAVOLA_DB_USER=... TAVOLA_DB_PASS=... \
-script/import-project-spec \
-  --config conf/config.json \
-  --spec specs/jenny.project.json \
-  --replace
-```
-
-The importer writes Tavola metadata records only. The generated app still has
-its own runtime database, initialized from the exported app's `conf/init.sql`.
-After import, export the generated app from the populated Tavola records:
-
-```bash
-TAVOLA_DB_USER=... TAVOLA_DB_PASS=... \
-script/export-project \
-  --config conf/config.json \
-  --owner jenny \
-  --out ../jenny \
-  --replace
-```
-
-Use `--tar PATH` instead of `--out PATH` to write an archive without extracting
-it. The direct generator and metadata exporter are headless and do not require
-the old hosted Tavola web UI, CGI entrypoints, or browser workflow.
+The old metadata DB import/export generator path was removed. Tavola JSON is
+still supported as a compatibility input and fixture format, but archive
+generation now goes through the Go package and `cmd/tavola-generate`.
 
 Custom generated-code files should be kept as explicit overlays referenced by
 the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).
 
 ## Development Checks
 
-Compile the application modules and entrypoints:
+Compile the remaining Perl support modules and Go generator:
 
 ```bash
 find lib -name '*.pm' | sort | while read -r f; do
   perl -Ilib -I../perl -c "$f" >/dev/null || exit 1
 done
 
-perl -Ilib -I../perl -c script/import-project-spec
-perl -Ilib -I../perl -c script/export-project
-perl -Ilib -I../perl -c script/generate-project
-perl -Ilib -I../perl -c script/smoke-generated-project
+GOWORK=off go test ./...
 ```
 
 Run generated-output regression tests:

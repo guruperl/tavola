@@ -6,9 +6,10 @@ use lib "$Bin/../lib", "$Bin/../../perl";
 
 use Cwd qw(abs_path);
 use JSON qw(decode_json);
+use File::Spec;
+use File::Temp qw(tempdir);
 use Test::More;
 
-use Tavola::Project::Spec;
 use Tavola::Project::Spec::Validator;
 
 my $repo = abs_path("$Bin/..");
@@ -45,31 +46,22 @@ ok($components{posts}->{roles}->{u}, 'manual FK descendant receives protected ro
 ok(!$components{audit_log}->{roles}, 'unrelated table has no protected role CRUD');
 is_deeply($components{posts}->{roles}->{u}, [ qw(startnew insert edit update delete topics) ], 'protected CRUD actions are preserved');
 
-my ($one, $other) = Tavola::Project::Spec->new(
-	config_path => "$repo/conf/config.json",
-	spec_path => "$repo/specs/sqlmeta.project.json",
-)->export_data();
+my $tmp = tempdir('tavola-sqlmeta-output-XXXXXX', TMPDIR => 1, CLEANUP => 1);
+my $out = File::Spec->catdir($tmp, 'php');
+system("$repo/script/generate-project", '--spec', "$repo/specs/sqlmeta.project.json", '--lang', 'php', '--out', $out, '--replace', '--deterministic') == 0
+	or die "generation failed\n";
 
-my %table_rows = map { $_->{table_name} => $_ } @{$one->{table_topics}};
-is($table_rows{users}->{current_key}, 'public_id', 'metadata builder uses manual role key');
-is($table_rows{posts}->{current_key}, 'id', 'metadata builder keeps child table key');
-
-my %role_rows = map { $_->{name_role} => $_ } @{$one->{role_topics}};
-is($role_rows{u}->{field_id}, 'public_id', 'role config id uses manual key');
-is($role_rows{u}->{field_login}, 'email', 'role config login field is preserved');
-is($role_rows{u}->{field_passwd}, 'passwd', 'role config password field is preserved');
-
-my %role_acl = map { $_->{name_component} => $_ } @{$one->{role_role_acl}};
-ok($role_acl{users}, 'role ACL includes users component');
-ok($role_acl{posts}, 'role ACL includes posts component');
-ok(!$role_acl{audit_log}, 'role ACL excludes unrelated audit_log component');
-
-my $config = decode_json($one->{config_json});
+my $config = _read_json("$out/conf/config.json");
 is($config->{Pubrole}, 'p', 'generated config keeps public role');
 is($config->{Roles}->{u}->{Id_name}, 'public_id', 'generated config role id uses manual key');
 is_deeply($config->{Roles}->{u}->{Attributes}, [ qw(public_id email u_firstname u_lastname) ], 'generated config attributes use auth fields');
 
-ok(ref($other->{r_list}) eq 'ARRAY', 'landing list is generated from consumed spec');
+my $api = _read_json("$out/api.json");
+my %api_components = map { $_->{name} => $_ } @{$api->{components}};
+ok($api_components{users}, 'generated API includes users component');
+ok($api_components{posts}, 'generated API includes posts component');
+my %posts_actions = map { $_->{name} => $_ } @{$api_components{posts}->{actions}};
+is_deeply(_sorted($posts_actions{topics}->{allowed_groups}), [ qw(p u) ], 'generated API preserves posts public/protected topics');
 
 SKIP: {
 	my $fixture_path = "$repo/../sqlmeta/xmeta/testdata/contracts/$scenario.expanded_app_spec.json";
@@ -117,4 +109,9 @@ sub _read_json {
 	my $json = <$fh>;
 	close $fh or die "Cannot close $path: $!";
 	return decode_json($json);
+}
+
+sub _sorted {
+	my $list = shift || [];
+	return [ sort @$list ];
 }

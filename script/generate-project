@@ -1,91 +1,37 @@
-#!/usr/bin/perl
+#!/usr/bin/env bash
+set -euo pipefail
 
-use strict;
-use warnings;
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+args=()
+dry_run=0
 
-use FindBin qw($Bin);
-use lib "$Bin/../lib", "$Bin/../../perl";
+while (($#)); do
+  case "$1" in
+    --config)
+      shift
+      [[ $# -gt 0 ]] || { printf 'Missing value for --config\n' >&2; exit 2; }
+      shift
+      ;;
+    --config=*)
+      shift
+      ;;
+    --web-ui|--no-web-ui)
+      shift
+      ;;
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    *)
+      args+=("$1")
+      shift
+      ;;
+  esac
+done
 
-use Getopt::Long qw(GetOptions);
-use Tavola::Project::Exporter;
-use Tavola::Project::Spec;
+if ((dry_run)); then
+  args+=("--dry-run")
+fi
 
-my $config = "$Bin/../conf/config.json";
-my $lang = 'php';
-my $spec;
-my $out;
-my $tar;
-my $replace = 0;
-my $dry_run = 0;
-my $web_ui = 1;
-my $web_ui_seen = 0;
-my $help = 0;
-
-GetOptions(
-	'config=s' => \$config,
-	'lang=s'   => \$lang,
-	'spec=s'   => \$spec,
-	'out=s'    => \$out,
-	'tar=s'    => \$tar,
-	'replace'  => \$replace,
-	'dry-run'  => \$dry_run,
-	'web-ui!'  => sub { $web_ui = $_[1] ? 1 : 0; $web_ui_seen = 1; },
-	'help'     => \$help,
-) or usage(2);
-
-usage(0) if $help;
-usage(2) unless $spec;
-usage(2) unless $dry_run || $out || $tar;
-$lang = lc $lang;
-die "Unsupported --lang '$lang'. Use php, perl, or go.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'go';
-
-my $loader = Tavola::Project::Spec->new(
-	config_path => $config,
-	spec_path   => $spec,
-);
-my ($one, $other) = $loader->export_data();
-
-if ($dry_run) {
-	print "Dry run: generate $lang project $one->{Project}\n";
-	print "source: $spec\n";
-	print "generated web UI: " . ($web_ui ? "yes" : "no") . "\n";
-	print "metadata: "
-		. scalar(@{$one->{role_topics}}) . " roles, "
-		. scalar(@{$one->{component_topics}}) . " components, "
-		. scalar(@{$one->{table_topics}}) . " tables, "
-		. scalar(@{$one->{stored_topics}}) . " procedures\n";
-	exit 0;
-}
-
-my $exporter = Tavola::Project::Exporter->new(
-	config_path => $config,
-	lang        => $lang,
-	data        => [$one, $other],
-	web_ui      => $web_ui,
-	asset_root  => "$Bin/..",
-);
-
-$exporter->write_tar($tar) if $tar;
-$exporter->write_dir($out, $replace) if $out;
-
-exit 0;
-
-sub usage {
-	my $exit = shift;
-	print <<"USAGE";
-Usage: script/generate-project --lang php|perl|go --spec PATH [options]
-
-Options:
-  --config PATH  Tavola generator config. Defaults to conf/config.json.
-  --lang LANG    Output language: php, perl, or go. Defaults to php.
-  --spec PATH    JSON project spec.
-  --out PATH     Extract generated files into PATH.
-  --tar PATH     Write a generated tar archive to PATH.
-  --replace      Replace --out PATH if it already exists.
-  --dry-run      Validate and summarize generation without writing.
-  --web-ui       Generate app views. PHP/Perl also include Vue files and app.html. Default.
-  --no-web-ui    Generate backend/API files without app web UI templates.
-  --help         Show this help.
-USAGE
-	exit $exit;
-}
+cd "$ROOT"
+GOWORK=off go run ./cmd/tavola-generate "${args[@]}"

@@ -10,9 +10,7 @@ use File::Temp qw(tempdir);
 use JSON qw(decode_json);
 use Test::More;
 
-use Tavola::Project::Exporter;
 use Tavola::Project::JSONSchema;
-use Tavola::Project::Spec;
 use Tavola::Project::Spec::Validator;
 
 my $repo = abs_path("$Bin/..");
@@ -32,42 +30,23 @@ ok(!$components{ticket_notes}->{public}, 'ticket notes are protected-only after 
 is_deeply($components{users}->{roles}->{u}, [ qw(edit update topics) ], 'users role actions are narrowed by review');
 ok(!$components{audit_events}->{roles}, 'unscoped audit table remains outside protected role grants');
 
-my ($one, $other) = Tavola::Project::Spec->new(
-	config_path => "$repo/conf/config.json",
-	spec_path => $spec_path,
-)->export_data();
-
-my $config = decode_json($one->{config_json});
-is($config->{Project}, 'SupportDesk', 'metadata export uses reviewed project name');
-is($config->{Roles}->{u}->{Issuers}->{db}->{Sql}, 'proc_u_login', 'metadata export wires reviewed login procedure');
-is_deeply($config->{Roles}->{u}->{Attributes}, [ qw(id email u_firstname u_lastname) ], 'metadata export wires reviewed auth attributes');
-
-my %role_acl = map { $_->{name_component} => $_ } @{$one->{role_role_acl}};
-ok($role_acl{tickets}, 'role ACL includes tickets');
-ok($role_acl{teams}, 'role ACL includes teams');
-ok($role_acl{ticket_notes}, 'role ACL includes ticket notes');
-ok($role_acl{users}, 'role ACL includes reviewed users permissions');
-ok(!$role_acl{audit_events}, 'role ACL excludes audit events');
-
 my $tmp = tempdir('tavola-source-truth-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $schema = _read_json("$repo/docs/api.schema.json");
 for my $lang (qw(php perl go)) {
 	my $out = File::Spec->catdir($tmp, $lang);
-	Tavola::Project::Exporter->new(
-		config_path => "$repo/conf/config.json",
-		lang => $lang,
-		data => [ $one, $other ],
-		web_ui => 0,
-		asset_root => $repo,
-	)->write_dir($out, 1);
+	system("$repo/script/generate-project", '--spec', $spec_path, '--lang', $lang, '--out', $out, '--replace', '--deterministic') == 0
+		or die "generation failed for $lang\n";
 
 	my $api = _read_json("$out/api.json");
+	my $config = _read_json("$out/conf/config.json");
 	my @errors = Tavola::Project::JSONSchema->new(schema => $schema)->validate($api);
 	is_deeply(\@errors, [], "$lang generated api.json matches schema");
 	is($api->{project}->{name}, 'SupportDesk', "$lang generated API uses reviewed source");
 	is($api->{project}->{default}->{component}, 'tickets', "$lang generated API keeps reviewed default");
 	my %roles = map { $_->{name} => $_ } @{$api->{roles}};
 	is($roles{u}->{login}->{sql}, 'proc_u_login', "$lang generated API keeps SQLite login procedure binding");
+	is($config->{Project}, 'SupportDesk', "$lang generated config uses reviewed project name");
+	is_deeply($config->{Roles}->{u}->{Attributes}, [ qw(id email u_firstname u_lastname) ], "$lang generated config wires reviewed auth attributes");
 	_assert_component_actions($api, $lang);
 	my $init_sql = _read_text("$out/conf/init.sql");
 	like($init_sql, qr/SQLite does not support stored procedure DDL/, "$lang generated SQLite init documents omitted procedure DDL");

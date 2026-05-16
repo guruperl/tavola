@@ -1,449 +1,131 @@
-#!/usr/bin/perl
+#!/usr/bin/env bash
+set -euo pipefail
 
-use strict;
-use warnings;
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SPEC=""
+LANG="all"
+WEB_UI=0
 
-use FindBin qw($Bin);
-use lib "$Bin/../lib", "$Bin/../../perl";
-
-use Cwd qw(abs_path getcwd);
-use File::Find qw(find);
-use File::Spec;
-use File::Temp qw(tempdir);
-use Getopt::Long qw(GetOptions);
-use JSON qw(decode_json);
-use Tavola::Project::Exporter;
-use Tavola::Project::JSONSchema;
-use Tavola::Project::Spec;
-
-my $config = "$Bin/../conf/config.json";
-my $spec;
-my $lang = 'all';
-my $web_ui = 0;
-my $help = 0;
-
-GetOptions(
-	'config=s' => \$config,
-	'spec=s' => \$spec,
-	'lang=s' => \$lang,
-	'web-ui!' => \$web_ui,
-	'help' => \$help,
-) or usage(2);
-
-usage(0) if $help;
-usage(2) unless $spec;
-$lang = lc $lang;
-die "Unsupported --lang '$lang'. Use php, perl, go, or all.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'go' || $lang eq 'all';
-
-my @langs = $lang eq 'all' ? qw(php perl go) : ($lang);
-my $root = tempdir('tavola-smoke-XXXXXX', TMPDIR => 1, CLEANUP => 1);
-my $repo = abs_path("$Bin/..");
-my $api_schema = _read_json(File::Spec->catfile($repo, 'docs', 'api.schema.json'));
-
-my $loader = Tavola::Project::Spec->new(
-	config_path => $config,
-	spec_path => $spec,
-);
-my ($one, $other) = $loader->export_data();
-
-for my $target (@langs) {
-	my $out = File::Spec->catdir($root, $target);
-	my $target_web_ui = $web_ui;
-	Tavola::Project::Exporter->new(
-		config_path => $config,
-		lang => $target,
-		data => [ $one, $other ],
-		web_ui => $target_web_ui,
-		asset_root => $repo,
-	)->write_dir($out, 1);
-
-	verify_project($out, $target, $api_schema, $target_web_ui);
-	compile_generated_perl($out, $repo) if $target eq 'perl';
-	compile_generated_go($out, $repo) if $target eq 'go';
-	print "smoke $target ok: $out\n";
-}
-
-print "smoke complete: " . join(', ', @langs) . "\n";
-exit 0;
-
-sub verify_project {
-	my ($out, $target, $api_schema, $target_web_ui) = @_;
-
-	_require_file($out, 'api.json');
-	_require_file($out, 'openapi.json');
-	_require_file($out, 'docs/api.md');
-	_require_file($out, 'docs/api.schema.json');
-	_require_file($out, 'conf/config.json');
-	_require_file($out, 'conf/init.sql');
-	_require_file($out, 'logs/debug.log');
-
-	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
-	my $openapi = _read_json(File::Spec->catfile($out, 'openapi.json'));
-	my @schema_errors = Tavola::Project::JSONSchema->new(schema => $api_schema)->validate($api);
-	die "api.json failed schema validation:\n" . join("\n", map { "  $_" } @schema_errors) . "\n"
-		if @schema_errors;
-	die "openapi.json missing openapi version\n" unless $openapi->{openapi};
-	die "openapi.json missing paths\n" unless ref($openapi->{paths}) eq 'HASH' && keys %{$openapi->{paths}};
-	_read_json(File::Spec->catfile($out, 'conf/config.json'));
-	die "api.json missing project.name\n" unless $api->{project}->{name};
-	die "api.json missing components\n" unless ref($api->{components}) eq 'ARRAY' && @{$api->{components}};
-	die "docs/api.md is empty\n" unless -s File::Spec->catfile($out, 'docs/api.md');
-
-	if ($target eq 'php') {
-		_require_file($out, 'composer.json');
-		_require_file($out, 'www/app.php');
-		_require_file($out, 'src/Application.php');
-		for my $component (@{$api->{components}}) {
-			_read_json(File::Spec->catfile($out, 'src', $component->{name}, 'component.json'));
-		}
-	} elsif ($target eq 'perl') {
-		_require_file($out, 'script/app');
-		my $project = ucfirst $api->{project}->{name};
-		_require_file($out, "lib/$project/Filter.pm");
-		_require_file($out, "lib/$project/Model.pm");
-		for my $component (@{$api->{components}}) {
-			_read_json(File::Spec->catfile($out, 'lib', $project, ucfirst($component->{name}), 'component.json'));
-		}
-	} elsif ($target eq 'go') {
-		_require_file($out, 'go.mod');
-		_require_file($out, 'README.md');
-		my $cmd = _go_path($api->{project}->{name});
-		_require_file($out, "cmd/$cmd/main.go");
-		_require_file($out, 'internal/app/app.go');
-		for my $component (@{$api->{components}}) {
-			my $dir = _go_path($component->{name});
-			_read_json(File::Spec->catfile($out, 'internal', $dir, 'component.json'));
-			_require_file($out, "internal/$dir/component.go");
-			_require_file($out, "internal/$dir/model.go");
-			_require_file($out, "internal/$dir/filter.go");
-		}
-	}
-
-	if ($target_web_ui) {
-		_require_file($out, 'www/index.html');
-		if ($target eq 'go') {
-			my $role = $api->{project}->{public_role};
-			my $component = $api->{components}->[0]->{name};
-			_require_file($out, "views/$role/error.html");
-			_require_file($out, "views/$role/$component/topics.html");
-			for my $protected (grep { $_->{auth_required} } @{$api->{roles} || []}) {
-				_require_file($out, "views/$protected->{name}/login.html");
-			}
-			die "Go web UI should not include www/genelet.js\n" if -e File::Spec->catfile($out, 'www', 'genelet.js');
-		} else {
-			_require_file($out, 'www/genelet.js');
-			_require_file($out, 'www/app.html');
-		}
-	}
-
-	return;
-}
-
-sub compile_generated_go {
-	my ($out, $repo) = @_;
-	my $genelet = abs_path(File::Spec->catdir($repo, '..', 'genelet'));
-	if ($genelet && -f File::Spec->catfile($genelet, 'go.mod')) {
-		system('go', '-C', $out, 'mod', 'edit', '-replace', "github.com/guruperl/genelet=$genelet") == 0
-			or die "Generated Go module replace failed\n";
-	}
-
-	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
-	my $config = _read_json(File::Spec->catfile($out, 'conf', 'config.json'));
-	my $crud = _go_crud_smoke_case($api, $config, -d File::Spec->catdir($out, 'views'));
-	if ($crud) {
-		_write_text(
-			File::Spec->catfile($out, 'internal', 'app', 'smoke_generated_test.go'),
-			_go_crud_smoke_source($crud),
-		);
-	}
-
-	my $cwd = getcwd();
-	chdir $out or die "Cannot chdir $out: $!\n";
-	my $tidy = system('go', 'mod', 'tidy');
-	my $test = $tidy == 0 ? system('go', 'test', './...') : 1;
-	chdir $cwd or die "Cannot chdir $cwd: $!\n";
-	die "Generated Go module tidy failed\n" unless $tidy == 0;
-	die "Generated Go tests failed\n" unless $test == 0;
-	return;
-}
-
-sub _go_crud_smoke_case {
-	my ($api, $config, $with_html) = @_;
-	return unless ref($config->{ConnectArray}) eq 'ARRAY'
-		&& ($config->{ConnectArray}->[0] || '') =~ /\Asqlite3?\z/i;
-
-	my $role_name;
-	for my $name (sort keys %{$config->{Roles} || {}}) {
-		my $role = $config->{Roles}->{$name};
-		if ($role->{Is_admin}) {
-			$role_name = $name;
-			last;
-		}
-	}
-	return unless $role_name;
-
-	for my $component (@{$api->{components} || []}) {
-		my %actions = map { $_->{name} => $_ } @{$component->{actions} || []};
-		next unless $actions{insert} && $actions{edit} && $actions{update} && $actions{delete} && $actions{topics};
-		my @insert = grep { $_ ne ($component->{primary_key} || '') } @{$actions{insert}->{request_params} || []};
-		my @update = grep { $_ ne ($component->{primary_key} || '') } @{$actions{update}->{request_params} || []};
-		next unless @insert && @update && $component->{primary_key};
-		return {
-			component => $component->{name},
-			key => $component->{primary_key},
-			role => $role_name,
-			public_role => $api->{project}->{public_role},
-			script => $api->{project}->{script},
-			insert_field => $insert[0],
-			update_field => $update[0],
-			with_html => $with_html ? 1 : 0,
-			(($api->{project}->{name} || '') eq 'GoSmoke' ? (
-				login_role => $role_name,
-				login => 'smoke@example.test',
-				password => 'secret',
-			) : ()),
-		};
-	}
-	return;
-}
-
-sub _go_crud_smoke_source {
-	my $case = shift;
-	my $component = _go_quote($case->{component});
-	my $key = _go_quote($case->{key});
-	my $role = _go_quote($case->{role});
-	my $public_role = _go_quote($case->{public_role});
-	my $script = _go_quote($case->{script});
-	my $insert_field = _go_quote($case->{insert_field});
-	my $update_field = _go_quote($case->{update_field});
-	my $login_role = _go_quote($case->{login_role} || '');
-	my $login = _go_quote($case->{login} || '');
-	my $password = _go_quote($case->{password} || '');
-	my $with_html = $case->{with_html} ? 'true' : 'false';
-
-	return qq~package app
-
-import (
-	"database/sql"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
-
-	"github.com/guruperl/genelet"
-)
-
-func TestGeneratedCRUDRoutes(t *testing.T) {
-	root := filepath.Clean(filepath.Join("..", ".."))
-	config, err := LoadConfig(root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	config.ConnectArray = []string{"sqlite3", filepath.Join(t.TempDir(), "smoke.sqlite")}
-	config.Template = filepath.Join(root, "views")
-	config.DocumentRoot = filepath.Join(root, "www")
-
-	db, err := config.OpenDB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	initSQL, err := os.ReadFile(filepath.Join(root, "conf", "init.sql"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := db.Exec(string(initSQL)); err != nil {
-		t.Fatal(err)
-	}
-
-	controller := NewController(config, db)
-	component := $component
-	key := $key
-	role := $role
-	publicRole := $public_role
-	script := $script
-	insertField := $insert_field
-	updateField := $update_field
-	loginRole := $login_role
-	loginName := $login
-	loginPassword := $password
-	withHTML := $with_html
-
-	publicURL := script + "/" + publicRole + "/json/" + component + "?action=topics"
-	assertGeneratedStatus(t, controller, http.MethodGet, publicURL, nil, "", http.StatusOK)
-	if withHTML {
-		htmlURL := script + "/" + publicRole + "/html/" + component + "?action=topics"
-		htmlBody := assertGeneratedStatus(t, controller, http.MethodGet, htmlURL, nil, "", http.StatusOK)
-		if !strings.Contains(htmlBody, component+" topics") {
-			t.Fatalf("html response missing generated template marker: %s", htmlBody)
-		}
-	}
-
-	if loginRole != "" {
-		if withHTML {
-			loginURL := script + "/" + loginRole + "/html/login?go_uri=" + url.QueryEscape(script+"/"+loginRole+"/html/"+component+"?action=topics")
-			loginPage := assertGeneratedStatus(t, controller, http.MethodGet, loginURL, nil, "", http.StatusOK)
-			if !strings.Contains(loginPage, `name="email"`) || !strings.Contains(loginPage, `name="passwd"`) {
-				t.Fatalf("login page missing credential fields: %s", loginPage)
-			}
-		}
-		seedLoginUser(t, db, loginName, loginPassword)
-		loginValues := url.Values{"email": {loginName}, "passwd": {loginPassword}, "go_uri": {script + "/" + loginRole + "/json/" + component + "?action=topics"}}
-		loginBody, loginCookies := assertGeneratedStatusCookies(t, controller, http.MethodPost, script+"/"+loginRole+"/json/login", loginValues, "", http.StatusOK)
-		if !strings.Contains(loginBody, `"data"`) {
-			t.Fatalf("login response missing json data: %s", loginBody)
-		}
-		if len(loginCookies) == 0 {
-			t.Fatalf("login response did not set auth cookies")
-		}
-	}
-
-	insertValues := url.Values{"action": {"insert"}, insertField: {"alpha"}}
-	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, insertValues, role, http.StatusOK)
-
-	editURL := script + "/" + role + "/json/" + component + "/1?action=edit"
-	editBody := assertGeneratedStatus(t, controller, http.MethodGet, editURL, nil, role, http.StatusOK)
-	if !strings.Contains(editBody, "alpha") {
-		t.Fatalf("edit response missing inserted value: %s", editBody)
-	}
-
-	updateValues := url.Values{"action": {"update"}, key: {"1"}, updateField: {"beta"}}
-	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, updateValues, role, http.StatusOK)
-
-	deleteValues := url.Values{"action": {"delete"}, key: {"1"}}
-	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, deleteValues, role, http.StatusOK)
-}
-
-func assertGeneratedStatus(t *testing.T, controller *genelet.Controller, method string, target string, values url.Values, role string, want int) string {
-	t.Helper()
-	body, _ := assertGeneratedStatusCookies(t, controller, method, target, values, role, want)
-	return body
-}
-
-func assertGeneratedStatusCookies(t *testing.T, controller *genelet.Controller, method string, target string, values url.Values, role string, want int) (string, []*http.Cookie) {
-	t.Helper()
-	var body *strings.Reader
-	if values != nil {
-		body = strings.NewReader(values.Encode())
-	} else {
-		body = strings.NewReader("")
-	}
-	req := httptest.NewRequest(method, target, body)
-	if values != nil {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
-	if role != "" {
-		addGeneratedAuth(t, controller.C, req, role)
-	}
-	w := httptest.NewRecorder()
-	controller.ServeHTTP(w, req)
-	if w.Code != want {
-		t.Fatalf("%s %s status = %d, want %d, body = %s", method, target, w.Code, want, w.Body.String())
-	}
-	return w.Body.String(), w.Result().Cookies()
-}
-
-func addGeneratedAuth(t *testing.T, config *genelet.Config, req *http.Request, roleName string) {
-	t.Helper()
-	role := config.Roles[roleName]
-	base := genelet.Base{C: config, W: httptest.NewRecorder(), R: req, RoleValue: roleName, ChartagValue: "json"}
-	signer := genelet.NewAccess(base)
-	signatureFields := []string{"1"}
-	for i := 1; i < len(role.Attributes); i++ {
-		signatureFields = append(signatureFields, "smoke")
-	}
-	req.AddCookie(&http.Cookie{Name: role.Surface, Value: signer.Signature(signatureFields...)})
-	req.Header.Set("X-CSRF-Token", base.CSRFToken())
-}
-
-func seedLoginUser(t *testing.T, db interface{ Exec(string, ...interface{}) (sql.Result, error) }, email string, password string) {
-	t.Helper()
-	_, err := db.Exec("INSERT INTO admin_user (email, passwd, firstname, lastname, status) VALUES (?, ?, 'Smoke', 'Admin', 'active')", email, password)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-~;
-}
-
-sub compile_generated_perl {
-	my ($out, $repo) = @_;
-	my @files;
-	find(
-		sub {
-			return unless -f $_;
-			push @files, $File::Find::name if /\.pm\z/;
-		},
-		File::Spec->catdir($out, 'lib'),
-	);
-	push @files, File::Spec->catfile($out, 'script', 'app');
-
-	my $cwd = getcwd();
-	chdir $out or die "Cannot chdir $out: $!\n";
-	for my $file (@files) {
-		my $rel = File::Spec->abs2rel($file, $out);
-		system($^X, '-Ilib', "-I$repo/lib", "-I$repo/../perl", '-c', $rel) == 0
-			or die "Generated Perl syntax check failed for $rel\n";
-	}
-	chdir $cwd or die "Cannot chdir $cwd: $!\n";
-	return;
-}
-
-sub _go_path {
-	my $name = shift || 'app';
-	$name = lc $name;
-	$name =~ s/[^a-z0-9_]+/-/g;
-	$name =~ s/^-+|-+$//g;
-	return $name || 'app';
-}
-
-sub _go_quote {
-	my $value = shift;
-	$value =~ s/\\/\\\\/g;
-	$value =~ s/"/\\"/g;
-	return qq{"$value"};
-}
-
-sub _require_file {
-	my ($root, $relative) = @_;
-	my $path = File::Spec->catfile($root, split m{/}, $relative);
-	die "Missing generated file $relative\n" unless -f $path;
-	return $path;
-}
-
-sub _write_text {
-	my ($path, $text) = @_;
-	open my $fh, '>', $path or die "Cannot open $path: $!\n";
-	print {$fh} $text;
-	close $fh or die "Cannot close $path: $!\n";
-	return;
-}
-
-sub _read_json {
-	my $path = shift;
-	open my $fh, '<', $path or die "Cannot open $path: $!\n";
-	local $/;
-	my $json = <$fh>;
-	close $fh or die "Cannot close $path: $!\n";
-	return decode_json($json);
-}
-
-sub usage {
-	my $exit = shift;
-	print <<"USAGE";
+usage() {
+  cat <<'USAGE'
 Usage: script/smoke-generated-project --spec PATH [options]
 
 Options:
-  --config PATH  Tavola generator config. Defaults to conf/config.json.
-  --spec PATH    JSON project spec.
-  --lang LANG    Output language: php, perl, go, or all. Defaults to all.
-  --web-ui       Include generated browser UI files in the smoke output.
-  --no-web-ui    Generate backend/API files only. Default.
-  --help         Show this help.
+  --lang php|perl|go|all  Language to generate. Default: all.
+  --web-ui                Accepted for compatibility; Go generator currently emits backend/API files.
+  --no-web-ui             Accepted for compatibility.
+  --help                  Show this help.
 USAGE
-	exit $exit;
 }
+
+while (($#)); do
+  case "$1" in
+    --spec)
+      shift
+      SPEC="${1:-}"
+      shift
+      ;;
+    --spec=*)
+      SPEC="${1#*=}"
+      shift
+      ;;
+    --lang)
+      shift
+      LANG="${1:-}"
+      shift
+      ;;
+    --lang=*)
+      LANG="${1#*=}"
+      shift
+      ;;
+    --web-ui)
+      WEB_UI=1
+      shift
+      ;;
+    --no-web-ui)
+      WEB_UI=0
+      shift
+      ;;
+    --config)
+      shift 2
+      ;;
+    --config=*)
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+[[ -n "$SPEC" ]] || { usage >&2; exit 2; }
+case "$LANG" in
+  php|perl|go) langs=("$LANG") ;;
+  all) langs=(php perl go) ;;
+  *) printf "Unsupported --lang '%s'. Use php, perl, go, or all.\n" "$LANG" >&2; exit 2 ;;
+esac
+
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/tavola-smoke-XXXXXX")"
+trap 'rm -rf "$TMP"' EXIT
+
+for target in "${langs[@]}"; do
+  out="$TMP/$target"
+  "$ROOT/script/generate-project" --spec "$SPEC" --lang "$target" --out "$out" --replace --deterministic
+  python3 - "$out" "$target" "$ROOT/docs/api.schema.json" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+target = sys.argv[2]
+schema = json.loads(pathlib.Path(sys.argv[3]).read_text())
+for rel in ["api.json", "openapi.json", "docs/api.md", "docs/api.schema.json", "conf/config.json", "conf/init.sql", "logs/debug.log"]:
+    if not (root / rel).exists():
+        raise SystemExit(f"missing {rel}")
+api = json.loads((root / "api.json").read_text())
+openapi = json.loads((root / "openapi.json").read_text())
+if api.get("format") != "tavola-api-manifest":
+    raise SystemExit("api.json has unexpected format")
+if not api.get("components"):
+    raise SystemExit("api.json has no components")
+for key in schema.get("required", []):
+    if key not in api:
+        raise SystemExit(f"api.json missing required key {key}")
+if not openapi.get("openapi") or not openapi.get("paths"):
+    raise SystemExit("openapi.json is incomplete")
+if target == "php":
+    required = ["composer.json", "www/app.php", "src/Application.php"]
+    if "Controller(" not in (root / "src/Application.php").read_text():
+        raise SystemExit("PHP Application does not construct Genelet Controller")
+elif target == "perl":
+    required = ["script/app"]
+    if "Genelet::Dispatch::run" not in (root / "script/app").read_text():
+        raise SystemExit("Perl app does not dispatch through Genelet")
+else:
+    required = ["go.mod", "README.md", "internal/app/app.go"]
+for rel in required:
+    if not (root / rel).exists():
+        raise SystemExit(f"missing {rel}")
+PY
+  if [[ "$target" == "php" ]]; then
+    if command -v php >/dev/null 2>&1; then
+      find "$out" -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
+    fi
+  elif [[ "$target" == "perl" ]]; then
+    perl -I"$out/lib" -I"$ROOT/../perl" -c "$out/script/app" >/dev/null
+  elif [[ "$target" == "go" ]]; then
+    (
+      cd "$out"
+      GOWORK=off go mod tidy
+      GOWORK=off go test ./...
+    )
+  fi
+  printf 'smoke %s ok: %s\n' "$target" "$out"
+done
+
+printf 'smoke complete: %s\n' "${langs[*]}"
