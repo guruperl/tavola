@@ -117,7 +117,8 @@ func run() error {
 	var err error
 	switch {
 	case specPath != "":
-		spec, err := tavola.LoadTavolaSpecFile(specPath)
+		var spec *tavola.Spec
+		spec, err = tavola.LoadTavolaSpecFile(specPath)
 		if err != nil {
 			return err
 		}
@@ -126,31 +127,37 @@ func run() error {
 		if metaPath == "" {
 			return fmt.Errorf("--expanded-app requires --meta")
 		}
-		meta, err := xmeta.LoadMetaDatabaseFromFile(metaPath)
+		var meta *xmeta.MetaDatabase
+		meta, err = xmeta.LoadMetaDatabaseFromFile(metaPath)
 		if err != nil {
 			return err
 		}
-		app, err := loadExpandedApp(expandedPath)
+		var app *xmeta.ExpandedAppSpec
+		app, err = loadExpandedApp(expandedPath)
 		if err != nil {
 			return err
 		}
 		archive, err = tavola.GenerateFromExpandedApp(meta, app, opts)
 	case metaPath != "":
-		meta, err := xmeta.LoadMetaDatabaseFromFile(metaPath)
+		var meta *xmeta.MetaDatabase
+		meta, err = xmeta.LoadMetaDatabaseFromFile(metaPath)
 		if err != nil {
 			return err
 		}
-		sqlOpts, err := sqlmetaOptions(opts, authTable, authID, authLogin, authPassword, authFirst, authLast, authRole, fallbackAll, overridesPath)
+		var sqlOpts tavola.SQLMetaGenerateOptions
+		sqlOpts, err = sqlmetaOptions(opts, authTable, authID, authLogin, authPassword, authFirst, authLast, authRole, fallbackAll, overridesPath)
 		if err != nil {
 			return err
 		}
 		archive, err = tavola.GenerateFromSQLMeta(meta, sqlOpts)
 	case driver != "" && dsn != "":
-		meta, err := introspect(driver, dsn, database, splitCSV(schemasCSV))
+		var meta *xmeta.MetaDatabase
+		meta, err = introspect(driver, dsn, database, splitCSV(schemasCSV))
 		if err != nil {
 			return err
 		}
-		sqlOpts, err := sqlmetaOptions(opts, authTable, authID, authLogin, authPassword, authFirst, authLast, authRole, fallbackAll, overridesPath)
+		var sqlOpts tavola.SQLMetaGenerateOptions
+		sqlOpts, err = sqlmetaOptions(opts, authTable, authID, authLogin, authPassword, authFirst, authLast, authRole, fallbackAll, overridesPath)
 		if err != nil {
 			return err
 		}

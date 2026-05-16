@@ -64,7 +64,24 @@ func TestRunSupportsDirectMetaAndExpandedAppDryRun(t *testing.T) {
 	runWithArgs(t, "tavola-generate", "--meta", metaPath, "--expanded-app", expandedPath, "--project", "SqlmetaApp", "--lang", "php", "--dry-run")
 }
 
+func TestRunUnsupportedLanguageDryRunReturnsError(t *testing.T) {
+	err := runWithArgsError(t, "tavola-generate", "--spec", filepath.Join("..", "..", "specs", "project.template.json"), "--lang", "ruby", "--dry-run")
+	if err == nil {
+		t.Fatal("expected unsupported language error")
+	}
+	if !strings.Contains(err.Error(), `unsupported language "ruby"`) {
+		t.Fatalf("expected unsupported language error, got %v", err)
+	}
+}
+
 func runWithArgs(t *testing.T, args ...string) {
+	t.Helper()
+	if err := runWithArgsError(t, args...); err != nil {
+		t.Fatalf("run(%v) failed: %v", args, err)
+	}
+}
+
+func runWithArgsError(t *testing.T, args ...string) error {
 	t.Helper()
 	oldArgs := os.Args
 	oldFlags := flag.CommandLine
@@ -75,7 +92,5 @@ func runWithArgs(t *testing.T, args ...string) {
 	os.Args = args
 	flag.CommandLine = flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flag.CommandLine.SetOutput(io.Discard)
-	if err := run(); err != nil {
-		t.Fatalf("run(%v) failed: %v", args, err)
-	}
+	return run()
 }

@@ -698,6 +698,7 @@ func referenceKeyTableName(expr *xmeta.ReferenceKeyExpr) string {
 	if name := tableName(expr.GetTableObjectName()); name != "" {
 		return name
 	}
+	//lint:ignore SA1019 Keep compatibility with older sqlmeta fixtures and callers that still populate the deprecated field.
 	return expr.GetTableName()
 }
 
