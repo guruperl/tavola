@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+func ValidateTavolaSpec(spec *Spec) error {
+	if spec == nil {
+		return fmt.Errorf("tavola spec is nil")
+	}
+	return validateSpec(spec)
+}
+
 func validateSpec(spec *Spec) error {
 	if spec.Version != 1 {
 		return fmt.Errorf("spec version must be 1")

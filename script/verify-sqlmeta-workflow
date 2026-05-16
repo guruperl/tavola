@@ -63,13 +63,13 @@ check_contract_drift() {
   local stale=()
   local paths=(
     "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/manual_pk_fk.expanded_app_spec.json"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/manual_pk_fk.project.json"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/manual_pk_fk.warnings.txt"
+    "$ROOT/testdata/sqlmeta/contracts/manual_pk_fk.project.json"
+    "$ROOT/testdata/sqlmeta/contracts/manual_pk_fk.warnings.txt"
     "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/invalid_overrides.expanded_app_spec.json"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/invalid_overrides.project.json"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/invalid_overrides.warnings.txt"
+    "$ROOT/testdata/sqlmeta/contracts/invalid_overrides.project.json"
+    "$ROOT/testdata/sqlmeta/contracts/invalid_overrides.warnings.txt"
     "$WORKSPACE/sqlmeta/xmeta/testdata/contracts/missing_auth_table.expand_error.txt"
-    "$WORKSPACE/sqlmeta/tavola/testdata/contracts/missing_auth_table.tavola_error.txt"
+    "$ROOT/testdata/sqlmeta/contracts/missing_auth_table.tavola_error.txt"
     "$ROOT/specs/sqlmeta.project.json"
   )
 
@@ -88,7 +88,7 @@ check_contract_drift() {
   done
 
   if ((${#stale[@]} > 0)); then
-    printf 'Contract fixtures are stale. Run `../sqlmeta/script/refresh-contract-fixtures` and commit the generated files.\n' >&2
+    printf 'Contract fixtures are stale. Run `../sqlmeta/script/refresh-contract-fixtures` and `script/refresh-contract-fixtures`, then commit the generated files.\n' >&2
     printf 'Stale generated files:\n' >&2
     printf '  %s\n' "${stale[@]}" >&2
     return 1
@@ -97,6 +97,7 @@ check_contract_drift() {
 
 run_fast() {
   run_go "$WORKSPACE/sqlmeta" ./script/refresh-contract-fixtures
+  run_go "$ROOT" ./script/refresh-contract-fixtures
   check_contract_drift
   run_go "$WORKSPACE/sqlmeta" go test ./...
 

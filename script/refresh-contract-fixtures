@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+args=("-root" "$ROOT")
+if (($#)); then
+  args+=("$@")
+fi
+
+GOWORK=off go run ./cmd/refresh-contract-fixtures "${args[@]}"

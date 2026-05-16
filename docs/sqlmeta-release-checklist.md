@@ -45,7 +45,9 @@ If the drift check fails, run:
 ```bash
 cd ../sqlmeta
 ./script/refresh-contract-fixtures
+cd ../tavola
+./script/refresh-contract-fixtures
 ```
 
-Then review and commit the generated sqlmeta fixture changes and the synced
-Tavola `specs/sqlmeta.project.json` change.
+Then review and commit the generated sqlmeta neutral fixtures plus Tavola's
+`testdata/sqlmeta/contracts` snapshots and `specs/sqlmeta.project.json` change.

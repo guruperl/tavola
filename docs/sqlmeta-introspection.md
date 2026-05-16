@@ -117,10 +117,10 @@ script/verify-sqlmeta-workflow --all
 The GitHub workflows are intentionally manual-dispatch. Treat `--all` as the
 mandatory local release gate before pushing a sqlmeta dependency ladder.
 
-The script first runs `../sqlmeta/script/refresh-contract-fixtures`, which
-refreshes the canonical `manual_pk_fk` green fixture, the `invalid_overrides`
-warning fixture, and the `missing_auth_table` error snapshots. Only
-`manual_pk_fk` is synced to `specs/sqlmeta.project.json`.
+The script first runs `../sqlmeta/script/refresh-contract-fixtures` for neutral
+`ExpandedAppSpec` fixtures, then `script/refresh-contract-fixtures` for
+Tavola-owned project JSON, warning snapshots, and
+`specs/sqlmeta.project.json`.
 
 `--fast` checks fixture drift, canonical `sqlmeta` tests, Tavola Go tests for
 direct `GenerateFromSQLMeta` and `cmd/tavola-generate` modes, compatibility Perl

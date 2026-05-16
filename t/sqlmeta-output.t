@@ -73,9 +73,9 @@ SKIP: {
 }
 
 SKIP: {
-	my $project_path = "$repo/../sqlmeta/tavola/testdata/contracts/invalid_overrides.project.json";
-	my $warnings_path = "$repo/../sqlmeta/tavola/testdata/contracts/invalid_overrides.warnings.txt";
-	skip 'sqlmeta sibling invalid override fixtures are not checked out', 10 unless -f $project_path && -f $warnings_path;
+	my $project_path = "$repo/testdata/sqlmeta/contracts/invalid_overrides.project.json";
+	my $warnings_path = "$repo/testdata/sqlmeta/contracts/invalid_overrides.warnings.txt";
+	skip 'Tavola invalid override fixtures are not checked out', 10 unless -f $project_path && -f $warnings_path;
 	my $invalid = _read_json($project_path);
 	ok(eval { Tavola::Project::Spec::Validator->validate($invalid); 1 }, 'invalid override project fixture validates');
 	open my $fh, '<', $warnings_path or die "Cannot open $warnings_path: $!";

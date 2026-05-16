@@ -154,6 +154,14 @@ type SQLMetaGenerateOptions struct {
 }
 
 func GenerateFromSQLMeta(meta *xmeta.MetaDatabase, opts SQLMetaGenerateOptions) (*Archive, error) {
+	spec, err := BuildTavolaSpecFromSQLMeta(meta, opts)
+	if err != nil {
+		return nil, err
+	}
+	return GenerateFromTavolaSpec(spec, opts.GenerateOptions)
+}
+
+func BuildTavolaSpecFromSQLMeta(meta *xmeta.MetaDatabase, opts SQLMetaGenerateOptions) (*Spec, error) {
 	if meta == nil {
 		return nil, fmt.Errorf("metadata database is nil")
 	}
@@ -178,7 +186,7 @@ func GenerateFromSQLMeta(meta *xmeta.MetaDatabase, opts SQLMetaGenerateOptions) 
 	if err != nil {
 		return nil, err
 	}
-	return generateFromExpandedApp(meta, expanded, diagnostics, opts.GenerateOptions)
+	return BuildTavolaSpecFromExpandedApp(meta, expanded, diagnostics, opts.GenerateOptions)
 }
 
 func GenerateFromExpandedApp(meta *xmeta.MetaDatabase, app *xmeta.ExpandedAppSpec, opts GenerateOptions) (*Archive, error) {
@@ -190,11 +198,15 @@ func GenerateFromExpandedAppWithDiagnostics(meta *xmeta.MetaDatabase, app *xmeta
 }
 
 func generateFromExpandedApp(meta *xmeta.MetaDatabase, app *xmeta.ExpandedAppSpec, diagnostics []xmeta.Diagnostic, opts GenerateOptions) (*Archive, error) {
-	spec, err := buildSpecFromExpandedApp(meta, app, diagnostics, opts)
+	spec, err := BuildTavolaSpecFromExpandedApp(meta, app, diagnostics, opts)
 	if err != nil {
 		return nil, err
 	}
 	return GenerateFromTavolaSpec(spec, opts)
+}
+
+func BuildTavolaSpecFromExpandedApp(meta *xmeta.MetaDatabase, app *xmeta.ExpandedAppSpec, diagnostics []xmeta.Diagnostic, opts GenerateOptions) (*Spec, error) {
+	return buildSpecFromExpandedApp(meta, app, diagnostics, opts)
 }
 
 func GenerateFromTavolaSpec(spec *Spec, opts GenerateOptions) (*Archive, error) {
