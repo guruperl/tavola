@@ -116,8 +116,6 @@ PY
     if command -v php >/dev/null 2>&1; then
       find "$out" -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
     fi
-  elif [[ "$target" == "perl" ]]; then
-    perl -I"$out/lib" -I"$ROOT/../perl" -c "$out/script/app" >/dev/null
   elif [[ "$target" == "go" ]]; then
     (
       cd "$out"

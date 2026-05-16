@@ -1,13 +1,15 @@
 package tavola
 
 import (
+	"cmp"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/genelet/sqlmeta/xmeta"
@@ -211,10 +213,10 @@ func buildGenerationModel(spec *Spec, opts GenerateOptions) (*generationModel, e
 			Name:      t.Name,
 			Key:       t.PrimaryKey,
 			AutoKey:   t.AutoKey,
-			Insert:    append([]string(nil), t.Insert...),
-			Edit:      append([]string(nil), t.Edit...),
-			Update:    append([]string(nil), t.Update...),
-			Topics:    append([]string(nil), t.Topics...),
+			Insert:    slices.Clone(t.Insert),
+			Edit:      slices.Clone(t.Edit),
+			Update:    slices.Clone(t.Update),
+			Topics:    slices.Clone(t.Topics),
 			Statement: strings.TrimSuffix(strings.TrimSpace(statement), ";"),
 			Comment:   t.Comment,
 		}
@@ -300,11 +302,7 @@ func buildGenerationModel(spec *Spec, opts GenerateOptions) (*generationModel, e
 			acl := aclForComponent(row, crud)
 			model.PublicACL = append(model.PublicACL, acl)
 		}
-		roleNames := make([]string, 0, len(comp.Roles))
-		for role := range comp.Roles {
-			roleNames = append(roleNames, role)
-		}
-		sort.Strings(roleNames)
+		roleNames := slices.Sorted(maps.Keys(comp.Roles))
 		for _, roleName := range roleNames {
 			crud := crudSet(comp.Roles[roleName])
 			if crud == "" {
@@ -341,8 +339,8 @@ func specText(baseDir, inline, path string) (string, error) {
 
 func componentJSONText(baseDir string, spec *Spec, comp Component, table tableRow) (string, error) {
 	if len(comp.ComponentJSON) > 0 {
-		if !json.Valid(comp.ComponentJSON) {
-			return "", fmt.Errorf("componentJson is invalid JSON")
+		if err := validateComponentJSONBytes(comp.Name, "componentJson", comp.ComponentJSON); err != nil {
+			return "", err
 		}
 		return string(comp.ComponentJSON) + "\n", nil
 	}
@@ -351,12 +349,117 @@ func componentJSONText(baseDir string, spec *Spec, comp Component, table tableRo
 		if err != nil {
 			return "", err
 		}
-		if !json.Valid(data) {
-			return "", fmt.Errorf("componentJsonFile %s is invalid JSON", comp.ComponentJSONFile)
+		if err := validateComponentJSONBytes(comp.Name, "componentJsonFile "+comp.ComponentJSONFile, data); err != nil {
+			return "", err
 		}
 		return string(data), nil
 	}
-	return mustJSON(componentJSONHash(spec, comp, table)), nil
+	text := mustJSON(componentJSONHash(spec, comp, table))
+	if err := validateComponentJSONBytes(comp.Name, "generated component JSON", []byte(text)); err != nil {
+		return "", err
+	}
+	return text, nil
+}
+
+func validateComponentJSONBytes(componentName, label string, data []byte) error {
+	var value any
+	if err := json.Unmarshal(data, &value); err != nil {
+		return fmt.Errorf("invalid component JSON override for %s (%s): %w", firstNonEmpty(componentName, "(unknown)"), label, err)
+	}
+	return validateComponentJSONValue(componentName, label, value)
+}
+
+func validateComponentJSONValue(componentName, label string, value any) error {
+	name := firstNonEmpty(componentName, "(unknown)")
+	var errors []string
+	jsonObject, ok := value.(map[string]any)
+	if !ok {
+		errors = append(errors, "must be a JSON object")
+	} else {
+		actions, ok := requireJSONObject(jsonObject, "actions", &errors)
+		requireJSONString(jsonObject, "current_table", &errors)
+		requireJSONString(jsonObject, "current_key", &errors)
+		for _, key := range []string{"edit_pars", "insert_pars", "update_pars", "topics_pars"} {
+			requireJSONStringArray(jsonObject, key, &errors)
+		}
+		if ok {
+			validateComponentActions(actions, &errors)
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("invalid component JSON for %s (%s): %s", name, label, strings.Join(errors, "; "))
+	}
+	return nil
+}
+
+func requireJSONObject(jsonObject map[string]any, key string, errors *[]string) (map[string]any, bool) {
+	value, ok := jsonObject[key]
+	if !ok {
+		*errors = append(*errors, key+" is required")
+		return nil, false
+	}
+	out, ok := value.(map[string]any)
+	if !ok {
+		*errors = append(*errors, key+" must be an object")
+		return nil, false
+	}
+	return out, true
+}
+
+func requireJSONString(jsonObject map[string]any, key string, errors *[]string) {
+	value, ok := jsonObject[key]
+	if !ok {
+		*errors = append(*errors, key+" is required")
+		return
+	}
+	if _, ok := value.(string); !ok {
+		*errors = append(*errors, key+" must be a string")
+	}
+}
+
+func requireJSONStringArray(jsonObject map[string]any, key string, errors *[]string) {
+	value, ok := jsonObject[key]
+	if !ok {
+		*errors = append(*errors, key+" is required")
+		return
+	}
+	items, ok := value.([]any)
+	if !ok {
+		*errors = append(*errors, key+" must be an array")
+		return
+	}
+	for i, item := range items {
+		if _, ok := item.(string); !ok {
+			*errors = append(*errors, fmt.Sprintf("%s[%d] must be a string", key, i))
+		}
+	}
+}
+
+func validateComponentActions(actions map[string]any, errors *[]string) {
+	names := slices.Sorted(maps.Keys(actions))
+	for _, name := range names {
+		action, ok := actions[name].(map[string]any)
+		if !ok {
+			*errors = append(*errors, "actions."+name+" must be an object")
+			continue
+		}
+		for _, key := range []string{"groups", "options"} {
+			value, ok := action[key]
+			if !ok {
+				continue
+			}
+			items, ok := value.([]any)
+			if !ok {
+				*errors = append(*errors, "actions."+name+"."+key+" must be an array")
+				continue
+			}
+			for i, item := range items {
+				if _, ok := item.(string); !ok {
+					*errors = append(*errors, fmt.Sprintf("actions.%s.%s[%d] must be a string", name, key, i))
+				}
+			}
+		}
+	}
 }
 
 func resolveSpecPath(baseDir, path string) string {
@@ -379,11 +482,7 @@ func componentJSONHash(spec *Spec, comp Component, table tableRow) map[string]an
 			actions[action]["groups"] = []string{spec.Project.PublicRole}
 		}
 	}
-	roleNames := make([]string, 0, len(comp.Roles))
-	for role := range comp.Roles {
-		roleNames = append(roleNames, role)
-	}
-	sort.Strings(roleNames)
+	roleNames := slices.Sorted(maps.Keys(comp.Roles))
 	for _, role := range roleNames {
 		for _, action := range comp.Roles[role] {
 			if _, ok := actions[action]; ok {
@@ -478,11 +577,11 @@ func buildOtherRows(model *generationModel, tablesByID map[int]tableRow) otherRo
 			})
 		}
 	}
-	sort.Slice(other.RoleLanding, func(i, j int) bool {
-		if other.RoleLanding[i].Component != other.RoleLanding[j].Component {
-			return other.RoleLanding[i].Component < other.RoleLanding[j].Component
-		}
-		return other.RoleLanding[i].Level < other.RoleLanding[j].Level
+	slices.SortFunc(other.RoleLanding, func(a, b roleLandingRow) int {
+		return cmp.Or(
+			cmp.Compare(a.Component, b.Component),
+			cmp.Compare(a.Level, b.Level),
+		)
 	})
 	return other
 }
@@ -553,8 +652,8 @@ func cloneIntrospection(in *Introspection) *Introspection {
 	}
 	out := &Introspection{
 		Source:         in.Source,
-		Warnings:       append([]string(nil), in.Warnings...),
-		WarningDetails: append([]xmeta.Diagnostic(nil), in.WarningDetails...),
+		Warnings:       slices.Clone(in.Warnings),
+		WarningDetails: slices.Clone(in.WarningDetails),
 	}
 	if out.Warnings == nil {
 		out.Warnings = []string{}

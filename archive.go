@@ -3,11 +3,12 @@ package tavola
 import (
 	"archive/tar"
 	"bytes"
+	"cmp"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func (a *Archive) AddMode(path string, data []byte, mode int64) {
 	if clean == "." || clean == "" || clean[0] == '/' || clean == ".." || strings.HasPrefix(clean, "../") {
 		panic(fmt.Sprintf("invalid archive path %q", path))
 	}
-	a.files[clean] = ArchiveFile{Path: clean, Data: append([]byte(nil), data...), Mode: mode}
+	a.files[clean] = ArchiveFile{Path: clean, Data: bytes.Clone(data), Mode: mode}
 }
 
 func (a *Archive) Files() []ArchiveFile {
@@ -50,7 +51,7 @@ func (a *Archive) Files() []ArchiveFile {
 	for _, file := range a.files {
 		files = append(files, file)
 	}
-	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
+	slices.SortFunc(files, func(a, b ArchiveFile) int { return cmp.Compare(a.Path, b.Path) })
 	return files
 }
 

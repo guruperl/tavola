@@ -1,9 +1,10 @@
 package tavola
 
 import (
+	"cmp"
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/genelet/sqlmeta/xmeta"
@@ -116,10 +117,10 @@ func buildSpecFromExpandedApp(meta *xmeta.MetaDatabase, expanded *xmeta.Expanded
 		}
 	}
 
-	sort.Slice(spec.Schema.Tables, func(i, j int) bool { return spec.Schema.Tables[i].Name < spec.Schema.Tables[j].Name })
-	sort.Slice(spec.Schema.Procedures, func(i, j int) bool { return spec.Schema.Procedures[i].Name < spec.Schema.Procedures[j].Name })
-	sort.Slice(spec.Components, func(i, j int) bool { return spec.Components[i].Name < spec.Components[j].Name })
-	sort.Slice(spec.Roles, func(i, j int) bool { return spec.Roles[i].Name < spec.Roles[j].Name })
+	slices.SortFunc(spec.Schema.Tables, func(a, b Table) int { return cmp.Compare(a.Name, b.Name) })
+	slices.SortFunc(spec.Schema.Procedures, func(a, b Procedure) int { return cmp.Compare(a.Name, b.Name) })
+	slices.SortFunc(spec.Components, func(a, b Component) int { return cmp.Compare(a.Name, b.Name) })
+	slices.SortFunc(spec.Roles, func(a, b Role) int { return cmp.Compare(a.Name, b.Name) })
 	warnings = append(warnings, expanded.GetWarnings()...)
 	diagnostics = append(diagnostics, expansionDiagnostics...)
 	setIntrospectionDiagnostics(spec.Introspection, warnings, diagnostics)
@@ -653,7 +654,7 @@ func resolveTable(name string, tables map[string]Table) string {
 			matches = append(matches, table)
 		}
 	}
-	sort.Strings(matches)
+	slices.Sort(matches)
 	if len(matches) == 1 {
 		return matches[0]
 	}
@@ -670,7 +671,7 @@ func resolveTableNameOnly(name string, tables map[string]bool) string {
 			matches = append(matches, table)
 		}
 	}
-	sort.Strings(matches)
+	slices.Sort(matches)
 	if len(matches) == 1 {
 		return matches[0]
 	}

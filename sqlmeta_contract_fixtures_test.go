@@ -3,11 +3,91 @@ package tavola
 import (
 	"encoding/json"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/genelet/sqlmeta/xmeta"
 )
+
+func TestSQLMetaProjectSpecAndGeneratedPHPArchive(t *testing.T) {
+	spec, err := LoadTavolaSpecFile("specs/sqlmeta.project.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateTavolaSpec(spec); err != nil {
+		t.Fatalf("ValidateTavolaSpec: %v", err)
+	}
+	if spec.Introspection == nil || spec.Introspection.Source != "sqlmeta" {
+		t.Fatalf("unexpected introspection: %#v", spec.Introspection)
+	}
+	warnings := strings.Join(spec.Introspection.Warnings, "\n")
+	for _, want := range []string{"manual primary key override", "without a login procedure"} {
+		if !strings.Contains(warnings, want) {
+			t.Fatalf("expected warning containing %q, got:\n%s", want, warnings)
+		}
+	}
+	codes := map[string]bool{}
+	for i, detail := range spec.Introspection.WarningDetails {
+		codes[detail.Code] = true
+		if detail.Code == "" || detail.Code == xmeta.DiagnosticUnknown {
+			t.Fatalf("warning detail has unstable code: %#v", detail)
+		}
+		if detail.Message != spec.Introspection.Warnings[i] {
+			t.Fatalf("warning detail message = %q, want %q", detail.Message, spec.Introspection.Warnings[i])
+		}
+	}
+	if !codes[xmeta.DiagnosticTableManualPK] || !codes[xmeta.DiagnosticAuthMissingLoginProcedure] {
+		t.Fatalf("missing expected warning codes: %#v", codes)
+	}
+	if spec.Project.PublicRole != "p" {
+		t.Fatalf("public role = %q", spec.Project.PublicRole)
+	}
+	tables := tablesByName(spec.Schema.Tables)
+	if tables["users"].PrimaryKey != "public_id" || tables["users"].AutoKey != "id" {
+		t.Fatalf("users key = %q auto = %q", tables["users"].PrimaryKey, tables["users"].AutoKey)
+	}
+	roles := rolesByName(spec.Roles)
+	role := roles["u"]
+	if role.Table != "users" || role.Fields.ID != "public_id" || role.Fields.Login != "email" || role.Fields.Password != "passwd" || role.Fields.FirstName != "firstname" || role.Fields.LastName != "lastname" {
+		t.Fatalf("unexpected auth role fields: %#v", role)
+	}
+	components := componentsByName(spec.Components)
+	if len(components["users"].Roles["u"]) == 0 || len(components["posts"].Roles["u"]) == 0 {
+		t.Fatalf("protected grants missing: %#v", components)
+	}
+	if len(components["audit_log"].Roles) != 0 {
+		t.Fatalf("audit_log should not have protected grants: %#v", components["audit_log"].Roles)
+	}
+	if !slices.Equal(components["posts"].Roles["u"], []string{"startnew", "insert", "edit", "update", "delete", "topics"}) {
+		t.Fatalf("posts role actions = %#v", components["posts"].Roles["u"])
+	}
+
+	archive, err := GenerateFromTavolaSpec(spec, GenerateOptions{Language: LanguagePHP, Deterministic: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := filesByPath(archive)
+	config := decodeArchiveJSON(t, files["conf/config.json"])
+	if config["Pubrole"] != "p" {
+		t.Fatalf("config Pubrole = %v", config["Pubrole"])
+	}
+	uConfig := config["Roles"].(map[string]any)["u"].(map[string]any)
+	if uConfig["Id_name"] != "public_id" {
+		t.Fatalf("config role Id_name = %v", uConfig["Id_name"])
+	}
+	if got := stringSliceFromAny(uConfig["Attributes"]); !slices.Equal(got, []string{"public_id", "email", "u_firstname", "u_lastname"}) {
+		t.Fatalf("config role attributes = %#v", got)
+	}
+	api := decodeArchiveJSON(t, files["api.json"])
+	if maybeJSONComponentAction(api, "users", "topics") == nil || maybeJSONComponentAction(api, "posts", "topics") == nil {
+		t.Fatalf("generated API missing users/posts components")
+	}
+	postsTopics := jsonComponentAction(t, api, "posts", "topics")
+	if got := slices.Sorted(slices.Values(stringSliceFromAny(postsTopics["allowed_groups"]))); !slices.Equal(got, []string{"p", "u"}) {
+		t.Fatalf("posts topics groups = %#v", got)
+	}
+}
 
 func TestManualPKFKProjectFixture(t *testing.T) {
 	spec := readContractProject(t, "manual_pk_fk")
@@ -37,6 +117,9 @@ func TestManualPKFKProjectFixture(t *testing.T) {
 
 func TestInvalidOverridesProjectFixture(t *testing.T) {
 	spec := readContractProject(t, "invalid_overrides")
+	if err := ValidateTavolaSpec(spec); err != nil {
+		t.Fatalf("ValidateTavolaSpec: %v", err)
+	}
 	if spec.Project.Name != "SqlmetaApp" || spec.Introspection == nil || spec.Introspection.Source != "sqlmeta" {
 		t.Fatalf("unexpected project fixture metadata: %#v", spec.Project)
 	}
@@ -66,6 +149,22 @@ func TestInvalidOverridesProjectFixture(t *testing.T) {
 		}
 	}
 	assertWarningSnapshot(t, "invalid_overrides", spec)
+}
+
+func tablesByName(tables []Table) map[string]Table {
+	out := map[string]Table{}
+	for _, table := range tables {
+		out[table.Name] = table
+	}
+	return out
+}
+
+func rolesByName(roles []Role) map[string]Role {
+	out := map[string]Role{}
+	for _, role := range roles {
+		out[role.Name] = role
+	}
+	return out
 }
 
 func TestMissingAuthTableErrorFixture(t *testing.T) {

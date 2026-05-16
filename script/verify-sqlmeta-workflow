@@ -104,7 +104,6 @@ run_fast() {
   (
     cd "$ROOT"
     env "${go_env[@]}" go test ./...
-    prove -Ilib -I../perl t/sqlmeta-output.t t/source-truth-json.t
     script/smoke-generated-project --spec specs/supportdesk.project.json --lang all
     script/smoke-sqlite-init
   )

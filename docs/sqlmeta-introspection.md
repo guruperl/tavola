@@ -123,8 +123,8 @@ Tavola-owned project JSON, warning snapshots, and
 `specs/sqlmeta.project.json`.
 
 `--fast` checks fixture drift, canonical `sqlmeta` tests, Tavola Go tests for
-direct `GenerateFromSQLMeta` and `cmd/tavola-generate` modes, compatibility Perl
-consumer tests, and the generated-app and SQLite init smoke checks above.
+direct `GenerateFromSQLMeta`, `cmd/tavola-generate`, compatibility JSON
+generation, and the generated-app and SQLite init smoke checks above.
 
 `--integration` runs the Docker-backed `molecule/rdb` and `golet/genesis`
 harnesses plus `golet` vet. `--all` runs both paths and remains the default

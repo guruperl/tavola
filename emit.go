@@ -4,8 +4,9 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -266,7 +267,7 @@ func apiManifest(model *generationModel) map[string]any {
 			manifestActions = append(manifestActions, map[string]any{
 				"name":           action,
 				"allowed_groups": groups,
-				"public":         contains(groups, model.Project.PublicRole),
+				"public":         slices.Contains(groups, model.Project.PublicRole),
 				"options":        nonNilStrings(toStringSlice(item["options"])),
 				"request_params": nonNilStrings(requestParams(action, jsonData)),
 				"primary_key":    jsonData["current_key"],
@@ -344,7 +345,7 @@ func openAPIDocument(manifest map[string]any) map[string]any {
 			map[string]any{"name": "role", "in": "path", "required": true, "schema": map[string]any{"type": "string", "enum": roles}},
 			map[string]any{"name": "action", "in": "query", "required": true, "schema": map[string]any{"type": "string", "enum": actions}},
 		)
-		for _, param := range sortedKeys(params) {
+		for _, param := range slices.Sorted(maps.Keys(params)) {
 			parameters = append(parameters, map[string]any{"name": param, "in": "query", "required": false, "schema": params[param]})
 		}
 		paths[script+"/{role}/json/"+name] = map[string]any{"get": map[string]any{
@@ -526,29 +527,20 @@ func actionNames(actions map[string]any) []string {
 			seen[action] = true
 		}
 	}
+	customStart := len(out)
 	for key := range actions {
 		if !seen[key] {
 			out = append(out, key)
 		}
 	}
-	sort.Strings(out[len(standardIntersection(actions)):])
-	return out
-}
-
-func standardIntersection(actions map[string]any) []string {
-	var out []string
-	for _, action := range []string{"topics", "startnew", "insert", "edit", "update", "delete"} {
-		if _, ok := actions[action]; ok {
-			out = append(out, action)
-		}
-	}
+	slices.Sort(out[customStart:])
 	return out
 }
 
 func toStringSlice(value any) []string {
 	switch v := value.(type) {
 	case []string:
-		return append([]string(nil), v...)
+		return slices.Clone(v)
 	case []any:
 		out := make([]string, 0, len(v))
 		for _, item := range v {
@@ -584,24 +576,6 @@ func requestParams(action string, jsonData map[string]any) []string {
 
 func example(script, role, tag, component, action string) string {
 	return script + "/" + role + "/" + tag + "/" + component + "?action=" + action
-}
-
-func contains(values []string, want string) bool {
-	for _, value := range values {
-		if value == want {
-			return true
-		}
-	}
-	return false
-}
-
-func sortedKeys(m map[string]any) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func tavolaResponses() map[string]any {

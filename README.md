@@ -21,12 +21,10 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 - `script/` contains compatibility wrappers and smoke checks.
 - `assets/` contains static assets copied into generated applications.
 - `conf/` contains application configuration and database seed SQL.
-- `lib/Tavola/Project/` contains remaining Perl JSON/schema helpers.
 - `specs/` contains JSON project specs and fixture SQL.
 
 ## Requirements
 
-- Perl 5
 - Go 1.25+
 - JSON
 - PDO and the PDO driver for generated PHP apps, when running generated PHP
@@ -82,8 +80,9 @@ script/generate-project \
 `jenny` is used here as the generated app name and output path. It marks an app
 produced by Tavola; it is not a Tavola subsystem or package.
 
-Use `--lang perl` for Perl output, `--lang go` for Go/Genelet output, and
-`--tar PATH` instead of `--out PATH` to write an archive without extracting it.
+Use `--lang perl` for Perl output emitted by the Go generator, `--lang go` for
+Go/Genelet output, and `--tar PATH` instead of `--out PATH` to write an archive
+without extracting it.
 The legacy Perl generator has been removed; `script/generate-project` now
 delegates to the Go `cmd/tavola-generate` implementation. The compatibility
 `--no-web-ui` flag is accepted by the wrapper, but the Go generator currently
@@ -187,35 +186,15 @@ the JSON spec. See [Custom Code Overlays](docs/custom-code-overlays.md).
 
 ## Development Checks
 
-Compile the remaining Perl support modules and Go generator:
+Run the Go generator and compatibility regression tests:
 
 ```bash
-find lib -name '*.pm' | sort | while read -r f; do
-  perl -Ilib -I../perl -c "$f" >/dev/null || exit 1
-done
-
 GOWORK=off go test ./...
 ```
 
-Run generated-output regression tests:
+Run generated-output smoke checks:
 
 ```bash
-prove -Ilib -I../perl t/*.t
-```
-
-`t/db-export-parity.t` is skipped by default. Enable it only when a disposable
-Tavola metadata database is configured; it imports `specs/smoke.project.json`
-with replace semantics, exports from the DB, and compares `api.json` against
-direct spec generation:
-
-```bash
-TAVOLA_RUN_DB_PARITY=1 TAVOLA_DB_USER=... TAVOLA_DB_PASS=... \
-prove -Ilib -I../perl t/db-export-parity.t
-```
-
-Run the Genelet framework tests from this checkout when the sibling `../perl`
-repository is present:
-
-```bash
-prove -I../perl ../perl/Genelet/Test/*.t
+script/smoke-generated-project --spec specs/project.template.json --lang all --no-web-ui
+script/smoke-sqlite-init
 ```
