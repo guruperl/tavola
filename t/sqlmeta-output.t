@@ -22,6 +22,8 @@ like(join("\n", @{$spec->{introspection}->{warnings}}), qr/without a login proce
 my @warning_codes = map { $_->{code} } @{$spec->{introspection}->{warningDetails}};
 ok(grep { $_ eq 'table_manual_primary_key' } @warning_codes, 'manual PK warning code is preserved');
 ok(grep { $_ eq 'auth_missing_login_procedure' } @warning_codes, 'missing login procedure warning code is preserved');
+ok(!grep { !defined $_ || $_ eq '' || $_ eq 'unknown' } @warning_codes, 'reviewed spec warning codes are known');
+is_deeply([ map { $_->{message} } @{$spec->{introspection}->{warningDetails}} ], $spec->{introspection}->{warnings}, 'reviewed spec warning detail messages mirror warning strings');
 
 is($spec->{project}->{publicRole}, 'p', 'public role remains p');
 
