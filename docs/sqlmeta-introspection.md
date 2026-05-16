@@ -100,19 +100,23 @@ login procedure binding in generated config and API metadata.
 
 ## Local Verification
 
-Until the packages are ready for release CI, run the local cross-repo workflow
-from this repo:
+Run the local cross-repo workflow from this repo:
 
 ```bash
-script/verify-sqlmeta-workflow
+script/verify-sqlmeta-workflow --fast
+script/verify-sqlmeta-workflow --integration
+script/verify-sqlmeta-workflow --all
 ```
 
 The script first runs `../sqlmeta/script/refresh-contract-fixtures`, which
 refreshes the canonical `manual_pk_fk` green fixture, the `invalid_overrides`
 warning fixture, and the `missing_auth_table` error snapshots. Only
-`manual_pk_fk` is synced to `specs/sqlmeta.project.json`. The workflow then
-checks fixture drift, canonical `sqlmeta` tests, Docker-backed `molecule/rdb`
-and `golet/genesis` harnesses, `golet` vet, and Tavola's
-`t/sqlmeta-output.t` and `t/source-truth-json.t` consumer tests against the
-shared contract fixtures and reviewed JSON source-of-truth fixture. It also
-runs the generated-app and SQLite init smoke checks above.
+`manual_pk_fk` is synced to `specs/sqlmeta.project.json`.
+
+`--fast` checks fixture drift, canonical `sqlmeta` tests, Tavola's
+`t/sqlmeta-output.t` and `t/source-truth-json.t` consumer tests, and the
+generated-app and SQLite init smoke checks above.
+
+`--integration` runs the Docker-backed `molecule/rdb` and `golet/genesis`
+harnesses plus `golet` vet. `--all` runs both paths and remains the default
+when no mode is provided.

@@ -3,6 +3,42 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKSPACE="$(cd "$ROOT/.." && pwd)"
+MODE="all"
+
+usage() {
+  cat <<'USAGE'
+Usage: script/verify-sqlmeta-workflow [--fast|--integration|--all]
+
+Modes:
+  --fast         Refresh/check contract drift, run sqlmeta tests, and run Tavola
+                 consumer/source-of-truth/generated-app smoke checks.
+  --integration  Run Docker-backed molecule/golet harnesses and golet vet.
+  --all          Run fast and integration checks. Default.
+USAGE
+}
+
+while (($#)); do
+  case "$1" in
+    --fast)
+      MODE="fast"
+      ;;
+    --integration)
+      MODE="integration"
+      ;;
+    --all)
+      MODE="all"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 go_env=(
   GIT_CONFIG_COUNT=1
@@ -59,16 +95,34 @@ check_contract_drift() {
   fi
 }
 
-run_go "$WORKSPACE/sqlmeta" ./script/refresh-contract-fixtures
-check_contract_drift
-run_go "$WORKSPACE/sqlmeta" go test ./...
-run_go "$WORKSPACE/molecule" env MOLECULE_MYSQL_PORT="${MOLECULE_MYSQL_PORT:-3330}" MOLECULE_POSTGRES_PORT="${MOLECULE_POSTGRES_PORT:-5456}" ./scripts/harness-test.sh ./...
-run_go "$WORKSPACE/golet" env GOLET_MYSQL_PORT="${GOLET_MYSQL_PORT:-3331}" GOLET_POSTGRES_PORT="${GOLET_POSTGRES_PORT:-5457}" ./scripts/harness-test.sh ./...
-run_go "$WORKSPACE/golet" go vet ./...
+run_fast() {
+  run_go "$WORKSPACE/sqlmeta" ./script/refresh-contract-fixtures
+  check_contract_drift
+  run_go "$WORKSPACE/sqlmeta" go test ./...
 
-(
-  cd "$ROOT"
-  prove -Ilib -I../perl t/sqlmeta-output.t t/source-truth-json.t
-  script/smoke-generated-project --spec specs/supportdesk.project.json --lang all
-  script/smoke-sqlite-init
-)
+  (
+    cd "$ROOT"
+    prove -Ilib -I../perl t/sqlmeta-output.t t/source-truth-json.t
+    script/smoke-generated-project --spec specs/supportdesk.project.json --lang all
+    script/smoke-sqlite-init
+  )
+}
+
+run_integration() {
+  run_go "$WORKSPACE/molecule" env MOLECULE_MYSQL_PORT="${MOLECULE_MYSQL_PORT:-3330}" MOLECULE_POSTGRES_PORT="${MOLECULE_POSTGRES_PORT:-5456}" ./scripts/harness-test.sh ./...
+  run_go "$WORKSPACE/golet" env GOLET_MYSQL_PORT="${GOLET_MYSQL_PORT:-3331}" GOLET_POSTGRES_PORT="${GOLET_POSTGRES_PORT:-5457}" ./scripts/harness-test.sh ./...
+  run_go "$WORKSPACE/golet" go vet ./...
+}
+
+case "$MODE" in
+  fast)
+    run_fast
+    ;;
+  integration)
+    run_integration
+    ;;
+  all)
+    run_fast
+    run_integration
+    ;;
+esac
