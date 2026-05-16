@@ -1,0 +1,302 @@
+{
+  "version": 1,
+  "owner": {
+    "login": "support",
+    "email": "support@example.test",
+    "typeid": 1
+  },
+  "project": {
+    "name": "SupportDesk",
+    "script": "/support/app.php",
+    "publicRole": "p",
+    "default": {
+      "component": "tickets",
+      "action": "topics"
+    }
+  },
+  "datasource": {
+    "type": "SQLite",
+    "nickname": "supportdesk",
+    "database": "supportdesk.sqlite",
+    "path": "data/supportdesk.sqlite"
+  },
+  "schema": {
+    "tables": [
+      {
+        "name": "audit_events",
+        "primaryKey": "id",
+        "autoKey": "id",
+        "statement": "CREATE TABLE audit_events (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  event_type TEXT NOT NULL,\n  body TEXT NOT NULL,\n  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n)",
+        "insert": [
+          "event_type",
+          "body",
+          "created_at"
+        ],
+        "edit": [
+          "id",
+          "event_type",
+          "body",
+          "created_at"
+        ],
+        "update": [
+          "id",
+          "event_type",
+          "body",
+          "created_at"
+        ],
+        "topics": [
+          "id",
+          "event_type",
+          "body",
+          "created_at"
+        ]
+      },
+      {
+        "name": "teams",
+        "primaryKey": "id",
+        "autoKey": "id",
+        "statement": "CREATE TABLE teams (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  name TEXT NOT NULL UNIQUE,\n  owner_user_id INTEGER NOT NULL,\n  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  FOREIGN KEY (owner_user_id) REFERENCES users(id)\n)",
+        "insert": [
+          "name",
+          "owner_user_id",
+          "created_at"
+        ],
+        "edit": [
+          "id",
+          "name",
+          "owner_user_id",
+          "created_at"
+        ],
+        "update": [
+          "id",
+          "name",
+          "owner_user_id",
+          "created_at"
+        ],
+        "topics": [
+          "id",
+          "name",
+          "owner_user_id",
+          "created_at"
+        ]
+      },
+      {
+        "name": "ticket_notes",
+        "primaryKey": "id",
+        "autoKey": "id",
+        "statement": "CREATE TABLE ticket_notes (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  ticket_id INTEGER NOT NULL,\n  author_user_id INTEGER NOT NULL,\n  body TEXT NOT NULL,\n  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  FOREIGN KEY (ticket_id) REFERENCES tickets(id),\n  FOREIGN KEY (author_user_id) REFERENCES users(id)\n)",
+        "insert": [
+          "ticket_id",
+          "author_user_id",
+          "body",
+          "created_at"
+        ],
+        "edit": [
+          "id",
+          "ticket_id",
+          "author_user_id",
+          "body",
+          "created_at"
+        ],
+        "update": [
+          "id",
+          "ticket_id",
+          "author_user_id",
+          "body",
+          "created_at"
+        ],
+        "topics": [
+          "id",
+          "ticket_id",
+          "author_user_id",
+          "body",
+          "created_at"
+        ]
+      },
+      {
+        "name": "tickets",
+        "primaryKey": "id",
+        "autoKey": "id",
+        "statement": "CREATE TABLE tickets (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  team_id INTEGER NOT NULL,\n  reporter_user_id INTEGER NOT NULL,\n  assignee_user_id INTEGER,\n  subject TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'open',\n  priority TEXT NOT NULL DEFAULT 'normal',\n  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  FOREIGN KEY (team_id) REFERENCES teams(id),\n  FOREIGN KEY (reporter_user_id) REFERENCES users(id),\n  FOREIGN KEY (assignee_user_id) REFERENCES users(id)\n)",
+        "insert": [
+          "team_id",
+          "reporter_user_id",
+          "assignee_user_id",
+          "subject",
+          "status",
+          "priority",
+          "created_at"
+        ],
+        "edit": [
+          "id",
+          "team_id",
+          "reporter_user_id",
+          "assignee_user_id",
+          "subject",
+          "status",
+          "priority",
+          "created_at"
+        ],
+        "update": [
+          "id",
+          "team_id",
+          "reporter_user_id",
+          "assignee_user_id",
+          "subject",
+          "status",
+          "priority",
+          "created_at"
+        ],
+        "topics": [
+          "id",
+          "team_id",
+          "reporter_user_id",
+          "assignee_user_id",
+          "subject",
+          "status",
+          "priority",
+          "created_at"
+        ]
+      },
+      {
+        "name": "users",
+        "primaryKey": "id",
+        "autoKey": "id",
+        "statement": "CREATE TABLE users (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  email TEXT NOT NULL UNIQUE,\n  passwd TEXT NOT NULL,\n  firstname TEXT,\n  lastname TEXT,\n  status TEXT NOT NULL DEFAULT 'active'\n)",
+        "insert": [
+          "email",
+          "passwd",
+          "firstname",
+          "lastname",
+          "status"
+        ],
+        "edit": [
+          "id",
+          "email",
+          "passwd",
+          "firstname",
+          "lastname",
+          "status"
+        ],
+        "update": [
+          "id",
+          "email",
+          "passwd",
+          "firstname",
+          "lastname",
+          "status"
+        ],
+        "topics": [
+          "id",
+          "email",
+          "firstname",
+          "lastname",
+          "status"
+        ]
+      }
+    ],
+    "procedures": [
+      {
+        "name": "proc_u_login",
+        "table": "users",
+        "statement": "SELECT id, email, firstname, lastname FROM users WHERE email = ? AND passwd = ? AND status = 'active'"
+      }
+    ]
+  },
+  "roles": [
+    {
+      "name": "u",
+      "description": "Support desk agent",
+      "authen": "db",
+      "isAdmin": 0,
+      "isAuto": 1,
+      "table": "users",
+      "default": {
+        "component": "tickets",
+        "action": "topics"
+      },
+      "fields": {
+        "id": "id",
+        "login": "email",
+        "password": "passwd",
+        "firstname": "firstname",
+        "lastname": "lastname"
+      },
+      "restriction": "status = 'active'"
+    }
+  ],
+  "components": [
+    {
+      "name": "audit_events",
+      "description": "Operational audit events",
+      "table": "audit_events",
+      "public": [
+        "topics"
+      ]
+    },
+    {
+      "name": "teams",
+      "description": "Support teams",
+      "table": "teams",
+      "roles": {
+        "u": [
+          "startnew",
+          "insert",
+          "edit",
+          "update",
+          "delete",
+          "topics"
+        ]
+      }
+    },
+    {
+      "name": "ticket_notes",
+      "description": "Ticket discussion notes",
+      "table": "ticket_notes",
+      "roles": {
+        "u": [
+          "startnew",
+          "insert",
+          "edit",
+          "update",
+          "delete",
+          "topics"
+        ]
+      }
+    },
+    {
+      "name": "tickets",
+      "description": "Support tickets",
+      "table": "tickets",
+      "public": [
+        "topics"
+      ],
+      "roles": {
+        "u": [
+          "startnew",
+          "insert",
+          "edit",
+          "update",
+          "delete",
+          "topics"
+        ]
+      }
+    },
+    {
+      "name": "users",
+      "description": "Support users",
+      "table": "users",
+      "roles": {
+        "u": [
+          "edit",
+          "update",
+          "topics"
+        ]
+      }
+    }
+  ],
+  "overlays": {},
+  "introspection": {
+    "source": "sqlmeta"
+  }
+}

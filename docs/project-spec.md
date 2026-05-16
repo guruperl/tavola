@@ -4,9 +4,11 @@ Tavola project specs describe the generated application. The JSON spec is the
 source of truth for runtime config, database metadata, roles, components,
 allowed actions, and optional generated-code overlays.
 
-Start from `specs/project.template.json`. It contains a small app with a public
-role `p`, a non-public login role `u`, a login table, one login procedure, and
-one protected component.
+Start from `specs/project.template.json` for a minimal hand-written app, or
+from `specs/supportdesk.project.json` for a reviewed sqlmeta-generated
+source-of-truth example. The template contains a small app with a public role
+`p`, a non-public login role `u`, a login table, one login procedure, and one
+protected component.
 
 For specs generated from an existing database, use sqlmeta's
 `tavola-introspect` bridge. See [`sqlmeta-introspection.md`](sqlmeta-introspection.md).

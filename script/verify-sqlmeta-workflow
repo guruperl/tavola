@@ -68,5 +68,5 @@ run_go "$WORKSPACE/golet" go vet ./...
 
 (
   cd "$ROOT"
-  prove -Ilib -I../perl t/sqlmeta-output.t
+  prove -Ilib -I../perl t/sqlmeta-output.t t/source-truth-json.t
 )

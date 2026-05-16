@@ -64,6 +64,25 @@ GOWORK=off go run ./cmd/tavola-introspect \
   `--auth-procedure` and `--auth-procedure-sql` to emit `schema.procedures`;
   otherwise sqlmeta emits a warning and Tavola keeps the role for review.
 
+## Reviewed Source-Of-Truth
+
+`specs/supportdesk.project.json` is the current reviewed source-of-truth
+example. It was generated from `specs/supportdesk/schema.sql` with
+`tavola-introspect`, then edited as an application contract: the landing route,
+role restriction, login SQL, descriptions, and public/protected component
+actions are deliberate JSON decisions. Do not regenerate over that file without
+reviewing the application-level changes again.
+
+The package boundary is:
+
+- `sqlmeta` owns database introspection, neutral `ExpandedAppSpec` contract
+  fixtures, FK role expansion, and Tavola JSON draft generation.
+- `tavola` owns reviewed Tavola project JSON as the app source-of-truth and
+  proves generation from that JSON.
+- `molecule` and `golet` continue to consume `sqlmeta` at the metadata/loader
+  level. They should not consume `ExpandedAppSpec` directly until they need app
+  intent semantics such as Tavola-style role grants or component CRUD policy.
+
 ## Local Verification
 
 Until the packages are ready for release CI, run the local cross-repo workflow
@@ -79,4 +98,5 @@ warning fixture, and the `missing_auth_table` error snapshots. Only
 `manual_pk_fk` is synced to `specs/sqlmeta.project.json`. The workflow then
 checks fixture drift, canonical `sqlmeta` tests, Docker-backed `molecule/rdb`
 and `golet/genesis` harnesses, `golet` vet, and Tavola's
-`t/sqlmeta-output.t` consumer test against the shared contract fixtures.
+`t/sqlmeta-output.t` and `t/source-truth-json.t` consumer tests against the
+shared contract fixtures and reviewed JSON source-of-truth fixture.
