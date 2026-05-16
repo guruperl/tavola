@@ -16,17 +16,13 @@ trap 'rm -rf "$TMP"' EXIT
 
 python3 - "$SOURCE_SCHEMA" "$TMP/generated/conf/init.sql" <<'PY'
 import pathlib
-import re
 import sqlite3
 import sys
 
 source_schema = pathlib.Path(sys.argv[1]).read_text()
 generated_init = pathlib.Path(sys.argv[2]).read_text()
 
-# The generated init file also carries stored-procedure text. SQLite has no
-# stored procedures, so this smoke check validates the table DDL contract.
-generated_tables = re.split(r"\nDROP PROCEDURE IF EXISTS ", generated_init, maxsplit=1)[0]
-if not generated_tables.strip():
+if not generated_init.strip():
     raise SystemExit("generated init.sql has no table DDL")
 
 
@@ -65,7 +61,7 @@ def quote_ident(value):
 
 
 source = load(source_schema)
-generated = load(generated_tables)
+generated = load(generated_init)
 
 source_tables = table_names(source)
 generated_tables = table_names(generated)

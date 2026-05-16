@@ -52,17 +52,6 @@ sub add_to_tar {
 
 	$tar->add_data('www/genelet.js', $self->_read_asset('assets/genelet.js')) if $self->{web_ui};
 
-	my $str = '';
-	for my $hash (@{$one->{table_topics}}) {
-		$str .= "\nDROP TABLE IF EXISTS " . $hash->{table_name} . ";\n" . $hash->{statement} . ";\n\n";
-	}
-	for my $hash (@{$one->{stored_topics}}) {
-		$str .= "\nDROP PROCEDURE IF EXISTS " . $hash->{procedure_name} . ";\n"
-			. "DELIMITER //\n"
-			. $hash->{statement} . "//\n"
-			. "DELIMITER ;\n\n";
-	}
-
 	my $project = {};
 	$project->{$_} = $one->{$_} for (qw(memberid filter model config_json Document_root Project Server_url Script Template Uploaddir Pubrole def_component def_action ds));
 	$project->{$_} = $one->{$_} for (qw(dbtype dbname dbuser dbpass host port Log_file));
@@ -74,7 +63,7 @@ sub add_to_tar {
 		lists      => $one->{role_topics},
 	);
 
-	$tar->add_data('conf/init.sql', $str);
+	$tar->add_data('conf/init.sql', $self->_init_sql($one, $project));
 	$tar->add_data('logs/debug.log', '');
 	$tar->chmod('logs/debug.log', '777');
 	$tar->add_data('conf/config.json', $one->{config_json});
@@ -112,6 +101,53 @@ sub add_to_tar {
 		}
 	}
 	return;
+}
+
+sub _init_sql {
+	my ($self, $one, $project) = @_;
+	my $str = '';
+	for my $hash (@{$one->{table_topics}}) {
+		$str .= "\nDROP TABLE IF EXISTS " . $hash->{table_name} . ";\n" . $hash->{statement} . ";\n\n";
+	}
+	$str .= $self->_procedure_init_sql($one->{stored_topics} || [], $project->{dbtype});
+	return $str;
+}
+
+sub _procedure_init_sql {
+	my ($self, $procedures, $dbtype) = @_;
+	return '' unless @$procedures;
+
+	my $family = $self->_db_family($dbtype);
+	if ($family eq 'sqlite') {
+		my $str = "\n-- SQLite does not support stored procedure DDL.\n";
+		for my $hash (@$procedures) {
+			$str .= "-- Procedure " . $hash->{procedure_name} . " is exposed in config/API only.\n";
+		}
+		return $str . "\n";
+	}
+
+	my $str = '';
+	for my $hash (@$procedures) {
+		if ($family eq 'postgresql') {
+			$str .= "\nDROP PROCEDURE IF EXISTS " . $hash->{procedure_name} . ";\n" . $hash->{statement} . ";\n\n";
+		} else {
+			$str .= "\nDROP PROCEDURE IF EXISTS " . $hash->{procedure_name} . ";\n"
+				. "DELIMITER //\n"
+				. $hash->{statement} . "//\n"
+				. "DELIMITER ;\n\n";
+		}
+	}
+	return $str;
+}
+
+sub _db_family {
+	my ($self, $type) = @_;
+	my $normalized = lc($type || 'mysql');
+	$normalized =~ s/[^a-z0-9]//g;
+	return 'mysql' if $normalized eq 'mysql' || $normalized eq 'mariadb';
+	return 'postgresql' if $normalized eq 'postgresql' || $normalized eq 'postgres' || $normalized eq 'pgsql';
+	return 'sqlite' if $normalized eq 'sqlite' || $normalized eq 'sqlite3';
+	return 'mysql';
 }
 
 sub _add_php_project {

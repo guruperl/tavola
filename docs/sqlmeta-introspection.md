@@ -91,12 +91,12 @@ script/smoke-sqlite-init
 ```
 
 `smoke-generated-project` validates the exported PHP and Perl project packages.
-`smoke-sqlite-init` regenerates a PHP package, executes the table DDL from
+`smoke-sqlite-init` regenerates a PHP package, executes the full generated
 `conf/init.sql` in an in-memory SQLite database, compares that schema against
 `specs/supportdesk/schema.sql`, and inserts linked rows through the generated
-foreign keys. Stored procedure DDL is intentionally outside that SQLite smoke:
-the current exporter emits procedure wrappers for engines that support stored
-procedures, while SQLite auth procedure semantics remain a runtime/login concern.
+foreign keys. SQLite does not support stored procedure DDL, so the exporter
+emits comments for those procedures in SQLite init SQL while preserving the
+login procedure binding in generated config and API metadata.
 
 ## Local Verification
 

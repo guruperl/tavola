@@ -66,8 +66,12 @@ for my $lang (qw(php perl)) {
 	is_deeply(\@errors, [], "$lang generated api.json matches schema");
 	is($api->{project}->{name}, 'SupportDesk', "$lang generated API uses reviewed source");
 	is($api->{project}->{default}->{component}, 'tickets', "$lang generated API keeps reviewed default");
+	my %roles = map { $_->{name} => $_ } @{$api->{roles}};
+	is($roles{u}->{login}->{sql}, 'proc_u_login', "$lang generated API keeps SQLite login procedure binding");
 	_assert_component_actions($api, $lang);
-	ok(-s "$out/conf/init.sql", "$lang generated init.sql from reviewed source");
+	my $init_sql = _read_text("$out/conf/init.sql");
+	like($init_sql, qr/SQLite does not support stored procedure DDL/, "$lang generated SQLite init documents omitted procedure DDL");
+	unlike($init_sql, qr/DROP PROCEDURE|DELIMITER/, "$lang generated SQLite init avoids non-SQLite procedure syntax");
 	ok(-s "$out/openapi.json", "$lang generated openapi.json from reviewed source");
 }
 
@@ -96,6 +100,15 @@ sub _read_json {
 	my $json = <$fh>;
 	close $fh or die "Cannot close $path: $!";
 	return decode_json($json);
+}
+
+sub _read_text {
+	my $path = shift;
+	open my $fh, '<', $path or die "Cannot open $path: $!";
+	local $/;
+	my $text = <$fh>;
+	close $fh or die "Cannot close $path: $!";
+	return $text;
 }
 
 sub _sorted {

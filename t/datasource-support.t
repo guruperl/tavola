@@ -48,6 +48,12 @@ like(
 	'SQLite Perl output uses Genelet::SQLite',
 );
 
+my $exporter = Tavola::Project::Exporter->new();
+my $procedure = [{ procedure_name => 'proc_login', statement => 'CREATE PROCEDURE proc_login() SELECT 1' }];
+like($exporter->_procedure_init_sql($procedure, 'MySQL'), qr/DELIMITER \/\/.*proc_login\(\) SELECT 1\/\/.*DELIMITER ;/s, 'MySQL init keeps delimiter procedure wrapper');
+like($exporter->_procedure_init_sql($procedure, 'PostgreSQL'), qr/DROP PROCEDURE IF EXISTS proc_login;\nCREATE PROCEDURE proc_login\(\) SELECT 1;/, 'PostgreSQL init emits plain procedure DDL');
+unlike($exporter->_procedure_init_sql($procedure, 'SQLite'), qr/DROP PROCEDURE|DELIMITER/, 'SQLite init omits stored procedure DDL');
+
 my $sqlite_spec = _sqlite_spec();
 ok(eval { Tavola::Project::Spec::Validator->validate($sqlite_spec); 1 }, 'SQLite datasource validates without host/user/password');
 
