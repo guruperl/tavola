@@ -207,15 +207,9 @@ Use this path only when migrating or testing the old DB-backed workflow:
 JSON spec -> import-project-spec -> Tavola metadata DB -> export-project
 ```
 
-`conf/init.sql` initializes that Tavola metadata database. It does not create
-the generated app's runtime schema or add authentication tables to an existing
-application database.
-
-Initialize the Tavola metadata database:
-
-```bash
-mysql -u root tavola < conf/init.sql
-```
+Use an existing compatible metadata database when exercising this path. The
+generated app's runtime schema is still emitted into the exported app's own
+`conf/init.sql`; that generated file is separate from the legacy metadata DB.
 
 Import or replace a project in the metadata database:
 
