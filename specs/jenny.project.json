@@ -134,28 +134,28 @@
       "description": "Poll questions",
       "table": "poll_question",
       "public": ["startnew", "edit", "topics"],
-      "componentJsonFile": "../jenny/src/question/component.json"
+      "componentJsonFile": "jenny/src/question/component.json"
     },
     {
       "name": "choice",
       "description": "Poll choices",
       "table": "poll_choice",
       "public": ["startnew", "update", "topics"],
-      "componentJsonFile": "../jenny/src/choice/component.json"
+      "componentJsonFile": "jenny/src/choice/component.json"
     },
     {
       "name": "car",
       "description": "Vehicle recalls",
       "table": "Book3_csv",
       "public": ["startnew", "edit", "topics"],
-      "componentJsonFile": "../jenny/src/car/component.json"
+      "componentJsonFile": "jenny/src/car/component.json"
     }
   ],
   "overlays": {
     "components": {
       "car": {
-        "filterFile": "../jenny/src/car/Filter.php",
-        "modelFile": "../jenny/src/car/Model.php"
+        "filterFile": "jenny/src/car/Filter.php",
+        "modelFile": "jenny/src/car/Model.php"
       }
     }
   }
