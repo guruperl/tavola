@@ -18,7 +18,7 @@ my $repo = abs_path("$Bin/..");
 my $tmp = tempdir('tavola-generated-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $schema = _read_json("$repo/docs/api.schema.json");
 
-for my $lang (qw(php perl)) {
+for my $lang (qw(php perl go)) {
 	my $out = _generate($lang);
 	my $api = _read_json("$out/api.json");
 	my $openapi = _read_json("$out/openapi.json");
@@ -107,6 +107,14 @@ sub _assert_config {
 	is($config->{Project}, 'ExampleApp', "$lang config project");
 	is($config->{Pubrole}, 'p', "$lang config public role");
 	ok($config->{Roles}->{u}, "$lang config u role");
+	if ($lang eq 'go') {
+		ok(!$config->{Db}, "$lang config omits PHP/Perl Db");
+		is_deeply($config->{ConnectArray}, [ 'mysql', '${APP_DB_USER}', '${APP_DB_PASSWORD}', '127.0.0.1', '3306', 'example' ], "$lang config uses structured Go ConnectArray");
+		is($config->{ServerURL}, 'http://example.localhost', "$lang config uses Go ServerURL key");
+		is($config->{DocumentRoot}, '/tmp/tavola/generated/example/www', "$lang config uses Go DocumentRoot key");
+		is($config->{UploadDir}, '/tmp/tavola/generated/example/www/upload', "$lang config uses Go UploadDir key");
+		is($config->{Chartags}->{json}->{ContentType}, "application/json; charset='UTF-8'", "$lang config uses Go chartag content type key");
+	}
 
 	my $role = $config->{Roles}->{u};
 	is($role->{Id_name}, 'user_id', "$lang config role id");
@@ -117,8 +125,10 @@ sub _assert_config {
 	ok($issuer, "$lang config db issuer");
 	is($issuer->{Sql}, 'proc_example_u', "$lang config db issuer sql");
 	is_deeply($issuer->{Credential}, [ qw(email passwd direct tu) ], "$lang config db credentials");
-	is_deeply($issuer->{In_pars}, [ qw(email passwd) ], "$lang config db input params");
-	is_deeply($issuer->{Out_pars}, [ qw(user_id email u_firstname u_lastname) ], "$lang config db output params");
+	my $in_key = $lang eq 'go' ? 'InPars' : 'In_pars';
+	my $out_key = $lang eq 'go' ? 'OutPars' : 'Out_pars';
+	is_deeply($issuer->{$in_key}, [ qw(email passwd) ], "$lang config db input params");
+	is_deeply($issuer->{$out_key}, [ qw(user_id email u_firstname u_lastname) ], "$lang config db output params");
 }
 
 sub _assert_openapi {
@@ -180,6 +190,7 @@ sub _assert_component_json {
 sub _component_json_path {
 	my ($out, $lang) = @_;
 	return "$out/src/item/component.json" if $lang eq 'php';
+	return "$out/internal/item/component.json" if $lang eq 'go';
 	return "$out/lib/ExampleApp/Item/component.json";
 }
 

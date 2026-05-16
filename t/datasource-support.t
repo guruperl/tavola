@@ -12,6 +12,7 @@ use Test::More;
 
 use Tavola::Generator::PHP;
 use Tavola::Generator::Perl;
+use Tavola::Generator::Go;
 use Tavola::Project::Exporter;
 use Tavola::Project::Spec;
 use Tavola::Project::Spec::Validator;
@@ -48,6 +49,24 @@ like(
 	'SQLite Perl output uses Genelet::SQLite',
 );
 
+is_deeply(
+	Tavola::Generator::Go->new(project => _project(dbtype => 'MySQL'))->config_hash()->{ConnectArray},
+	[ 'mysql', '${APP_DB_USER}', '${APP_DB_PASSWORD}', '127.0.0.1', '3306', 'app' ],
+	'MySQL datasource creates structured Go mysql ConnectArray',
+);
+
+is_deeply(
+	Tavola::Generator::Go->new(project => _project(dbtype => 'PostgreSQL', port => 5432))->config_hash()->{ConnectArray},
+	[ 'postgres', '${APP_DB_USER}', '${APP_DB_PASSWORD}', '127.0.0.1', '5432', 'app' ],
+	'PostgreSQL datasource creates structured Go postgres ConnectArray',
+);
+
+is_deeply(
+	Tavola::Generator::Go->new(project => _project(dbtype => 'SQLite3', dbname => 'data/app.sqlite'))->config_hash()->{ConnectArray},
+	[ 'sqlite3', 'data/app.sqlite' ],
+	'SQLite3 datasource creates Go sqlite ConnectArray',
+);
+
 my $exporter = Tavola::Project::Exporter->new();
 my $procedure = [{ procedure_name => 'proc_login', statement => 'CREATE PROCEDURE proc_login() SELECT 1' }];
 like($exporter->_procedure_init_sql($procedure, 'MySQL'), qr/DELIMITER \/\/.*proc_login\(\) SELECT 1\/\/.*DELIMITER ;/s, 'MySQL init keeps delimiter procedure wrapper');
@@ -72,7 +91,7 @@ my ($one, $other) = Tavola::Project::Spec->new(
 	spec_path => $spec_path,
 )->export_data();
 
-for my $lang (qw(php perl)) {
+for my $lang (qw(php perl go)) {
 	my $out = File::Spec->catdir($tmp, $lang);
 	Tavola::Project::Exporter->new(
 		config_path => "$repo/conf/config.json",
@@ -83,7 +102,12 @@ for my $lang (qw(php perl)) {
 	)->write_dir($out, 1);
 
 	my $config = _read_json(File::Spec->catfile($out, 'conf', 'config.json'));
-	is($config->{Db}->[0], 'sqlite:data/app.sqlite', "$lang generated SQLite config keeps PDO sqlite DSN");
+	if ($lang eq 'go') {
+		ok(!$config->{Db}, "$lang generated SQLite config omits PHP/Perl Db");
+		is_deeply($config->{ConnectArray}, [ 'sqlite3', 'data/app.sqlite' ], "$lang generated SQLite config uses Go sqlite ConnectArray");
+	} else {
+		is($config->{Db}->[0], 'sqlite:data/app.sqlite', "$lang generated SQLite config keeps PDO sqlite DSN");
+	}
 }
 
 like(

@@ -33,9 +33,10 @@ GetOptions(
 usage(0) if $help;
 usage(2) unless $spec;
 $lang = lc $lang;
-die "Unsupported --lang '$lang'. Use php, perl, or all.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'all';
+die "Go generation is API/JSON-only; use --no-web-ui.\n" if $web_ui && $lang eq 'go';
+die "Unsupported --lang '$lang'. Use php, perl, go, or all.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'go' || $lang eq 'all';
 
-my @langs = $lang eq 'all' ? qw(php perl) : ($lang);
+my @langs = $lang eq 'all' ? qw(php perl go) : ($lang);
 my $root = tempdir('tavola-smoke-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $repo = abs_path("$Bin/..");
 my $api_schema = _read_json(File::Spec->catfile($repo, 'docs', 'api.schema.json'));
@@ -48,16 +49,18 @@ my ($one, $other) = $loader->export_data();
 
 for my $target (@langs) {
 	my $out = File::Spec->catdir($root, $target);
+	my $target_web_ui = $target eq 'go' ? 0 : $web_ui;
 	Tavola::Project::Exporter->new(
 		config_path => $config,
 		lang => $target,
 		data => [ $one, $other ],
-		web_ui => $web_ui,
+		web_ui => $target_web_ui,
 		asset_root => $repo,
 	)->write_dir($out, 1);
 
-	verify_project($out, $target, $api_schema);
+	verify_project($out, $target, $api_schema, $target_web_ui);
 	compile_generated_perl($out, $repo) if $target eq 'perl';
+	compile_generated_go($out, $repo) if $target eq 'go';
 	print "smoke $target ok: $out\n";
 }
 
@@ -65,7 +68,7 @@ print "smoke complete: " . join(', ', @langs) . "\n";
 exit 0;
 
 sub verify_project {
-	my ($out, $target, $api_schema) = @_;
+	my ($out, $target, $api_schema, $target_web_ui) = @_;
 
 	_require_file($out, 'api.json');
 	_require_file($out, 'openapi.json');
@@ -102,15 +105,201 @@ sub verify_project {
 		for my $component (@{$api->{components}}) {
 			_read_json(File::Spec->catfile($out, 'lib', $project, ucfirst($component->{name}), 'component.json'));
 		}
+	} elsif ($target eq 'go') {
+		_require_file($out, 'go.mod');
+		my $cmd = _go_path($api->{project}->{name});
+		_require_file($out, "cmd/$cmd/main.go");
+		_require_file($out, 'internal/app/app.go');
+		for my $component (@{$api->{components}}) {
+			my $dir = _go_path($component->{name});
+			_read_json(File::Spec->catfile($out, 'internal', $dir, 'component.json'));
+			_require_file($out, "internal/$dir/component.go");
+			_require_file($out, "internal/$dir/model.go");
+			_require_file($out, "internal/$dir/filter.go");
+		}
 	}
 
-	if ($web_ui) {
+	if ($target_web_ui) {
 		_require_file($out, 'www/genelet.js');
 		_require_file($out, 'www/index.html');
 		_require_file($out, 'www/app.html');
 	}
 
 	return;
+}
+
+sub compile_generated_go {
+	my ($out, $repo) = @_;
+	my $genelet = abs_path(File::Spec->catdir($repo, '..', 'genelet'));
+	if ($genelet && -f File::Spec->catfile($genelet, 'go.mod')) {
+		system('go', '-C', $out, 'mod', 'edit', '-replace', "github.com/guruperl/genelet=$genelet") == 0
+			or die "Generated Go module replace failed\n";
+	}
+
+	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
+	my $config = _read_json(File::Spec->catfile($out, 'conf', 'config.json'));
+	my $crud = _go_crud_smoke_case($api, $config);
+	if ($crud) {
+		_write_text(
+			File::Spec->catfile($out, 'internal', 'app', 'smoke_generated_test.go'),
+			_go_crud_smoke_source($crud),
+		);
+	}
+
+	my $cwd = getcwd();
+	chdir $out or die "Cannot chdir $out: $!\n";
+	my $tidy = system('go', 'mod', 'tidy');
+	my $test = $tidy == 0 ? system('go', 'test', './...') : 1;
+	chdir $cwd or die "Cannot chdir $cwd: $!\n";
+	die "Generated Go module tidy failed\n" unless $tidy == 0;
+	die "Generated Go tests failed\n" unless $test == 0;
+	return;
+}
+
+sub _go_crud_smoke_case {
+	my ($api, $config) = @_;
+	return unless ref($config->{ConnectArray}) eq 'ARRAY'
+		&& ($config->{ConnectArray}->[0] || '') =~ /\Asqlite3?\z/i;
+
+	my $role_name;
+	for my $name (sort keys %{$config->{Roles} || {}}) {
+		my $role = $config->{Roles}->{$name};
+		if ($role->{Is_admin}) {
+			$role_name = $name;
+			last;
+		}
+	}
+	return unless $role_name;
+
+	for my $component (@{$api->{components} || []}) {
+		my %actions = map { $_->{name} => $_ } @{$component->{actions} || []};
+		next unless $actions{insert} && $actions{edit} && $actions{update} && $actions{delete} && $actions{topics};
+		my @insert = grep { $_ ne ($component->{primary_key} || '') } @{$actions{insert}->{request_params} || []};
+		my @update = grep { $_ ne ($component->{primary_key} || '') } @{$actions{update}->{request_params} || []};
+		next unless @insert && @update && $component->{primary_key};
+		return {
+			component => $component->{name},
+			key => $component->{primary_key},
+			role => $role_name,
+			public_role => $api->{project}->{public_role},
+			script => $api->{project}->{script},
+			insert_field => $insert[0],
+			update_field => $update[0],
+		};
+	}
+	return;
+}
+
+sub _go_crud_smoke_source {
+	my $case = shift;
+	my $component = _go_quote($case->{component});
+	my $key = _go_quote($case->{key});
+	my $role = _go_quote($case->{role});
+	my $public_role = _go_quote($case->{public_role});
+	my $script = _go_quote($case->{script});
+	my $insert_field = _go_quote($case->{insert_field});
+	my $update_field = _go_quote($case->{update_field});
+
+	return qq~package app
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/guruperl/genelet"
+)
+
+func TestGeneratedCRUDRoutes(t *testing.T) {
+	root := filepath.Clean(filepath.Join("..", ".."))
+	config, err := LoadConfig(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.ConnectArray = []string{"sqlite3", filepath.Join(t.TempDir(), "smoke.sqlite")}
+
+	db, err := config.OpenDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	initSQL, err := os.ReadFile(filepath.Join(root, "conf", "init.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(string(initSQL)); err != nil {
+		t.Fatal(err)
+	}
+
+	controller := NewController(config, db)
+	component := $component
+	key := $key
+	role := $role
+	publicRole := $public_role
+	script := $script
+	insertField := $insert_field
+	updateField := $update_field
+
+	publicURL := script + "/" + publicRole + "/json/" + component + "?action=topics"
+	assertGeneratedStatus(t, controller, http.MethodGet, publicURL, nil, "", http.StatusOK)
+
+	insertValues := url.Values{"action": {"insert"}, insertField: {"alpha"}}
+	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, insertValues, role, http.StatusOK)
+
+	editURL := script + "/" + role + "/json/" + component + "/1?action=edit"
+	editBody := assertGeneratedStatus(t, controller, http.MethodGet, editURL, nil, role, http.StatusOK)
+	if !strings.Contains(editBody, "alpha") {
+		t.Fatalf("edit response missing inserted value: %s", editBody)
+	}
+
+	updateValues := url.Values{"action": {"update"}, key: {"1"}, updateField: {"beta"}}
+	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, updateValues, role, http.StatusOK)
+
+	deleteValues := url.Values{"action": {"delete"}, key: {"1"}}
+	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, deleteValues, role, http.StatusOK)
+}
+
+func assertGeneratedStatus(t *testing.T, controller *genelet.Controller, method string, target string, values url.Values, role string, want int) string {
+	t.Helper()
+	var body *strings.Reader
+	if values != nil {
+		body = strings.NewReader(values.Encode())
+	} else {
+		body = strings.NewReader("")
+	}
+	req := httptest.NewRequest(method, target, body)
+	if values != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	if role != "" {
+		addGeneratedAuth(t, controller.C, req, role)
+	}
+	w := httptest.NewRecorder()
+	controller.ServeHTTP(w, req)
+	if w.Code != want {
+		t.Fatalf("%s %s status = %d, want %d, body = %s", method, target, w.Code, want, w.Body.String())
+	}
+	return w.Body.String()
+}
+
+func addGeneratedAuth(t *testing.T, config *genelet.Config, req *http.Request, roleName string) {
+	t.Helper()
+	role := config.Roles[roleName]
+	base := genelet.Base{C: config, W: httptest.NewRecorder(), R: req, RoleValue: roleName, ChartagValue: "json"}
+	signer := genelet.NewAccess(base)
+	signatureFields := []string{"1"}
+	for i := 1; i < len(role.Attributes); i++ {
+		signatureFields = append(signatureFields, "smoke")
+	}
+	req.AddCookie(&http.Cookie{Name: role.Surface, Value: signer.Signature(signatureFields...)})
+	req.Header.Set("X-CSRF-Token", base.CSRFToken())
+}
+~;
 }
 
 sub compile_generated_perl {
@@ -136,11 +325,34 @@ sub compile_generated_perl {
 	return;
 }
 
+sub _go_path {
+	my $name = shift || 'app';
+	$name = lc $name;
+	$name =~ s/[^a-z0-9_]+/-/g;
+	$name =~ s/^-+|-+$//g;
+	return $name || 'app';
+}
+
+sub _go_quote {
+	my $value = shift;
+	$value =~ s/\\/\\\\/g;
+	$value =~ s/"/\\"/g;
+	return qq{"$value"};
+}
+
 sub _require_file {
 	my ($root, $relative) = @_;
 	my $path = File::Spec->catfile($root, split m{/}, $relative);
 	die "Missing generated file $relative\n" unless -f $path;
 	return $path;
+}
+
+sub _write_text {
+	my ($path, $text) = @_;
+	open my $fh, '>', $path or die "Cannot open $path: $!\n";
+	print {$fh} $text;
+	close $fh or die "Cannot close $path: $!\n";
+	return;
 }
 
 sub _read_json {
@@ -160,7 +372,7 @@ Usage: script/smoke-generated-project --spec PATH [options]
 Options:
   --config PATH  Tavola generator config. Defaults to conf/config.json.
   --spec PATH    JSON project spec.
-  --lang LANG    Output language: php, perl, or all. Defaults to all.
+  --lang LANG    Output language: php, perl, go, or all. Defaults to all.
   --web-ui       Include generated browser UI files in the smoke output.
   --no-web-ui    Generate backend/API files only. Default.
   --help         Show this help.

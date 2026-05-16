@@ -51,7 +51,7 @@ ok(!$role_acl{audit_events}, 'role ACL excludes audit events');
 
 my $tmp = tempdir('tavola-source-truth-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 my $schema = _read_json("$repo/docs/api.schema.json");
-for my $lang (qw(php perl)) {
+for my $lang (qw(php perl go)) {
 	my $out = File::Spec->catdir($tmp, $lang);
 	Tavola::Project::Exporter->new(
 		config_path => "$repo/conf/config.json",

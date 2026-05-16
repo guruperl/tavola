@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "owner": {
+    "login": "gosmoke",
+    "email": "gosmoke@example.test",
+    "typeid": 1
+  },
+  "project": {
+    "name": "GoSmoke",
+    "script": "/go/app.php",
+    "publicRole": "p",
+    "default": {
+      "component": "widget",
+      "action": "topics"
+    }
+  },
+  "datasource": {
+    "type": "SQLite",
+    "nickname": "gosmoke",
+    "path": "data/gosmoke.sqlite"
+  },
+  "schema": {
+    "tables": [
+      {
+        "name": "admin_user",
+        "primaryKey": "admin_id",
+        "autoKey": "admin_id",
+        "statement": "CREATE TABLE admin_user (admin_id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, passwd TEXT NOT NULL, firstname TEXT, lastname TEXT, status TEXT NOT NULL DEFAULT 'active')",
+        "insert": ["email", "passwd", "firstname", "lastname", "status"],
+        "edit": ["admin_id", "email", "passwd", "firstname", "lastname", "status"],
+        "update": ["admin_id", "email", "passwd", "firstname", "lastname", "status"],
+        "topics": ["admin_id", "email", "firstname", "lastname", "status"]
+      },
+      {
+        "name": "widget",
+        "primaryKey": "widget_id",
+        "autoKey": "widget_id",
+        "statement": "CREATE TABLE widget (widget_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, created TEXT)",
+        "insert": ["name", "created"],
+        "edit": ["widget_id", "name", "created"],
+        "update": ["widget_id", "name"],
+        "topics": ["widget_id", "name", "created"]
+      }
+    ],
+    "procedures": [
+      {
+        "name": "proc_go_smoke_a",
+        "table": "admin_user",
+        "statement": "SELECT admin_id, email, firstname, lastname FROM admin_user WHERE email = ? AND passwd = ? AND status = 'active'"
+      }
+    ]
+  },
+  "roles": [
+    {
+      "name": "a",
+      "description": "Smoke administrator",
+      "authen": "db",
+      "isAdmin": 1,
+      "isAuto": 1,
+      "table": "admin_user",
+      "default": {
+        "component": "widget",
+        "action": "topics"
+      },
+      "fields": {
+        "id": "admin_id",
+        "login": "email",
+        "password": "passwd",
+        "firstname": "firstname",
+        "lastname": "lastname"
+      },
+      "restriction": "status = 'active'"
+    }
+  ],
+  "components": [
+    {
+      "name": "widget",
+      "description": "Go smoke widgets",
+      "table": "widget",
+      "public": ["topics"],
+      "roles": {
+        "a": ["startnew", "insert", "edit", "update", "delete", "topics"]
+      }
+    }
+  ],
+  "overlays": {}
+}

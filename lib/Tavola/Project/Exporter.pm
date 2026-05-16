@@ -10,6 +10,7 @@ use File::Path qw(make_path remove_tree);
 use File::Spec;
 use JSON qw(decode_json);
 use Tavola::Project::APIManifest;
+use Tavola::Generator::Go;
 use Tavola::Generator::PHP;
 use Tavola::Generator::Perl;
 use Tavola::Project::OpenAPI;
@@ -44,6 +45,7 @@ sub export_tar {
 sub add_to_tar {
 	my ($self, $tar, $form) = @_;
 	my ($one, $other) = $form ? $self->_from_form($form) : $self->{data} ? @{$self->{data}} : $self->_load_export_data();
+	die "Go generation is API/JSON-only; use --no-web-ui\n" if $self->{lang} eq 'go' && $self->{web_ui};
 
 	return 3007 unless ($one->{def_component} && $one->{def_action});
 	for my $role (@{$one->{role_topics}}) {
@@ -60,22 +62,29 @@ sub add_to_tar {
 		logger     => $self->{logger},
 		_config    => $self->_config(),
 		components => [map { $_->{name_component} } @{$one->{component_topics}}],
+		roles      => $one->{role_topics},
 		lists      => $one->{role_topics},
 	);
 
 	$tar->add_data('conf/init.sql', $self->_init_sql($one, $project));
 	$tar->add_data('logs/debug.log', '');
 	$tar->chmod('logs/debug.log', '777');
-	$tar->add_data('conf/config.json', $one->{config_json});
+	$tar->add_data('conf/config.json', $self->{lang} eq 'go' ? $generator->get_config() : $one->{config_json});
 	my $api = Tavola::Project::APIManifest->new(one => $one, other => $other);
 	my $manifest = $api->manifest();
 	$tar->add_data('api.json', $api->encode());
 	$tar->add_data('openapi.json', Tavola::Project::OpenAPI->new(manifest => $manifest)->encode());
 	$tar->add_data('docs/api.md', $api->docs($manifest));
 	$tar->add_data('docs/api.schema.json', $self->_read_asset('docs/api.schema.json'));
-	$self->{lang} eq 'php'
-		? $self->_add_php_project($tar, $one, $project, $generator)
-		: $self->_add_perl_project($tar, $one, $project, $generator);
+	if ($self->{lang} eq 'php') {
+		$self->_add_php_project($tar, $one, $project, $generator);
+	} elsif ($self->{lang} eq 'perl') {
+		$self->_add_perl_project($tar, $one, $project, $generator);
+	} elsif ($self->{lang} eq 'go') {
+		$self->_add_go_project($tar, $one, $project, $generator);
+	} else {
+		die "Unsupported language '$self->{lang}'\n";
+	}
 
 	return unless $self->{web_ui};
 	$tar->add_data('www/index.html', Tavola::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
@@ -198,10 +207,35 @@ sub _add_perl_project {
 	return;
 }
 
+sub _add_go_project {
+	my ($self, $tar, $one, $project, $go) = @_;
+
+	$tar->add_data('go.mod', $go->go_mod());
+	$tar->add_data('cmd/' . $go->command_dir() . '/main.go', $go->main());
+	$tar->add_data('internal/app/app.go', $go->app());
+
+	for my $item (@{$one->{component_topics}}) {
+		my $c = $item->{name_component};
+		my $comp_go = $self->_generator(
+			project   => $project,
+			logger    => $self->{logger},
+			_config   => $self->_config(),
+			components => [map { $_->{name_component} } @{$one->{component_topics}}],
+			component => $item,
+		);
+		my $dir = $go->component_dir($c);
+		$tar->add_data("internal/$dir/component.json", $item->{component_json});
+		$tar->add_data("internal/$dir/component.go", $comp_go->component_support());
+		$tar->add_data("internal/$dir/model.go", $comp_go->component_model());
+		$tar->add_data("internal/$dir/filter.go", $comp_go->component_filter());
+	}
+	return;
+}
+
 sub _generator {
 	my ($self, %args) = @_;
-	die "Unsupported language '$self->{lang}'\n" unless $self->{lang} eq 'php' || $self->{lang} eq 'perl';
-	my $class = $self->{lang} eq 'perl' ? 'Tavola::Generator::Perl' : 'Tavola::Generator::PHP';
+	die "Unsupported language '$self->{lang}'\n" unless $self->{lang} eq 'php' || $self->{lang} eq 'perl' || $self->{lang} eq 'go';
+	my $class = $self->{lang} eq 'go' ? 'Tavola::Generator::Go' : $self->{lang} eq 'perl' ? 'Tavola::Generator::Perl' : 'Tavola::Generator::PHP';
 	return $class->new(%args);
 }
 

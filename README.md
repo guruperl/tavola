@@ -33,6 +33,7 @@ is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 - PDO and the PDO driver for generated PHP apps
 - JSON and Archive::Tar
 - Template Toolkit for generated-app template output
+- Go 1.22+ for generated Go apps
 
 For local framework tests, the sibling Genelet repository can run its default
 SQLite-backed test suite without a service database.
@@ -89,10 +90,12 @@ script/generate-project \
 `jenny` is used here as the generated app name and output path. It marks an app
 produced by Tavola; it is not a Tavola subsystem or package.
 
-Use `--lang perl` for Perl output and `--tar PATH` instead of `--out PATH` to
-write an archive without extracting it. Generated app web UI files are included
-by default; add `--no-web-ui` to generate backend/API files without `views/`,
-Vue files, `www/app.html`, `www/index.html`, or `www/genelet.js`.
+Use `--lang perl` for Perl output, `--lang go` for API/JSON-first Go output,
+and `--tar PATH` instead of `--out PATH` to write an archive without extracting
+it. Generated app web UI files are included by default for PHP and Perl; add
+`--no-web-ui` to generate backend/API files without `views/`, Vue files,
+`www/app.html`, `www/index.html`, or `www/genelet.js`. Go output is API-only in
+this first version.
 
 ## Generated Archive Contents
 
@@ -115,7 +118,9 @@ The generator writes a complete application archive. The common files are:
 PHP archives include `composer.json`, `www/app.php`, project classes under
 `src/`, and component classes under `src/<component>/`. Perl archives include
 `script/app`, project modules under `lib/<Project>/`, and component modules
-under `lib/<Project>/<Component>/`.
+under `lib/<Project>/<Component>/`. Go archives include `go.mod`, a
+`cmd/<project>/main.go` entrypoint, app registration under `internal/app/`, and
+component packages under `internal/<component>/`.
 
 When generated app web UI is enabled, the archive also includes:
 
@@ -133,6 +138,12 @@ temporary directory and verify the backend/API archive layout:
 
 ```bash
 script/smoke-generated-project --spec specs/project.template.json --lang all --no-web-ui
+```
+
+Run the focused Go CRUD route smoke with the SQLite fixture:
+
+```bash
+script/smoke-generated-project --spec specs/go-smoke.project.json --lang go --no-web-ui
 ```
 
 ## Generated Endpoint Pattern

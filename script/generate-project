@@ -18,6 +18,7 @@ my $tar;
 my $replace = 0;
 my $dry_run = 0;
 my $web_ui = 1;
+my $web_ui_seen = 0;
 my $help = 0;
 
 GetOptions(
@@ -28,7 +29,7 @@ GetOptions(
 	'tar=s'    => \$tar,
 	'replace'  => \$replace,
 	'dry-run'  => \$dry_run,
-	'web-ui!'  => \$web_ui,
+	'web-ui!'  => sub { $web_ui = $_[1] ? 1 : 0; $web_ui_seen = 1; },
 	'help'     => \$help,
 ) or usage(2);
 
@@ -36,7 +37,11 @@ usage(0) if $help;
 usage(2) unless $spec;
 usage(2) unless $dry_run || $out || $tar;
 $lang = lc $lang;
-die "Unsupported --lang '$lang'. Use php or perl.\n" unless $lang eq 'php' || $lang eq 'perl';
+die "Unsupported --lang '$lang'. Use php, perl, or go.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'go';
+if ($lang eq 'go') {
+	die "Go generation is API/JSON-only; use --no-web-ui.\n" if $web_ui_seen && $web_ui;
+	$web_ui = 0;
+}
 
 my $loader = Tavola::Project::Spec->new(
 	config_path => $config,
@@ -72,17 +77,17 @@ exit 0;
 sub usage {
 	my $exit = shift;
 	print <<"USAGE";
-Usage: script/generate-project --lang php|perl --spec PATH [options]
+Usage: script/generate-project --lang php|perl|go --spec PATH [options]
 
 Options:
   --config PATH  Tavola generator config. Defaults to conf/config.json.
-  --lang LANG    Output language: php or perl. Defaults to php.
+  --lang LANG    Output language: php, perl, or go. Defaults to php.
   --spec PATH    JSON project spec.
   --out PATH     Extract generated files into PATH.
   --tar PATH     Write a generated tar archive to PATH.
   --replace      Replace --out PATH if it already exists.
   --dry-run      Validate and summarize generation without writing.
-  --web-ui       Generate app views, Vue files, app.html, and index.html. Default.
+  --web-ui       Generate app views, Vue files, app.html, and index.html. Default for PHP/Perl.
   --no-web-ui    Generate backend/API files without app web UI templates.
   --help         Show this help.
 USAGE
