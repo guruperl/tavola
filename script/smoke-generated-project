@@ -126,6 +126,10 @@ sub verify_project {
 			my $component = $api->{components}->[0]->{name};
 			_require_file($out, "views/$role/error.html");
 			_require_file($out, "views/$role/$component/topics.html");
+			for my $protected (grep { $_->{auth_required} } @{$api->{roles} || []}) {
+				_require_file($out, "views/$protected->{name}/login.html");
+			}
+			die "Go web UI should not include www/genelet.js\n" if -e File::Spec->catfile($out, 'www', 'genelet.js');
 		} else {
 			_require_file($out, 'www/genelet.js');
 			_require_file($out, 'www/app.html');
@@ -280,6 +284,13 @@ func TestGeneratedCRUDRoutes(t *testing.T) {
 	}
 
 	if loginRole != "" {
+		if withHTML {
+			loginURL := script + "/" + loginRole + "/html/login?go_uri=" + url.QueryEscape(script+"/"+loginRole+"/html/"+component+"?action=topics")
+			loginPage := assertGeneratedStatus(t, controller, http.MethodGet, loginURL, nil, "", http.StatusOK)
+			if !strings.Contains(loginPage, `name="email"`) || !strings.Contains(loginPage, `name="passwd"`) {
+				t.Fatalf("login page missing credential fields: %s", loginPage)
+			}
+		}
 		seedLoginUser(t, db, loginName, loginPassword)
 		loginValues := url.Values{"email": {loginName}, "passwd": {loginPassword}, "go_uri": {script + "/" + loginRole + "/json/" + component + "?action=topics"}}
 		loginBody, loginCookies := assertGeneratedStatusCookies(t, controller, http.MethodPost, script+"/"+loginRole+"/json/login", loginValues, "", http.StatusOK)

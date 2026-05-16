@@ -14,6 +14,8 @@ use Test::More;
 use Tavola::Project::Exporter;
 use Tavola::Project::JSONSchema;
 use Tavola::Project::Spec;
+use Tavola::Project::Spec::Importer;
+use Tavola::Generator::Go;
 
 my $repo = abs_path("$Bin/..");
 my $tmp = tempdir('tavola-generated-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
@@ -39,6 +41,9 @@ for my $lang (qw(php perl go)) {
 }
 
 _assert_go_overlay_and_templates();
+_assert_go_auth_key_compatibility();
+_assert_go_overlay_import_guard();
+_assert_go_readme_endpoint_selection();
 
 done_testing();
 
@@ -221,8 +226,102 @@ sub _assert_go_overlay_and_templates {
 	like(_read_text("$out/internal/item/filter.go"), qr/custom go filter overlay/, 'go filter overlay replaces generated filter');
 	ok(-s "$out/README.md", 'go generated README exists');
 	ok(-s "$out/www/index.html", 'go generated web index exists');
+	ok(!-e "$out/www/genelet.js", 'go generated web UI omits PHP/Perl genelet.js helper');
 	ok(-s "$out/views/p/error.html", 'go generated public error template exists');
+	ok(-s "$out/views/u/login.html", 'go generated protected role login template exists');
 	ok(-s "$out/views/p/item/topics.html", 'go generated public action template exists');
+}
+
+sub _assert_go_auth_key_compatibility {
+	my $go = Tavola::Generator::Go->new(
+		_config => { Custom => { USER_domain => 'example.test' } },
+		project => {
+			Project => 'AuthApp',
+			dbtype => 'MySQL',
+			dbname => 'authapp',
+		},
+		roles => [
+			{
+				name_role => 'g',
+				roleid => 1,
+				authen => 'google',
+				field_id => 'user_id',
+				field_login => 'email',
+				field_passwd => 'passwd',
+				field_firstname => 'firstname',
+				field_lastname => 'lastname',
+				procedure_name => 'proc_auth_g',
+			},
+		],
+	);
+	my $config = $go->config_hash();
+	my $issuer = $config->{Roles}->{g}->{Issuers}->{google};
+	ok($issuer->{Provider_pars}, 'go config keeps Provider_pars key for Genelet JSON tag');
+	ok(!$issuer->{ProviderPars}, 'go config does not emit unsupported ProviderPars key');
+
+	my $manual = {
+		Roles => {
+			u => {
+				Issuers => {
+					db => {
+						Password_hash => 'passwd_hash',
+						In_pars => [ 'email' ],
+						Out_pars => [ 'user_id', 'email' ],
+					},
+				},
+			},
+		},
+	};
+	$go->_normalize_config_hash($manual);
+	is($manual->{Roles}->{u}->{Issuers}->{db}->{Password_hash}, 'passwd_hash', 'go config keeps Password_hash key for Genelet JSON tag');
+	ok(!$manual->{Roles}->{u}->{Issuers}->{db}->{PasswordHash}, 'go config does not emit unsupported PasswordHash key');
+	is_deeply($manual->{Roles}->{u}->{Issuers}->{db}->{InPars}, [ 'email' ], 'go config still emits supported InPars key');
+	is_deeply($manual->{Roles}->{u}->{Issuers}->{db}->{OutPars}, [ 'user_id', 'email' ], 'go config still emits supported OutPars key');
+}
+
+sub _assert_go_overlay_import_guard {
+	my $spec = _read_json("$repo/specs/project.template.json");
+	$spec->{overlays}->{components}->{item} = { goModelFile => 'overlays/internal/item/model.go' };
+	my $err = _error_for(sub {
+		Tavola::Project::Spec::Importer->new(spec => $spec)->_reject_go_overlays();
+	});
+	like($err, qr/Go overlays are supported only by direct JSON generation.*goModelFile/s, 'metadata import rejects Go overlay files before silent loss');
+
+	my $inline = _read_json("$repo/specs/project.template.json");
+	$inline->{components}->[0]->{goFilter} = 'package item';
+	$err = _error_for(sub {
+		Tavola::Project::Spec::Importer->new(spec => $inline)->_reject_go_overlays();
+	});
+	like($err, qr/Go overlays are supported only by direct JSON generation.*goFilter/s, 'metadata import rejects inline Go overlays before silent loss');
+}
+
+sub _assert_go_readme_endpoint_selection {
+	my $public_out = _generate('go');
+	my $public_readme = _read_text("$public_out/README.md");
+	like($public_readme, qr{/example/app\.php/p/json/item\?action=topics}, 'go README uses a public endpoint when available');
+	like($public_readme, qr/This endpoint is public\./, 'go README labels public endpoint');
+
+	my $case_dir = File::Spec->catdir($tmp, 'go-readme-protected-case');
+	make_path($case_dir);
+	my $spec = _read_json("$repo/specs/project.template.json");
+	$spec->{components}->[0]->{public} = [];
+	_write_text(File::Spec->catfile($case_dir, 'project.json'), encode_json($spec));
+	my $loader = Tavola::Project::Spec->new(
+		config_path => "$repo/conf/config.json",
+		spec_path => File::Spec->catfile($case_dir, 'project.json'),
+	);
+	my ($one, $other) = $loader->export_data();
+	my $out = File::Spec->catdir($tmp, 'go-readme-protected');
+	Tavola::Project::Exporter->new(
+		config_path => "$repo/conf/config.json",
+		lang => 'go',
+		data => [ $one, $other ],
+		web_ui => 0,
+		asset_root => $repo,
+	)->write_dir($out, 1);
+	my $readme = _read_text("$out/README.md");
+	like($readme, qr{/example/app\.php/u/json/item\?action=topics}, 'go README falls back to protected endpoint when no public action exists');
+	like($readme, qr/This endpoint requires login/, 'go README labels protected fallback endpoint');
 }
 
 sub _component_json_path {
@@ -256,6 +355,16 @@ sub _write_text {
 	print {$fh} $text;
 	close $fh or die "Cannot close $path: $!";
 	return;
+}
+
+sub _error_for {
+	my $code = shift;
+	my $ok = eval {
+		$code->();
+		1;
+	};
+	return '' if $ok;
+	return $@ || 'unknown error';
 }
 
 sub _sorted {

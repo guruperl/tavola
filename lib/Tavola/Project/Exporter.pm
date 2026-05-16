@@ -50,8 +50,6 @@ sub add_to_tar {
 		return [3008, $role->{name_role}] unless ($role->{default_component} && $role->{default_action});
 	}
 
-	$tar->add_data('www/genelet.js', $self->_read_asset('assets/genelet.js')) if $self->{web_ui};
-
 	my $project = {};
 	$project->{$_} = $one->{$_} for (qw(memberid filter model config_json Document_root Project Server_url Script Template Uploaddir Pubrole def_component def_action ds));
 	$project->{$_} = $one->{$_} for (qw(dbtype dbname dbuser dbpass host port Log_file));
@@ -79,7 +77,7 @@ sub add_to_tar {
 	} elsif ($self->{lang} eq 'perl') {
 		$self->_add_perl_project($tar, $one, $project, $generator);
 	} elsif ($self->{lang} eq 'go') {
-		$self->_add_go_project($tar, $one, $project, $generator);
+		$self->_add_go_project($tar, $one, $project, $generator, $manifest);
 		return $self->_add_go_web_ui($tar, $one, $project, $generator) if $self->{web_ui};
 		return;
 	} else {
@@ -87,6 +85,7 @@ sub add_to_tar {
 	}
 
 	return unless $self->{web_ui};
+	$tar->add_data('www/genelet.js', $self->_read_asset('assets/genelet.js'));
 	$tar->add_data('www/index.html', Tavola::Template::Base::index($one->{def_component}, $one->{def_action}, $other->{p_list}, $other->{a_list}, $other->{r_list}));
 	my ($html, $output, $twig) = Tavola::Template::Role::vues($one, $self->{logger});
 	$tar->add_data('www/app.html', Tavola::Template::Base::app($html, 'p', $one->{def_component}, $one->{def_action}));
@@ -208,10 +207,10 @@ sub _add_perl_project {
 }
 
 sub _add_go_project {
-	my ($self, $tar, $one, $project, $go) = @_;
+	my ($self, $tar, $one, $project, $go, $manifest) = @_;
 
 	$tar->add_data('go.mod', $go->go_mod());
-	$tar->add_data('README.md', $go->readme());
+	$tar->add_data('README.md', $go->readme($manifest));
 	$tar->add_data('cmd/' . $go->command_dir() . '/main.go', $go->main());
 	$tar->add_data('internal/app/app.go', $go->app());
 
@@ -242,6 +241,7 @@ sub _add_go_web_ui {
 
 	for my $role (sort keys %roles) {
 		$tar->add_data("views/$role/error.html", $go->error_template());
+		$tar->add_data("views/$role/login.html", $go->login_template()) if grep { $_->{name_role} eq $role } @{$one->{role_topics} || []};
 		for my $item (@{$one->{component_topics}}) {
 			my $component = $item->{name_component};
 			my $actions = decode_json($item->{component_json} || '{}')->{actions} || {};

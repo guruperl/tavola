@@ -59,6 +59,10 @@ For this example:
 If an overlay is omitted, Tavola writes its normal generated default for that
 file.
 
+Go overlays are supported only by direct JSON generation. The legacy metadata
+database import path rejects `goFilter`, `goFilterFile`, `goModel`, and
+`goModelFile` because the metadata schema has no columns to preserve them.
+
 `componentJson` and `componentJsonFile` overlays are validated during direct
 generation and metadata import. They must be JSON objects with:
 

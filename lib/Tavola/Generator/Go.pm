@@ -35,18 +35,21 @@ sub config_hash {
 		$chartag->{ContentType} = delete $chartag->{Content_type} if exists $chartag->{Content_type};
 	}
 
+	$self->_normalize_config_hash($config);
+	return $config;
+}
+
+sub _normalize_config_hash {
+	my ($self, $config) = @_;
 	for my $role_name (keys %{$config->{Roles} || {}}) {
 		my $role = $config->{Roles}->{$role_name};
 		$role->{MaxAge} = delete $role->{Max_age} if exists $role->{Max_age};
 		for my $issuer_name (keys %{$role->{Issuers} || {}}) {
 			my $issuer = $role->{Issuers}->{$issuer_name};
-			$issuer->{ProviderPars} = delete $issuer->{Provider_pars} if exists $issuer->{Provider_pars};
 			$issuer->{InPars} = delete $issuer->{In_pars} if exists $issuer->{In_pars};
 			$issuer->{OutPars} = delete $issuer->{Out_pars} if exists $issuer->{Out_pars};
-			$issuer->{PasswordHash} = delete $issuer->{Password_hash} if exists $issuer->{Password_hash};
 		}
 	}
-
 	return $config;
 }
 
@@ -94,12 +97,10 @@ require github.com/guruperl/genelet v0.1.0
 }
 
 sub readme {
-	my $self = shift;
+	my ($self, $manifest) = @_;
 	my $project = $self->{PROJECT}->{Project};
 	my $cmd = $self->command_dir();
-	my $script = $self->{PROJECT}->{Script} || '/app.php';
-	my $component = ($self->{COMPONENTS} || [])->[0] || $self->{PROJECT}->{def_component} || 'component';
-	my $role = $self->{PROJECT}->{Pubrole} || 'p';
+	my $endpoint = $self->_readme_endpoint($manifest);
 
 	return qq~# $project
 
@@ -127,8 +128,10 @@ defaults to port `80` when it is omitted.
 ## Smoke Endpoint
 
 ```text
-$script/$role/json/$component?action=topics
+$endpoint->{url}
 ```
+
+$endpoint->{note}
 
 When templates are generated, HTML endpoints use the same route shape with
 `html` in place of `json`.
@@ -444,6 +447,21 @@ sub error_template {
 	return '<html><body>{{.Errstr}}</body></html>';
 }
 
+sub login_template {
+	return qq~<html>
+<body>
+{{if .Errorstr}}<p>{{.Errorstr}}</p>{{end}}
+<form method="post">
+<input type="hidden" name="{{.GoURIName}}" value="{{.GoURI}}">
+<label>Login <input name="{{.Login}}"></label>
+<label>Password <input type="password" name="{{.Password}}"></label>
+<button type="submit">Login</button>
+</form>
+</body>
+</html>
+~;
+}
+
 sub action_template {
 	my ($self, $component, $action) = @_;
 	return qq~<html>
@@ -521,6 +539,42 @@ sub _unique_go_name {
 	}
 	$seen->{$name} = 1;
 	return $name;
+}
+
+sub _readme_endpoint {
+	my ($self, $manifest) = @_;
+	my $script = $self->{PROJECT}->{Script} || '/app.php';
+	my $fallback = {
+		url => $script . '/' . ($self->{PROJECT}->{Pubrole} || 'p') . '/json/' . (($self->{COMPONENTS} || [])->[0] || $self->{PROJECT}->{def_component} || 'component') . '?action=topics',
+		note => 'This endpoint is the first generated route candidate.',
+	};
+	return $fallback unless $manifest && ref($manifest->{components}) eq 'ARRAY';
+
+	for my $preferred (1, 0) {
+		for my $component (@{$manifest->{components}}) {
+			for my $action (@{$component->{actions} || []}) {
+				next if $preferred && $action->{name} ne 'topics';
+				next unless $action->{public};
+				my $role = ($action->{allowed_groups} || [])->[0] || $manifest->{project}->{public_role};
+				return {
+					url => $script . '/' . $role . '/json/' . $component->{name} . '?action=' . $action->{name},
+					note => 'This endpoint is public.',
+				};
+			}
+		}
+	}
+
+	for my $component (@{$manifest->{components}}) {
+		for my $action (@{$component->{actions} || []}) {
+			my $role = ($action->{allowed_groups} || [])->[0] or next;
+			return {
+				url => $script . '/' . $role . '/json/' . $component->{name} . '?action=' . $action->{name},
+				note => 'This endpoint requires login for the shown role.',
+			};
+		}
+	}
+
+	return $fallback;
 }
 
 sub _go_path {

@@ -47,6 +47,7 @@ sub run {
 sub _import {
 	my $self = shift;
 	my $spec = $self->{spec};
+	$self->_reject_go_overlays();
 
 	my $memberid = $self->_ensure_owner($spec->{owner});
 	if (my $existing = $self->_existing_project($memberid)) {
@@ -324,6 +325,25 @@ sub _overlay_text {
 	my $overlay = $overlays->{$component->{name}} || {};
 	return $overlay->{$kind} if $overlay->{$kind};
 	return $self->{files}->read_text($overlay->{"${kind}File"}) if $overlay->{"${kind}File"};
+	return;
+}
+
+sub _reject_go_overlays {
+	my $self = shift;
+	my @keys = qw(goFilter goFilterFile goModel goModelFile);
+	my $overlays = $self->{spec}->{overlays}->{components} || {};
+
+	for my $component (@{$self->{spec}->{components} || []}) {
+		for my $key (@keys) {
+			die "Go overlays are supported only by direct JSON generation and cannot be preserved through metadata DB import: component '$component->{name}' uses '$key'\n"
+				if exists $component->{$key};
+		}
+		my $overlay = $overlays->{$component->{name}} || {};
+		for my $key (@keys) {
+			die "Go overlays are supported only by direct JSON generation and cannot be preserved through metadata DB import: component '$component->{name}' overlay uses '$key'\n"
+				if exists $overlay->{$key};
+		}
+	}
 	return;
 }
 
