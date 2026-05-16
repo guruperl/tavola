@@ -83,6 +83,21 @@ The package boundary is:
   level. They should not consume `ExpandedAppSpec` directly until they need app
   intent semantics such as Tavola-style role grants or component CRUD policy.
 
+The reviewed fixture also has generated-app smoke coverage:
+
+```bash
+script/smoke-generated-project --spec specs/supportdesk.project.json --lang all
+script/smoke-sqlite-init
+```
+
+`smoke-generated-project` validates the exported PHP and Perl project packages.
+`smoke-sqlite-init` regenerates a PHP package, executes the table DDL from
+`conf/init.sql` in an in-memory SQLite database, compares that schema against
+`specs/supportdesk/schema.sql`, and inserts linked rows through the generated
+foreign keys. Stored procedure DDL is intentionally outside that SQLite smoke:
+the current exporter emits procedure wrappers for engines that support stored
+procedures, while SQLite auth procedure semantics remain a runtime/login concern.
+
 ## Local Verification
 
 Until the packages are ready for release CI, run the local cross-repo workflow
@@ -99,4 +114,5 @@ warning fixture, and the `missing_auth_table` error snapshots. Only
 checks fixture drift, canonical `sqlmeta` tests, Docker-backed `molecule/rdb`
 and `golet/genesis` harnesses, `golet` vet, and Tavola's
 `t/sqlmeta-output.t` and `t/source-truth-json.t` consumer tests against the
-shared contract fixtures and reviewed JSON source-of-truth fixture.
+shared contract fixtures and reviewed JSON source-of-truth fixture. It also
+runs the generated-app and SQLite init smoke checks above.

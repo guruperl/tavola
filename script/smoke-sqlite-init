@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SPEC="${1:-$ROOT/specs/supportdesk.project.json}"
+SOURCE_SCHEMA="${2:-$ROOT/specs/supportdesk/schema.sql}"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/tavola-sqlite-init-XXXXXX")"
+trap 'rm -rf "$TMP"' EXIT
+
+"$ROOT/script/generate-project" \
+  --spec "$SPEC" \
+  --lang php \
+  --out "$TMP/generated" \
+  --replace \
+  --no-web-ui >/dev/null
+
+python3 - "$SOURCE_SCHEMA" "$TMP/generated/conf/init.sql" <<'PY'
+import pathlib
+import re
+import sqlite3
+import sys
+
+source_schema = pathlib.Path(sys.argv[1]).read_text()
+generated_init = pathlib.Path(sys.argv[2]).read_text()
+
+# The generated init file also carries stored-procedure text. SQLite has no
+# stored procedures, so this smoke check validates the table DDL contract.
+generated_tables = re.split(r"\nDROP PROCEDURE IF EXISTS ", generated_init, maxsplit=1)[0]
+if not generated_tables.strip():
+    raise SystemExit("generated init.sql has no table DDL")
+
+
+def load(sql):
+    con = sqlite3.connect(":memory:")
+    con.execute("PRAGMA foreign_keys = ON")
+    con.executescript(sql)
+    return con
+
+
+def table_names(con):
+    return [
+        row[0]
+        for row in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        )
+    ]
+
+
+def table_columns(con, table):
+    return [
+        (row[1], row[2].upper(), row[3], row[5])
+        for row in con.execute(f"PRAGMA table_info({quote_ident(table)})")
+    ]
+
+
+def table_foreign_keys(con, table):
+    return sorted(
+        (row[3], row[2], row[4])
+        for row in con.execute(f"PRAGMA foreign_key_list({quote_ident(table)})")
+    )
+
+
+def quote_ident(value):
+    return '"' + value.replace('"', '""') + '"'
+
+
+source = load(source_schema)
+generated = load(generated_tables)
+
+source_tables = table_names(source)
+generated_tables = table_names(generated)
+if generated_tables != source_tables:
+    raise SystemExit(f"generated tables {generated_tables!r} != source tables {source_tables!r}")
+
+for table in source_tables:
+    if table_columns(generated, table) != table_columns(source, table):
+        raise SystemExit(f"generated columns for {table} differ from source schema")
+    if table_foreign_keys(generated, table) != table_foreign_keys(source, table):
+        raise SystemExit(f"generated foreign keys for {table} differ from source schema")
+
+generated.execute(
+    "INSERT INTO users (email, passwd, firstname, lastname, status) VALUES (?, ?, ?, ?, ?)",
+    ("agent@example.test", "secret", "Ada", "Lovelace", "active"),
+)
+user_id = generated.execute("SELECT id FROM users WHERE email = ?", ("agent@example.test",)).fetchone()[0]
+generated.execute(
+    "INSERT INTO teams (name, owner_user_id) VALUES (?, ?)",
+    ("Support", user_id),
+)
+team_id = generated.execute("SELECT id FROM teams WHERE name = ?", ("Support",)).fetchone()[0]
+generated.execute(
+    "INSERT INTO tickets (team_id, reporter_user_id, assignee_user_id, subject) VALUES (?, ?, ?, ?)",
+    (team_id, user_id, user_id, "Broken login"),
+)
+ticket_id = generated.execute("SELECT id FROM tickets WHERE subject = ?", ("Broken login",)).fetchone()[0]
+generated.execute(
+    "INSERT INTO ticket_notes (ticket_id, author_user_id, body) VALUES (?, ?, ?)",
+    (ticket_id, user_id, "Investigating"),
+)
+generated.execute(
+    "INSERT INTO audit_events (event_type, body) VALUES (?, ?)",
+    ("ticket.created", "Broken login"),
+)
+generated.commit()
+
+if generated.execute("SELECT COUNT(*) FROM ticket_notes").fetchone()[0] != 1:
+    raise SystemExit("generated schema insert smoke failed")
+PY
+
+printf 'sqlite init smoke ok: %s\n' "$SPEC"
