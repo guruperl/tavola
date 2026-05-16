@@ -9,7 +9,7 @@ func emitGo(a *Archive, model *generationModel, manifest map[string]any) {
 	module := "example.com/tavola/" + safePath(model.Project.Project)
 	cmd := safePath(model.Project.Project)
 	specs := goComponentSpecs(model.Components)
-	a.AddString("go.mod", "module "+module+"\n\ngo 1.22\n\nrequire github.com/guruperl/genelet v0.1.0\n")
+	a.AddString("go.mod", "module "+module+"\n\ngo 1.22\n\nrequire github.com/guruperl/genelet v0.1.1\n")
 	a.AddString("README.md", goReadme(model, manifest))
 	a.AddString("cmd/"+cmd+"/main.go", goMain(module))
 	a.AddString("internal/app/app.go", goApp(module, model, specs))
@@ -19,8 +19,16 @@ func emitGo(a *Archive, model *generationModel, manifest map[string]any) {
 		pkg := spec.pkg
 		a.AddString("internal/"+dir+"/component.json", comp.ComponentJS)
 		a.AddString("internal/"+dir+"/component.go", goComponentSupport(pkg))
-		a.AddString("internal/"+dir+"/model.go", goComponentModel(pkg))
-		a.AddString("internal/"+dir+"/filter.go", goComponentFilter(pkg))
+		if comp.GoModelOverlaySet {
+			a.AddString("internal/"+dir+"/model.go", comp.GoModelOverlay)
+		} else {
+			a.AddString("internal/"+dir+"/model.go", goComponentModel(pkg))
+		}
+		if comp.GoFilterOverlaySet {
+			a.AddString("internal/"+dir+"/filter.go", comp.GoFilterOverlay)
+		} else {
+			a.AddString("internal/"+dir+"/filter.go", goComponentFilter(pkg))
+		}
 	}
 }
 

@@ -159,6 +159,9 @@ func TestGenerateFromTavolaSpecCompatibility(t *testing.T) {
 					t.Fatalf("missing %s", path)
 				}
 			}
+			if !containsText(files["go.mod"], "github.com/guruperl/genelet v0.1.1") {
+				t.Fatalf("generated go.mod has stale Genelet requirement:\n%s", files["go.mod"])
+			}
 		})
 	}
 }
@@ -236,6 +239,75 @@ func TestGoComponentNameCollisionsAreUnique(t *testing.T) {
 	}
 	if !containsText(files["internal/app/app.go"], `foo_bar_2 "example.com/tavola/collision/internal/foo_bar"`) {
 		t.Fatalf("expected unique package alias in app.go:\n%s", files["internal/app/app.go"])
+	}
+}
+
+func TestGoComponentOverlaysReplaceGeneratedFiles(t *testing.T) {
+	tmp := t.TempDir()
+	filterText := "package foo_bar\n\n// custom filter overlay\n"
+	modelText := "package foo_bar\n\n// custom model overlay\n"
+	if err := os.MkdirAll(filepath.Join(tmp, "overlays"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "overlays", "filter.go"), []byte(filterText), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "overlays", "model.go"), []byte(modelText), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	spec := minimalSpec()
+	spec.BaseDir = tmp
+	spec.Overlays = map[string]any{
+		"components": map[string]any{
+			"foo-bar": map[string]any{
+				"goFilterFile": "overlays/filter.go",
+				"goModelFile":  "overlays/model.go",
+			},
+		},
+	}
+	archive, err := GenerateFromTavolaSpec(spec, GenerateOptions{Language: LanguageGo, Deterministic: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := filesByPath(archive)
+	if files["internal/foo-bar/filter.go"] != filterText {
+		t.Fatalf("filter overlay was not copied:\n%s", files["internal/foo-bar/filter.go"])
+	}
+	if files["internal/foo-bar/model.go"] != modelText {
+		t.Fatalf("model overlay was not copied:\n%s", files["internal/foo-bar/model.go"])
+	}
+}
+
+func TestGoComponentOverlayMissingFileFailsClearly(t *testing.T) {
+	spec := minimalSpec()
+	spec.BaseDir = t.TempDir()
+	spec.Overlays = map[string]any{
+		"components": map[string]any{
+			"foo-bar": map[string]any{
+				"goFilterFile": "overlays/missing-filter.go",
+			},
+		},
+	}
+	_, err := GenerateFromTavolaSpec(spec, GenerateOptions{Language: LanguageGo, Deterministic: true})
+	if err == nil || !containsText(err.Error(), "component foo-bar: goFilterFile overlays/missing-filter.go") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestGoComponentOverlaysDoNotAffectOtherLanguages(t *testing.T) {
+	spec := minimalSpec()
+	spec.BaseDir = t.TempDir()
+	spec.Overlays = map[string]any{
+		"components": map[string]any{
+			"foo-bar": map[string]any{
+				"goFilterFile": "overlays/missing-filter.go",
+				"goModelFile":  "overlays/missing-model.go",
+			},
+		},
+	}
+	if _, err := GenerateFromTavolaSpec(spec, GenerateOptions{Language: LanguagePHP, Deterministic: true}); err != nil {
+		t.Fatalf("php generation should ignore Go overlays: %v", err)
 	}
 }
 

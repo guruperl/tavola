@@ -93,19 +93,23 @@ type roleRow struct {
 }
 
 type componentRow struct {
-	ID           int
-	Name         string
-	Description  string
-	TableID      int
-	TableName    string
-	Key          string
-	AutoKey      string
-	Insert       []string
-	Edit         []string
-	Update       []string
-	Topics       []string
-	ComponentJS  string
-	CurrentTable []string
+	ID                 int
+	Name               string
+	Description        string
+	TableID            int
+	TableName          string
+	Key                string
+	AutoKey            string
+	Insert             []string
+	Edit               []string
+	Update             []string
+	Topics             []string
+	ComponentJS        string
+	CurrentTable       []string
+	GoFilterOverlay    string
+	GoFilterOverlaySet bool
+	GoModelOverlay     string
+	GoModelOverlaySet  bool
 }
 
 type aclRow struct {
@@ -294,6 +298,20 @@ func buildGenerationModel(spec *Spec, opts GenerateOptions) (*generationModel, e
 			return nil, fmt.Errorf("component %s: %w", comp.Name, err)
 		}
 		row.ComponentJS = componentJSON
+		if opts.Language == LanguageGo {
+			if text, ok, err := goComponentOverlayText(baseDir, spec.Overlays, comp.Name, "goFilterFile"); err != nil {
+				return nil, fmt.Errorf("component %s: %w", comp.Name, err)
+			} else if ok {
+				row.GoFilterOverlay = text
+				row.GoFilterOverlaySet = true
+			}
+			if text, ok, err := goComponentOverlayText(baseDir, spec.Overlays, comp.Name, "goModelFile"); err != nil {
+				return nil, fmt.Errorf("component %s: %w", comp.Name, err)
+			} else if ok {
+				row.GoModelOverlay = text
+				row.GoModelOverlaySet = true
+			}
+		}
 		model.Components = append(model.Components, row)
 		if model.Project.DefaultComp == "" {
 			model.Project.DefaultComp = row.Name
@@ -359,6 +377,44 @@ func componentJSONText(baseDir string, spec *Spec, comp Component, table tableRo
 		return "", err
 	}
 	return text, nil
+}
+
+func goComponentOverlayText(baseDir string, overlays map[string]any, componentName, key string) (string, bool, error) {
+	if len(overlays) == 0 {
+		return "", false, nil
+	}
+	componentsRaw, ok := overlays["components"]
+	if !ok {
+		return "", false, nil
+	}
+	components, ok := componentsRaw.(map[string]any)
+	if !ok {
+		return "", false, fmt.Errorf("overlays.components must be an object")
+	}
+	componentRaw, ok := components[componentName]
+	if !ok {
+		return "", false, nil
+	}
+	componentOverlays, ok := componentRaw.(map[string]any)
+	if !ok {
+		return "", false, fmt.Errorf("overlays.components.%s must be an object", componentName)
+	}
+	pathRaw, ok := componentOverlays[key]
+	if !ok {
+		return "", false, nil
+	}
+	path, ok := pathRaw.(string)
+	if !ok {
+		return "", false, fmt.Errorf("overlays.components.%s.%s must be a string", componentName, key)
+	}
+	if strings.TrimSpace(path) == "" {
+		return "", false, nil
+	}
+	data, err := os.ReadFile(resolveSpecPath(baseDir, path))
+	if err != nil {
+		return "", false, fmt.Errorf("%s %s: %w", key, path, err)
+	}
+	return string(data), true, nil
 }
 
 func validateComponentJSONBytes(componentName, label string, data []byte) error {

@@ -224,7 +224,9 @@ emits backend/API archives.
 Use `overlays` when generated defaults are not enough. Component overlays can
 replace generated PHP `Filter` or `Model` files, Go `filter.go` or `model.go`
 files, and `componentJsonFile` can replace the generated component action
-contract. Use `goFilterFile` and `goModelFile` for Go component overlays.
+contract. Use `goFilterFile` and `goModelFile` for Go component overlays, and
+keep those overlay source files outside any output directory regenerated with
+`--replace`.
 `componentJson` and
 `componentJsonFile` are validated during generation and must include the
 standard component contract keys: `actions`, `current_table`, `current_key`,

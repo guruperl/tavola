@@ -15,6 +15,20 @@ Generated projects can expose REST-style endpoints and browser views from the
 same component definitions. The old hosted Tavola builder UI is historical and
 is not part of Tavola's `main`; keep using the `ui` branch for that web app.
 
+## Tavola or golet/genesis
+
+Use Tavola when you want a reviewed JSON project spec to produce a deployable
+PHP, Perl, or Go application archive with generated runtime config and API docs.
+Use `golet/genesis` when a Go service should introspect a live database and
+construct a Genelet controller in process without writing a generated app tree.
+
+| Need | Use |
+| --- | --- |
+| Reviewed source-of-truth JSON, code archive, repeatable regeneration | Tavola |
+| Embedded Go runtime config from a live DB schema | `golet/genesis` |
+| PHP or Perl output | Tavola |
+| Standalone generated Go/Genelet service | Tavola `--lang go` |
+
 ## Repository Layout
 
 - `cmd/tavola-generate/` contains the Go generator CLI.
@@ -198,3 +212,6 @@ Run generated-output smoke checks:
 script/smoke-generated-project --spec specs/project.template.json --lang all --no-web-ui
 script/smoke-sqlite-init
 ```
+
+For release gates and the module-path migration rule, see
+[Release Checklist](docs/release-checklist.md).

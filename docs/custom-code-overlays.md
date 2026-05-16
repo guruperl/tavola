@@ -57,7 +57,8 @@ For this example:
 - `goModelFile` replaces the generated Go `internal/car/model.go`.
 
 If an overlay is omitted, Tavola writes its normal generated default for that
-file.
+file. Go overlay source files are copied into the generated archive during
+generation, so keep them outside the output directory used with `--replace`.
 
 Go overlays are supported only by direct JSON generation. The legacy metadata
 database import path rejects `goFilter`, `goFilterFile`, `goModel`, and
