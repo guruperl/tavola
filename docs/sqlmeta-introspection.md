@@ -108,6 +108,9 @@ script/verify-sqlmeta-workflow --integration
 script/verify-sqlmeta-workflow --all
 ```
 
+The GitHub workflows are intentionally manual-dispatch. Treat `--all` as the
+mandatory local release gate before pushing a sqlmeta dependency ladder.
+
 The script first runs `../sqlmeta/script/refresh-contract-fixtures`, which
 refreshes the canonical `manual_pk_fk` green fixture, the `invalid_overrides`
 warning fixture, and the `missing_auth_table` error snapshots. Only

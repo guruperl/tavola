@@ -2,6 +2,8 @@
 
 This workflow is local-only during development. Run it from the Tavola repo
 with sibling checkouts at `../sqlmeta`, `../molecule`, and `../golet`.
+GitHub CI for these repos is manual-dispatch only; the local workflow below is
+the required release gate before pushing sqlmeta contract bumps.
 
 ## Fast Gate
 
@@ -34,7 +36,7 @@ It runs the Docker-backed molecule and golet database harnesses and `golet` vet.
    `github.com/genelet/molecule`, run the golet harness and vet, then commit and
    push.
 4. In `tavola`, commit generated specs/docs/tests that consume the new contract,
-   then run `script/verify-sqlmeta-workflow --all` and push.
+   then run `script/verify-sqlmeta-workflow --all` and push only if it passes.
 
 If the drift check fails, run:
 
