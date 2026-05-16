@@ -13,7 +13,8 @@ JSON as its normal project spec.
 3. Pass `--schema-overrides` when the app needs virtual PK/FK relationships that
    differ from the physical database.
 4. Review the generated `introspection.warnings` before importing or generating
-   a Tavola app.
+   a Tavola app. Use `introspection.warningDetails` when automation needs
+   stable diagnostic codes.
 
 Example:
 
@@ -34,6 +35,8 @@ GOWORK=off go run ./cmd/tavola-introspect \
   --auth-password passwd \
   --auth-firstname firstname \
   --auth-lastname lastname \
+  --auth-procedure proc_u_login \
+  --auth-procedure-sql 'SELECT public_id, email, firstname, lastname FROM users WHERE email = ? AND passwd = ?' \
   --schema-overrides overrides.textpb \
   --out ../tavola/specs/sqlmeta.project.json \
   --force
@@ -54,6 +57,12 @@ GOWORK=off go run ./cmd/tavola-introspect \
 - `introspection.warnings` is the review surface for synthesized DDL, manual
   override decisions, missing login procedures, skipped relationships, and other
   introspection caveats.
+- `introspection.warningDetails` mirrors `introspection.warnings` with
+  `{code,severity,message}` objects so package tests and workflow automation can
+  assert warning semantics without parsing prose.
+- Auth login procedures are optional during introspection. Pass
+  `--auth-procedure` and `--auth-procedure-sql` to emit `schema.procedures`;
+  otherwise sqlmeta emits a warning and Tavola keeps the role for review.
 
 ## Local Verification
 

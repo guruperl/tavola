@@ -19,6 +19,9 @@ ok(eval { Tavola::Project::Spec::Validator->validate($spec); 1 }, 'sqlmeta-gener
 is($spec->{introspection}->{source}, 'sqlmeta', 'introspection source records sqlmeta');
 like(join("\n", @{$spec->{introspection}->{warnings}}), qr/manual primary key override/, 'manual PK warning is preserved');
 like(join("\n", @{$spec->{introspection}->{warnings}}), qr/without a login procedure/, 'missing login procedure warning is preserved');
+my @warning_codes = map { $_->{code} } @{$spec->{introspection}->{warningDetails}};
+ok(grep { $_ eq 'table_manual_primary_key' } @warning_codes, 'manual PK warning code is preserved');
+ok(grep { $_ eq 'auth_missing_login_procedure' } @warning_codes, 'missing login procedure warning code is preserved');
 
 is($spec->{project}->{publicRole}, 'p', 'public role remains p');
 
@@ -78,7 +81,7 @@ SKIP: {
 SKIP: {
 	my $project_path = "$repo/../sqlmeta/tavola/testdata/contracts/invalid_overrides.project.json";
 	my $warnings_path = "$repo/../sqlmeta/tavola/testdata/contracts/invalid_overrides.warnings.txt";
-	skip 'sqlmeta sibling invalid override fixtures are not checked out', 8 unless -f $project_path && -f $warnings_path;
+	skip 'sqlmeta sibling invalid override fixtures are not checked out', 10 unless -f $project_path && -f $warnings_path;
 	my $invalid = _read_json($project_path);
 	ok(eval { Tavola::Project::Spec::Validator->validate($invalid); 1 }, 'invalid override project fixture validates');
 	open my $fh, '<', $warnings_path or die "Cannot open $warnings_path: $!";
@@ -91,6 +94,13 @@ SKIP: {
 	like($warnings, qr/ambiguous table name matched archive\.teams, public\.teams/, 'ambiguous table warning is preserved');
 	like($warnings, qr/composite columns; skipped role scope edge/, 'composite manual FK warning is preserved');
 	like($warnings, qr/missing_user_id/, 'invalid manual FK warning is preserved');
+	my %invalid_warning_codes = map { $_->{code} => 1 } @{$invalid->{introspection}->{warningDetails}};
+	ok($invalid_warning_codes{manual_pk_missing_column}
+		&& $invalid_warning_codes{manual_fk_ambiguous_table}
+		&& $invalid_warning_codes{manual_fk_composite}
+		&& $invalid_warning_codes{manual_fk_missing_child_column}
+		&& $invalid_warning_codes{auth_missing_login_procedure}, 'invalid override warning codes are preserved');
+	is_deeply([ map { $_->{message} } @{$invalid->{introspection}->{warningDetails}} ], $invalid->{introspection}->{warnings}, 'warning detail messages mirror warning strings');
 	my %invalid_components = map { $_->{table} => $_ } @{$invalid->{components}};
 	ok($invalid_components{users}->{roles}->{u} && $invalid_components{posts}->{roles}->{u}, 'valid auth-scope tables receive protected grants');
 	ok(!$invalid_components{audit_log}->{roles} && !$invalid_components{memberships}->{roles}, 'unrelated and skipped-FK tables receive no protected grants');
