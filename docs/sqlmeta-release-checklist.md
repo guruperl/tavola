@@ -7,15 +7,15 @@ the required release gate before pushing sqlmeta contract bumps.
 
 ## Fast Gate
 
-Use this while iterating on sqlmeta contracts or Tavola JSON generation:
+Use this while iterating on sqlmeta contracts or Tavola direct generation:
 
 ```bash
 script/verify-sqlmeta-workflow --fast
 ```
 
 It refreshes generated contract fixtures, checks drift, runs `sqlmeta` Go tests,
-and verifies Tavola consumption of both generated sqlmeta fixtures and the
-reviewed SupportDesk JSON source-of-truth fixture.
+runs Tavola Go tests for direct sqlmeta and compatibility generation, and
+verifies the reviewed SupportDesk compatibility fixture.
 
 ## Integration Gate
 
@@ -35,8 +35,10 @@ It runs the Docker-backed molecule and golet database harnesses and `golet` vet.
 3. In `golet`, bump `github.com/genelet/sqlmeta` and
    `github.com/genelet/molecule`, run the golet harness and vet, then commit and
    push.
-4. In `tavola`, commit generated specs/docs/tests that consume the new contract,
-   then run `script/verify-sqlmeta-workflow --all` and push only if it passes.
+4. In `tavola`, bump `github.com/genelet/sqlmeta`, commit direct-generation
+   tests/docs plus any compatibility fixture updates that consume the new
+   contract, then run `script/verify-sqlmeta-workflow --all` and push only if it
+   passes.
 
 If the drift check fails, run:
 

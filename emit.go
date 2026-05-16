@@ -282,7 +282,7 @@ func apiManifest(model *generationModel) map[string]any {
 			"actions":         manifestActions,
 		})
 	}
-	return map[string]any{
+	manifest := map[string]any{
 		"format":           "tavola-api-manifest",
 		"version":          1,
 		"project":          map[string]any{"name": model.Project.Project, "script": model.Project.Script, "public_role": model.Project.PublicRole, "default": map[string]any{"component": model.Project.DefaultComp, "action": model.Project.DefaultAction}},
@@ -296,6 +296,14 @@ func apiManifest(model *generationModel) map[string]any {
 		"roles":      roles,
 		"components": components,
 	}
+	if model.Inspect != nil {
+		manifest["introspection"] = map[string]any{
+			"source":          model.Inspect.Source,
+			"warnings":        nonNilStrings(model.Inspect.Warnings),
+			"warning_details": model.Inspect.WarningDetails,
+		}
+	}
+	return manifest
 }
 
 func openAPIDocument(manifest map[string]any) map[string]any {
@@ -348,7 +356,7 @@ func openAPIDocument(manifest map[string]any) map[string]any {
 			"x-tavola-actions":   comp["actions"],
 		}}
 	}
-	return map[string]any{
+	doc := map[string]any{
 		"openapi": "3.0.3",
 		"info": map[string]any{
 			"title":       project["name"].(string) + " API",
@@ -360,6 +368,10 @@ func openAPIDocument(manifest map[string]any) map[string]any {
 		"x-tavola-source":           "api.json",
 		"x-tavola-endpoint-pattern": manifest["endpoint_pattern"],
 	}
+	if introspection, ok := manifest["introspection"]; ok {
+		doc["x-tavola-introspection"] = introspection
+	}
+	return doc
 }
 
 func apiDocs(manifest map[string]any) string {
@@ -384,6 +396,17 @@ func apiDocs(manifest map[string]any) string {
 			b.WriteString(" | `")
 			b.WriteString(action["examples"].(map[string]any)["json"].(string))
 			b.WriteString("` |\n")
+		}
+	}
+	if introspection, ok := manifest["introspection"].(map[string]any); ok {
+		warnings := toStringSlice(introspection["warnings"])
+		if len(warnings) > 0 {
+			b.WriteString("\n## Introspection Warnings\n\n")
+			for _, warning := range warnings {
+				b.WriteString("- ")
+				b.WriteString(warning)
+				b.WriteString("\n")
+			}
 		}
 	}
 	return b.String()

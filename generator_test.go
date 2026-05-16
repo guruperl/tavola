@@ -50,6 +50,33 @@ func TestGenerateFromSQLMetaDirectContractScenario(t *testing.T) {
 			if api["format"] != "tavola-api-manifest" {
 				t.Fatalf("unexpected api format %v", api["format"])
 			}
+			introspection, ok := api["introspection"].(map[string]any)
+			if !ok {
+				t.Fatalf("api manifest missing sqlmeta introspection metadata")
+			}
+			if introspection["source"] != "sqlmeta" {
+				t.Fatalf("unexpected introspection source %v", introspection["source"])
+			}
+			if got := len(introspection["warnings"].([]any)); got == 0 {
+				t.Fatalf("expected introspection warnings")
+			}
+			details := introspection["warning_details"].([]any)
+			if len(details) == 0 {
+				t.Fatalf("expected warning details")
+			}
+			if code := details[0].(map[string]any)["code"]; code == "" || code == xmeta.DiagnosticUnknown {
+				t.Fatalf("expected stable diagnostic code, got %v", code)
+			}
+			var openapi map[string]any
+			if err := json.Unmarshal([]byte(files["openapi.json"]), &openapi); err != nil {
+				t.Fatal(err)
+			}
+			if _, ok := openapi["x-tavola-introspection"]; !ok {
+				t.Fatalf("openapi missing introspection extension")
+			}
+			if !containsText(files["docs/api.md"], "## Introspection Warnings") {
+				t.Fatalf("api docs missing introspection warnings")
+			}
 			switch lang {
 			case LanguagePHP:
 				if files["src/posts/component.json"] == "" || files["www/app.php"] == "" {
@@ -65,6 +92,44 @@ func TestGenerateFromSQLMetaDirectContractScenario(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGenerateFromExpandedAppWithDiagnosticsPreservesCodes(t *testing.T) {
+	scenario, err := xmeta.LoadContractScenario(xmeta.ContractScenarioManualPKFK)
+	if err != nil {
+		t.Fatal(err)
+	}
+	app, err := xmeta.BuildDefaultAppSpec(scenario.Meta, xmeta.AppSpecOptions{
+		Name:            scenario.AppName,
+		Auth:            scenario.Auth,
+		RoleName:        scenario.RoleName,
+		SchemaOverrides: scenario.SchemaOverrides,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expanded, diagnostics, err := xmeta.ExpandRoleScopesWithDiagnostics(scenario.Meta, app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive, err := GenerateFromExpandedAppWithDiagnostics(scenario.Meta, expanded, diagnostics, GenerateOptions{
+		Language:           LanguageGo,
+		Project:            "SqlmetaApp",
+		PublicRole:         "p",
+		DatasourceType:     "SQLite",
+		DatasourceDatabase: "app.sqlite",
+		Deterministic:      true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := filesByPath(archive)["api.json"]
+	if !containsText(api, `"warning_details"`) {
+		t.Fatalf("api manifest missing warning details:\n%s", api)
+	}
+	if containsText(api, `"code": "unknown"`) {
+		t.Fatalf("api manifest lost diagnostic codes:\n%s", api)
 	}
 }
 

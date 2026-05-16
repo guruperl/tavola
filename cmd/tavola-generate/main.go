@@ -15,6 +15,8 @@ import (
 	"github.com/genelet/sqlmeta/xmeta"
 	"github.com/guruperl/tavola"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 )
 
 func main() {
@@ -60,7 +62,7 @@ func run() error {
 	)
 	flag.StringVar(&specPath, "spec", "", "compatibility Tavola JSON spec path")
 	flag.StringVar(&metaPath, "meta", "", "sqlmeta MetaDatabase file (.json, .textpb, .pb)")
-	flag.StringVar(&expandedPath, "expanded-app", "", "sqlmeta ExpandedAppSpec file (.json)")
+	flag.StringVar(&expandedPath, "expanded-app", "", "sqlmeta ExpandedAppSpec file (.json, .textpb, .pb)")
 	flag.StringVar(&driver, "driver", "", "database driver for live introspection: mysql, postgres, sqlite")
 	flag.StringVar(&dsn, "dsn", "", "database/sql DSN for live introspection")
 	flag.StringVar(&database, "database", "", "database name")
@@ -250,8 +252,21 @@ func loadExpandedApp(path string) (*xmeta.ExpandedAppSpec, error) {
 		return nil, err
 	}
 	var app xmeta.ExpandedAppSpec
-	if err := protojson.Unmarshal(data, &app); err != nil {
-		return nil, err
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".json":
+		if err := protojson.Unmarshal(data, &app); err != nil {
+			return nil, err
+		}
+	case ".textpb", ".txtpb", ".pbtxt":
+		if err := prototext.Unmarshal(data, &app); err != nil {
+			return nil, err
+		}
+	case ".pb", ".bin":
+		if err := proto.Unmarshal(data, &app); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown expanded app extension %q (supported: .json, .textpb, .pb)", filepath.Ext(path))
 	}
 	return &app, nil
 }

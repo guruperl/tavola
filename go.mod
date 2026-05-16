@@ -3,7 +3,7 @@ module github.com/guruperl/tavola
 go 1.25.5
 
 require (
-	github.com/genelet/sqlmeta v0.0.0
+	github.com/genelet/sqlmeta v0.0.0-20260516023452-775a4c8c4181
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/lib/pq v1.12.3
 	github.com/mattn/go-sqlite3 v1.14.44
@@ -56,5 +56,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b // indirect
 	google.golang.org/grpc v1.78.0 // indirect
 )
-
-replace github.com/genelet/sqlmeta => ../sqlmeta

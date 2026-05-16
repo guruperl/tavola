@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	compat "github.com/genelet/sqlmeta/tavola"
 	"github.com/genelet/sqlmeta/xmeta"
 )
 
@@ -186,31 +185,16 @@ func GenerateFromExpandedApp(meta *xmeta.MetaDatabase, app *xmeta.ExpandedAppSpe
 	return generateFromExpandedApp(meta, app, nil, opts)
 }
 
+func GenerateFromExpandedAppWithDiagnostics(meta *xmeta.MetaDatabase, app *xmeta.ExpandedAppSpec, diagnostics []xmeta.Diagnostic, opts GenerateOptions) (*Archive, error) {
+	return generateFromExpandedApp(meta, app, diagnostics, opts)
+}
+
 func generateFromExpandedApp(meta *xmeta.MetaDatabase, app *xmeta.ExpandedAppSpec, diagnostics []xmeta.Diagnostic, opts GenerateOptions) (*Archive, error) {
-	spec, err := compat.BuildTavolaSpecWithDiagnostics(meta, app, diagnostics, compat.Options{
-		Project:            opts.Project,
-		Script:             opts.Script,
-		PublicRole:         opts.PublicRole,
-		OwnerLogin:         opts.OwnerLogin,
-		OwnerEmail:         opts.OwnerEmail,
-		OwnerTypeID:        opts.OwnerTypeID,
-		DatasourceType:     opts.DatasourceType,
-		DatasourceNickname: opts.DatasourceNickname,
-		DatasourceDatabase: opts.DatasourceDatabase,
-		DatasourceHost:     opts.DatasourceHost,
-		DatasourcePort:     opts.DatasourcePort,
-		DatasourceUser:     opts.DatasourceUser,
-		DatasourcePassword: opts.DatasourcePassword,
-		DatasourcePath:     opts.DatasourcePath,
-	})
+	spec, err := buildSpecFromExpandedApp(meta, app, diagnostics, opts)
 	if err != nil {
 		return nil, err
 	}
-	local, err := specFromCompat(spec)
-	if err != nil {
-		return nil, err
-	}
-	return GenerateFromTavolaSpec(local, opts)
+	return GenerateFromTavolaSpec(spec, opts)
 }
 
 func GenerateFromTavolaSpec(spec *Spec, opts GenerateOptions) (*Archive, error) {
@@ -249,14 +233,6 @@ func LoadTavolaSpecFile(path string) (*Spec, error) {
 	}
 	spec.BaseDir = filepath.Dir(path)
 	return spec, nil
-}
-
-func specFromCompat(spec *compat.Spec) (*Spec, error) {
-	data, err := json.Marshal(spec)
-	if err != nil {
-		return nil, err
-	}
-	return LoadTavolaSpecJSON(data)
 }
 
 func firstNonEmpty(values ...string) string {

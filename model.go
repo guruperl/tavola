@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/genelet/sqlmeta/xmeta"
 )
 
 type generationModel struct {
@@ -21,6 +23,7 @@ type generationModel struct {
 	RoleACL    []aclRow
 	Other      otherRows
 	Options    GenerateOptions
+	Inspect    *Introspection
 }
 
 type projectRow struct {
@@ -194,7 +197,7 @@ func buildGenerationModel(spec *Spec, opts GenerateOptions) (*generationModel, e
 		Host:          spec.Datasource.Host,
 		Port:          spec.Datasource.Port,
 	}
-	model := &generationModel{Project: p, Options: opts}
+	model := &generationModel{Project: p, Options: opts, Inspect: cloneIntrospection(spec.Introspection)}
 	baseDir := specBaseDir(opts)
 	tablesByName := map[string]tableRow{}
 	tablesByID := map[int]tableRow{}
@@ -542,4 +545,22 @@ func deterministicHex(opts GenerateOptions, n int) string {
 		return strings.Repeat("0", n)
 	}
 	return hex.EncodeToString(buf)[:n]
+}
+
+func cloneIntrospection(in *Introspection) *Introspection {
+	if in == nil {
+		return nil
+	}
+	out := &Introspection{
+		Source:         in.Source,
+		Warnings:       append([]string(nil), in.Warnings...),
+		WarningDetails: append([]xmeta.Diagnostic(nil), in.WarningDetails...),
+	}
+	if out.Warnings == nil {
+		out.Warnings = []string{}
+	}
+	if out.WarningDetails == nil {
+		out.WarningDetails = []xmeta.Diagnostic{}
+	}
+	return out
 }
