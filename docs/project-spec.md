@@ -16,7 +16,7 @@ For specs generated from an existing database, use sqlmeta's
 ## Top-Level Blocks
 
 - `version`: spec format version. Use `1`.
-- `owner`: metadata owner for compatibility import/export.
+- `owner`: compatibility owner metadata retained in the spec.
 - `project`: generated app identity, URL prefix, public role, and default
   landing component/action.
 - `datasource`: generated app runtime database connection values.
@@ -214,8 +214,9 @@ Each generated archive also includes:
   extensions.
 - `docs/api.md`, generated endpoint documentation derived from `api.json`.
 
-These files are emitted for PHP and Perl output and are still generated when
-`--no-web-ui` is used.
+These files are emitted for PHP, Perl, and Go output. The compatibility
+`--no-web-ui` flag is accepted by the wrapper, but the current Go generator
+emits backend/API archives.
 
 ## Overlays
 
@@ -223,10 +224,8 @@ Use `overlays` when generated defaults are not enough. Component overlays can
 replace generated PHP `Filter` or `Model` files, Go `filter.go` or `model.go`
 files, and `componentJsonFile` can replace the generated component action
 contract. Use `goFilterFile` and `goModelFile` for Go component overlays.
-Go overlays are direct JSON generation only; metadata DB import rejects them
-instead of silently dropping them.
 `componentJson` and
-`componentJsonFile` are validated during generation/import and must include the
+`componentJsonFile` are validated during generation and must include the
 standard component contract keys: `actions`, `current_table`, `current_key`,
 `insert_pars`, `edit_pars`, `update_pars`, and `topics_pars`. See
 [Custom Code Overlays](custom-code-overlays.md).

@@ -38,15 +38,9 @@ SQLite-backed test suite without a service database.
 
 ## Configuration
 
-`conf/config.json` provides generator defaults and the legacy metadata DB
-connection used only by the compatibility import/export commands. Direct JSON
-generation can run without a metadata database. DB-backed compatibility commands
-require:
-
-```text
-TAVOLA_DB_USER
-TAVOLA_DB_PASS
-```
+`conf/config.json` is retained for legacy runtime defaults and fixtures. The Go
+generator reads the project spec directly and does not require a Tavola
+metadata database.
 
 Generated application specs can still contain their own datasource placeholders,
 such as `${APP_DB_USER}` and `${APP_DB_PASSWORD}`.
@@ -120,19 +114,10 @@ under `lib/<Project>/<Component>/`. Go archives include `go.mod`, `README.md`,
 a `cmd/<project>/main.go` entrypoint, app registration under `internal/app/`,
 and component packages under `internal/<component>/`.
 
-When generated app web UI is enabled, the archive also includes:
-
-- `views/` with server-rendered HTML templates for each role and component.
-- For PHP and Perl, `www/<role>/*.vue` and
-  `www/<role>/<component>/*.vue` with Vue components.
-- For PHP and Perl, `www/app.html`, the browser app shell that loads Vue
-  components.
-- `www/index.html`, a generated route index.
-- For PHP and Perl, `www/genelet.js`, the browser helper copied from
-  `assets/genelet.js`.
-
-These files are generated app UI, not the old hosted Tavola builder UI. Use
-`--no-web-ui` when you only want backend/API output.
+The old Perl generator's Vue/browser template output has been removed. The
+current Go generator emits backend/API archives plus runtime template paths in
+`conf/config.json`; richer generated browser templates can be added back in the
+Go emitter when needed.
 
 Run the offline smoke harness to generate both language targets into a
 temporary directory and verify the backend/API archive layout:
@@ -187,12 +172,9 @@ in the spec. `<component>` is a generated component name. `<action>` is an
 action allowed by that component's `component.json`, such as `topics`,
 `startnew`, `insert`, `edit`, `update`, or `delete`.
 
-The generated Vue shell for PHP and Perl at `www/app.html` uses hash routes
-such as `/app.html#/p/widget?action=topics`, then calls the JSON endpoint
-through `www/genelet.js`. Go currently emits minimal server-rendered HTML
-templates that exercise the same route contract. API-only archives generated
-with `--no-web-ui` keep the same JSON endpoint pattern but omit the browser
-shell, Vue components, and HTML templates.
+The removed Perl generator used to emit a Vue shell and copied browser assets.
+The Go generator currently focuses on backend/API output while keeping the same
+JSON and HTML endpoint pattern in the generated app contract.
 
 ## Metadata DB Compatibility
 
