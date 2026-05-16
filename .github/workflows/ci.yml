@@ -1,18 +1,53 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/genelet/*
+      GONOSUMDB: github.com/genelet/*
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Perl dependencies
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Configure private module access
+        env:
+          GENELET_READ_TOKEN: ${{ secrets.GENELET_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          token="${GENELET_READ_TOKEN:-$GITHUB_TOKEN}"
+          git config --global url."https://x-access-token:${token}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install smoke dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libjson-perl libtemplate-perl
+          sudo apt-get install -y php-cli
 
       - name: Test
-        run: prove -Ilib -I../perl t/*.t
+        run: GOWORK=off go test ./...
+
+      - name: Vet
+        run: GOWORK=off go vet ./...
+
+      - name: Staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          GOWORK=off staticcheck ./...
+
+      - name: Smoke generated projects
+        run: script/smoke-generated-project --spec specs/project.template.json --lang all --no-web-ui
+
+      - name: Smoke SQLite init
+        run: script/smoke-sqlite-init
