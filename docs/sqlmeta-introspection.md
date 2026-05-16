@@ -90,8 +90,8 @@ script/smoke-generated-project --spec specs/supportdesk.project.json --lang all
 script/smoke-sqlite-init
 ```
 
-`smoke-generated-project` validates the exported PHP, Perl, and API-only Go
-project packages.
+`smoke-generated-project` validates the exported PHP, Perl, and Go project
+packages.
 `smoke-sqlite-init` regenerates a PHP package, executes the full generated
 `conf/init.sql` in an in-memory SQLite database, compares that schema against
 `specs/supportdesk/schema.sql`, and inserts linked rows through the generated

@@ -3,7 +3,7 @@
 Tavola project specs keep generated app structure in JSON and allow explicit
 custom-code overlays for files that should not be regenerated from defaults.
 Use overlays when a component needs hand-written behavior in its generated
-`Filter.php` or `Model.php`.
+filter or model file.
 
 ## Source Of Truth
 
@@ -38,7 +38,9 @@ Component overlays replace generated defaults for one component file.
     "components": {
       "car": {
         "filterFile": "../jenny/src/car/Filter.php",
-        "modelFile": "../jenny/src/car/Model.php"
+        "modelFile": "../jenny/src/car/Model.php",
+        "goFilterFile": "overlays/internal/car/filter.go",
+        "goModelFile": "overlays/internal/car/model.go"
       }
     }
   }
@@ -49,8 +51,10 @@ For this example:
 
 - `componentJsonFile` provides the component action contract, including custom
   actions like `years`, `makes`, or `history`.
-- `filterFile` replaces the generated `src/car/Filter.php`.
-- `modelFile` replaces the generated `src/car/Model.php`.
+- `filterFile` replaces the generated PHP `src/car/Filter.php`.
+- `modelFile` replaces the generated PHP `src/car/Model.php`.
+- `goFilterFile` replaces the generated Go `internal/car/filter.go`.
+- `goModelFile` replaces the generated Go `internal/car/model.go`.
 
 If an overlay is omitted, Tavola writes its normal generated default for that
 file.
@@ -95,6 +99,8 @@ specs/my.project.json
 specs/my/sql/
 specs/my/overlays/src/car/Filter.php
 specs/my/overlays/src/car/Model.php
+specs/my/overlays/internal/car/filter.go
+specs/my/overlays/internal/car/model.go
 ```
 
 Then reference them with paths relative to the spec file:
@@ -105,7 +111,9 @@ Then reference them with paths relative to the spec file:
     "components": {
       "car": {
         "filterFile": "my/overlays/src/car/Filter.php",
-        "modelFile": "my/overlays/src/car/Model.php"
+        "modelFile": "my/overlays/src/car/Model.php",
+        "goFilterFile": "my/overlays/internal/car/filter.go",
+        "goModelFile": "my/overlays/internal/car/model.go"
       }
     }
   }
@@ -121,8 +129,8 @@ the JSON source-of-truth package more portable.
 ## Rules For Overlay Code
 
 - Keep generated framework boilerplate compatible with the current generator:
-  namespace, parent class, method signatures, and return types should match the
-  generated file shape.
+  namespace or package name, parent/embedded type, method signatures, and
+  return types should match the generated file shape.
 - Add custom logic inside existing lifecycle methods when possible.
 - For custom model actions, add the action to `componentJsonFile` or
   `componentJson` so the generated app knows the route exists.

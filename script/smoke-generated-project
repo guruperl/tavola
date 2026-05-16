@@ -33,7 +33,6 @@ GetOptions(
 usage(0) if $help;
 usage(2) unless $spec;
 $lang = lc $lang;
-die "Go generation is API/JSON-only; use --no-web-ui.\n" if $web_ui && $lang eq 'go';
 die "Unsupported --lang '$lang'. Use php, perl, go, or all.\n" unless $lang eq 'php' || $lang eq 'perl' || $lang eq 'go' || $lang eq 'all';
 
 my @langs = $lang eq 'all' ? qw(php perl go) : ($lang);
@@ -49,7 +48,7 @@ my ($one, $other) = $loader->export_data();
 
 for my $target (@langs) {
 	my $out = File::Spec->catdir($root, $target);
-	my $target_web_ui = $target eq 'go' ? 0 : $web_ui;
+	my $target_web_ui = $web_ui;
 	Tavola::Project::Exporter->new(
 		config_path => $config,
 		lang => $target,
@@ -107,6 +106,7 @@ sub verify_project {
 		}
 	} elsif ($target eq 'go') {
 		_require_file($out, 'go.mod');
+		_require_file($out, 'README.md');
 		my $cmd = _go_path($api->{project}->{name});
 		_require_file($out, "cmd/$cmd/main.go");
 		_require_file($out, 'internal/app/app.go');
@@ -120,9 +120,16 @@ sub verify_project {
 	}
 
 	if ($target_web_ui) {
-		_require_file($out, 'www/genelet.js');
 		_require_file($out, 'www/index.html');
-		_require_file($out, 'www/app.html');
+		if ($target eq 'go') {
+			my $role = $api->{project}->{public_role};
+			my $component = $api->{components}->[0]->{name};
+			_require_file($out, "views/$role/error.html");
+			_require_file($out, "views/$role/$component/topics.html");
+		} else {
+			_require_file($out, 'www/genelet.js');
+			_require_file($out, 'www/app.html');
+		}
 	}
 
 	return;
@@ -138,7 +145,7 @@ sub compile_generated_go {
 
 	my $api = _read_json(File::Spec->catfile($out, 'api.json'));
 	my $config = _read_json(File::Spec->catfile($out, 'conf', 'config.json'));
-	my $crud = _go_crud_smoke_case($api, $config);
+	my $crud = _go_crud_smoke_case($api, $config, -d File::Spec->catdir($out, 'views'));
 	if ($crud) {
 		_write_text(
 			File::Spec->catfile($out, 'internal', 'app', 'smoke_generated_test.go'),
@@ -157,7 +164,7 @@ sub compile_generated_go {
 }
 
 sub _go_crud_smoke_case {
-	my ($api, $config) = @_;
+	my ($api, $config, $with_html) = @_;
 	return unless ref($config->{ConnectArray}) eq 'ARRAY'
 		&& ($config->{ConnectArray}->[0] || '') =~ /\Asqlite3?\z/i;
 
@@ -185,6 +192,12 @@ sub _go_crud_smoke_case {
 			script => $api->{project}->{script},
 			insert_field => $insert[0],
 			update_field => $update[0],
+			with_html => $with_html ? 1 : 0,
+			(($api->{project}->{name} || '') eq 'GoSmoke' ? (
+				login_role => $role_name,
+				login => 'smoke@example.test',
+				password => 'secret',
+			) : ()),
 		};
 	}
 	return;
@@ -199,10 +212,15 @@ sub _go_crud_smoke_source {
 	my $script = _go_quote($case->{script});
 	my $insert_field = _go_quote($case->{insert_field});
 	my $update_field = _go_quote($case->{update_field});
+	my $login_role = _go_quote($case->{login_role} || '');
+	my $login = _go_quote($case->{login} || '');
+	my $password = _go_quote($case->{password} || '');
+	my $with_html = $case->{with_html} ? 'true' : 'false';
 
 	return qq~package app
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -221,6 +239,8 @@ func TestGeneratedCRUDRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.ConnectArray = []string{"sqlite3", filepath.Join(t.TempDir(), "smoke.sqlite")}
+	config.Template = filepath.Join(root, "views")
+	config.DocumentRoot = filepath.Join(root, "www")
 
 	db, err := config.OpenDB()
 	if err != nil {
@@ -244,9 +264,32 @@ func TestGeneratedCRUDRoutes(t *testing.T) {
 	script := $script
 	insertField := $insert_field
 	updateField := $update_field
+	loginRole := $login_role
+	loginName := $login
+	loginPassword := $password
+	withHTML := $with_html
 
 	publicURL := script + "/" + publicRole + "/json/" + component + "?action=topics"
 	assertGeneratedStatus(t, controller, http.MethodGet, publicURL, nil, "", http.StatusOK)
+	if withHTML {
+		htmlURL := script + "/" + publicRole + "/html/" + component + "?action=topics"
+		htmlBody := assertGeneratedStatus(t, controller, http.MethodGet, htmlURL, nil, "", http.StatusOK)
+		if !strings.Contains(htmlBody, component+" topics") {
+			t.Fatalf("html response missing generated template marker: %s", htmlBody)
+		}
+	}
+
+	if loginRole != "" {
+		seedLoginUser(t, db, loginName, loginPassword)
+		loginValues := url.Values{"email": {loginName}, "passwd": {loginPassword}, "go_uri": {script + "/" + loginRole + "/json/" + component + "?action=topics"}}
+		loginBody, loginCookies := assertGeneratedStatusCookies(t, controller, http.MethodPost, script+"/"+loginRole+"/json/login", loginValues, "", http.StatusOK)
+		if !strings.Contains(loginBody, `"data"`) {
+			t.Fatalf("login response missing json data: %s", loginBody)
+		}
+		if len(loginCookies) == 0 {
+			t.Fatalf("login response did not set auth cookies")
+		}
+	}
 
 	insertValues := url.Values{"action": {"insert"}, insertField: {"alpha"}}
 	assertGeneratedStatus(t, controller, http.MethodPost, script+"/"+role+"/json/"+component, insertValues, role, http.StatusOK)
@@ -266,6 +309,12 @@ func TestGeneratedCRUDRoutes(t *testing.T) {
 
 func assertGeneratedStatus(t *testing.T, controller *genelet.Controller, method string, target string, values url.Values, role string, want int) string {
 	t.Helper()
+	body, _ := assertGeneratedStatusCookies(t, controller, method, target, values, role, want)
+	return body
+}
+
+func assertGeneratedStatusCookies(t *testing.T, controller *genelet.Controller, method string, target string, values url.Values, role string, want int) (string, []*http.Cookie) {
+	t.Helper()
 	var body *strings.Reader
 	if values != nil {
 		body = strings.NewReader(values.Encode())
@@ -284,7 +333,7 @@ func assertGeneratedStatus(t *testing.T, controller *genelet.Controller, method 
 	if w.Code != want {
 		t.Fatalf("%s %s status = %d, want %d, body = %s", method, target, w.Code, want, w.Body.String())
 	}
-	return w.Body.String()
+	return w.Body.String(), w.Result().Cookies()
 }
 
 func addGeneratedAuth(t *testing.T, config *genelet.Config, req *http.Request, roleName string) {
@@ -298,6 +347,14 @@ func addGeneratedAuth(t *testing.T, config *genelet.Config, req *http.Request, r
 	}
 	req.AddCookie(&http.Cookie{Name: role.Surface, Value: signer.Signature(signatureFields...)})
 	req.Header.Set("X-CSRF-Token", base.CSRFToken())
+}
+
+func seedLoginUser(t *testing.T, db interface{ Exec(string, ...interface{}) (sql.Result, error) }, email string, password string) {
+	t.Helper()
+	_, err := db.Exec("INSERT INTO admin_user (email, passwd, firstname, lastname, status) VALUES (?, ?, 'Smoke', 'Admin', 'active')", email, password)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 ~;
 }

@@ -93,6 +93,48 @@ require github.com/guruperl/genelet v0.1.0
 ~;
 }
 
+sub readme {
+	my $self = shift;
+	my $project = $self->{PROJECT}->{Project};
+	my $cmd = $self->command_dir();
+	my $script = $self->{PROJECT}->{Script} || '/app.php';
+	my $component = ($self->{COMPONENTS} || [])->[0] || $self->{PROJECT}->{def_component} || 'component';
+	my $role = $self->{PROJECT}->{Pubrole} || 'p';
+
+	return qq~# $project
+
+Generated Go/Genelet application from Tavola.
+
+## Setup
+
+```bash
+go mod tidy
+go test ./...
+```
+
+Initialize the database with `conf/init.sql`, then update `conf/config.json`
+or the datasource environment variables referenced by `ConnectArray`.
+
+## Run
+
+```bash
+go run ./cmd/$cmd
+```
+
+The generated server listens on `ServerPort` from `conf/config.json`; Genelet
+defaults to port `80` when it is omitted.
+
+## Smoke Endpoint
+
+```text
+$script/$role/json/$component?action=topics
+```
+
+When templates are generated, HTML endpoints use the same route shape with
+`html` in place of `json`.
+~;
+}
+
 sub main {
 	my $self = shift;
 	my $module = $self->module_path();
@@ -395,6 +437,35 @@ func (filter *Filter) Before(model *Model, extra url.Values, nextextra url.Value
 func (filter *Filter) After(model *Model) error {
 	return filter.Filter.After(&model.Model)
 }
+~;
+}
+
+sub error_template {
+	return '<html><body>{{.Errstr}}</body></html>';
+}
+
+sub action_template {
+	my ($self, $component, $action) = @_;
+	return qq~<html>
+<body>
+<h1>$component $action</h1>
+<pre>{{printf "%+v" .}}</pre>
+</body>
+</html>
+~;
+}
+
+sub index_html {
+	my $self = shift;
+	my $script = $self->{PROJECT}->{Script} || '/app.php';
+	my $role = $self->{PROJECT}->{Pubrole} || 'p';
+	my $component = ($self->{COMPONENTS} || [])->[0] || $self->{PROJECT}->{def_component} || 'component';
+	return qq~<!doctype html>
+<html>
+<body>
+<a href="$script/$role/html/$component?action=topics">Open $component</a>
+</body>
+</html>
 ~;
 }
 

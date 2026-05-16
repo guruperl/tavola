@@ -5,9 +5,10 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib", "$Bin/../../perl";
 
 use Cwd qw(abs_path);
+use File::Path qw(make_path);
 use File::Spec;
 use File::Temp qw(tempdir);
-use JSON qw(decode_json);
+use JSON qw(decode_json encode_json);
 use Test::More;
 
 use Tavola::Project::Exporter;
@@ -36,6 +37,8 @@ for my $lang (qw(php perl go)) {
 	_assert_config(_read_json("$out/conf/config.json"), $lang);
 	_assert_component_json(_component_json_path($out, $lang), $lang);
 }
+
+_assert_go_overlay_and_templates();
 
 done_testing();
 
@@ -187,6 +190,41 @@ sub _assert_component_json {
 	is_deeply($component->{topics_pars}, [ qw(item_id title owner_id created) ], "$lang component json topics params");
 }
 
+sub _assert_go_overlay_and_templates {
+	my $case_dir = File::Spec->catdir($tmp, 'go-overlay-case');
+	make_path(File::Spec->catdir($case_dir, 'overlays', 'internal', 'item'));
+
+	my $spec = _read_json("$repo/specs/project.template.json");
+	$spec->{overlays}->{components}->{item} = {
+		goModelFile => 'overlays/internal/item/model.go',
+		goFilterFile => 'overlays/internal/item/filter.go',
+	};
+	_write_text(File::Spec->catfile($case_dir, 'project.json'), encode_json($spec));
+	_write_text(File::Spec->catfile($case_dir, 'overlays', 'internal', 'item', 'model.go'), _go_model_overlay());
+	_write_text(File::Spec->catfile($case_dir, 'overlays', 'internal', 'item', 'filter.go'), _go_filter_overlay());
+
+	my $loader = Tavola::Project::Spec->new(
+		config_path => "$repo/conf/config.json",
+		spec_path => File::Spec->catfile($case_dir, 'project.json'),
+	);
+	my ($one, $other) = $loader->export_data();
+	my $out = File::Spec->catdir($tmp, 'go-overlay');
+	Tavola::Project::Exporter->new(
+		config_path => "$repo/conf/config.json",
+		lang => 'go',
+		data => [ $one, $other ],
+		web_ui => 1,
+		asset_root => $repo,
+	)->write_dir($out, 1);
+
+	like(_read_text("$out/internal/item/model.go"), qr/custom go model overlay/, 'go model overlay replaces generated model');
+	like(_read_text("$out/internal/item/filter.go"), qr/custom go filter overlay/, 'go filter overlay replaces generated filter');
+	ok(-s "$out/README.md", 'go generated README exists');
+	ok(-s "$out/www/index.html", 'go generated web index exists');
+	ok(-s "$out/views/p/error.html", 'go generated public error template exists');
+	ok(-s "$out/views/p/item/topics.html", 'go generated public action template exists');
+}
+
 sub _component_json_path {
 	my ($out, $lang) = @_;
 	return "$out/src/item/component.json" if $lang eq 'php';
@@ -212,7 +250,93 @@ sub _read_text {
 	return $text;
 }
 
+sub _write_text {
+	my ($path, $text) = @_;
+	open my $fh, '>', $path or die "Cannot open $path: $!";
+	print {$fh} $text;
+	close $fh or die "Cannot close $path: $!";
+	return;
+}
+
 sub _sorted {
 	my $list = shift || [];
 	return [ sort @$list ];
+}
+
+sub _go_model_overlay {
+	return <<'GO';
+package item
+
+import (
+	"net/url"
+
+	"github.com/guruperl/genelet"
+)
+
+// custom go model overlay
+type Model struct {
+	genelet.Model
+}
+
+func NewModel() *Model {
+	model := &Model{}
+	model.Initialize(loadComponent())
+	return model
+}
+
+func (model *Model) Topics(extra url.Values, nextextra url.Values) error {
+	return model.Model.Topics(extra, nextextra)
+}
+
+func (model *Model) Edit(extra url.Values, nextextra url.Values) error {
+	return model.Model.Edit(extra, nextextra)
+}
+
+func (model *Model) Insert(extra url.Values, nextextra url.Values) error {
+	return model.Model.Insert(extra, nextextra)
+}
+
+func (model *Model) Insupd(extra url.Values, nextextra url.Values) error {
+	return model.Model.Insupd(extra, nextextra)
+}
+
+func (model *Model) Update(extra url.Values, nextextra url.Values) error {
+	return model.Model.Update(extra, nextextra)
+}
+
+func (model *Model) Delete(extra url.Values, nextextra url.Values) error {
+	return model.Model.Delete(extra, nextextra)
+}
+GO
+}
+
+sub _go_filter_overlay {
+	return <<'GO';
+package item
+
+import (
+	"net/url"
+
+	"github.com/guruperl/genelet"
+)
+
+// custom go filter overlay
+type Filter struct {
+	genelet.Filter
+}
+
+func NewFilter() *Filter {
+	filter := &Filter{}
+	filter.Initialize(loadComponent())
+	return filter
+}
+
+func (filter *Filter) Before(model *Model, extra url.Values, nextextra url.Values) error {
+	return filter.Filter.Before(&model.Model, extra, nextextra)
+}
+
+func (filter *Filter) After(model *Model) error {
+	return filter.Filter.After(&model.Model)
+}
+GO
 }

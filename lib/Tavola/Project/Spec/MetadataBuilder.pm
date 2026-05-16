@@ -137,6 +137,8 @@ sub build {
 			|| Tavola::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->filter();
 		my $model = $self->_overlay_text($component, 'model')
 			|| Tavola::Generator::PHP->new(project => { Project => $spec->{project}->{name} }, component => { name_component => $component->{name} })->model();
+		my $go_filter = $self->_overlay_text($component, 'goFilter');
+		my $go_model = $self->_overlay_text($component, 'goModel');
 
 		my $row = {
 			componentid     => $componentid++,
@@ -156,6 +158,8 @@ sub build {
 			component_json => $component_json,
 			filter         => $filter,
 			model          => $model,
+			go_filter      => $go_filter,
+			go_model       => $go_model,
 		};
 		push @{$one->{component_topics}}, $row;
 

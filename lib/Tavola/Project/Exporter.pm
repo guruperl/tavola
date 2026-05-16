@@ -45,8 +45,6 @@ sub export_tar {
 sub add_to_tar {
 	my ($self, $tar, $form) = @_;
 	my ($one, $other) = $form ? $self->_from_form($form) : $self->{data} ? @{$self->{data}} : $self->_load_export_data();
-	die "Go generation is API/JSON-only; use --no-web-ui\n" if $self->{lang} eq 'go' && $self->{web_ui};
-
 	return 3007 unless ($one->{def_component} && $one->{def_action});
 	for my $role (@{$one->{role_topics}}) {
 		return [3008, $role->{name_role}] unless ($role->{default_component} && $role->{default_action});
@@ -82,6 +80,8 @@ sub add_to_tar {
 		$self->_add_perl_project($tar, $one, $project, $generator);
 	} elsif ($self->{lang} eq 'go') {
 		$self->_add_go_project($tar, $one, $project, $generator);
+		return $self->_add_go_web_ui($tar, $one, $project, $generator) if $self->{web_ui};
+		return;
 	} else {
 		die "Unsupported language '$self->{lang}'\n";
 	}
@@ -211,6 +211,7 @@ sub _add_go_project {
 	my ($self, $tar, $one, $project, $go) = @_;
 
 	$tar->add_data('go.mod', $go->go_mod());
+	$tar->add_data('README.md', $go->readme());
 	$tar->add_data('cmd/' . $go->command_dir() . '/main.go', $go->main());
 	$tar->add_data('internal/app/app.go', $go->app());
 
@@ -226,8 +227,28 @@ sub _add_go_project {
 		my $dir = $go->component_dir($c);
 		$tar->add_data("internal/$dir/component.json", $item->{component_json});
 		$tar->add_data("internal/$dir/component.go", $comp_go->component_support());
-		$tar->add_data("internal/$dir/model.go", $comp_go->component_model());
-		$tar->add_data("internal/$dir/filter.go", $comp_go->component_filter());
+		$tar->add_data("internal/$dir/model.go", $item->{go_model} || $comp_go->component_model());
+		$tar->add_data("internal/$dir/filter.go", $item->{go_filter} || $comp_go->component_filter());
+	}
+	return;
+}
+
+sub _add_go_web_ui {
+	my ($self, $tar, $one, $project, $go) = @_;
+
+	$tar->add_data('www/index.html', $go->index_html());
+	my %roles = map { $_->{name_role} => 1 } @{$one->{role_topics} || []};
+	$roles{$one->{Pubrole}} = 1 if $one->{Pubrole};
+
+	for my $role (sort keys %roles) {
+		$tar->add_data("views/$role/error.html", $go->error_template());
+		for my $item (@{$one->{component_topics}}) {
+			my $component = $item->{name_component};
+			my $actions = decode_json($item->{component_json} || '{}')->{actions} || {};
+			for my $action (sort keys %$actions) {
+				$tar->add_data("views/$role/$component/$action.html", $go->action_template($component, $action));
+			}
+		}
 	}
 	return;
 }

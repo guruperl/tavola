@@ -90,12 +90,12 @@ script/generate-project \
 `jenny` is used here as the generated app name and output path. It marks an app
 produced by Tavola; it is not a Tavola subsystem or package.
 
-Use `--lang perl` for Perl output, `--lang go` for API/JSON-first Go output,
-and `--tar PATH` instead of `--out PATH` to write an archive without extracting
-it. Generated app web UI files are included by default for PHP and Perl; add
-`--no-web-ui` to generate backend/API files without `views/`, Vue files,
-`www/app.html`, `www/index.html`, or `www/genelet.js`. Go output is API-only in
-this first version.
+Use `--lang perl` for Perl output, `--lang go` for Go/Genelet output, and
+`--tar PATH` instead of `--out PATH` to write an archive without extracting it.
+Generated app web UI files are included by default; add `--no-web-ui` to
+generate backend/API files without app templates. PHP and Perl include the Vue
+browser shell at `www/app.html` and `www/genelet.js`; Go includes a small
+server-rendered template set under `views/` plus `www/index.html`.
 
 ## Generated Archive Contents
 
@@ -118,17 +118,20 @@ The generator writes a complete application archive. The common files are:
 PHP archives include `composer.json`, `www/app.php`, project classes under
 `src/`, and component classes under `src/<component>/`. Perl archives include
 `script/app`, project modules under `lib/<Project>/`, and component modules
-under `lib/<Project>/<Component>/`. Go archives include `go.mod`, a
-`cmd/<project>/main.go` entrypoint, app registration under `internal/app/`, and
-component packages under `internal/<component>/`.
+under `lib/<Project>/<Component>/`. Go archives include `go.mod`, `README.md`,
+a `cmd/<project>/main.go` entrypoint, app registration under `internal/app/`,
+and component packages under `internal/<component>/`.
 
 When generated app web UI is enabled, the archive also includes:
 
 - `views/` with server-rendered HTML templates for each role and component.
-- `www/<role>/*.vue` and `www/<role>/<component>/*.vue` with Vue components.
-- `www/app.html`, the browser app shell that loads Vue components.
-- `www/index.html`, a generated route index for Twig and Vue entrypoints.
-- `www/genelet.js`, the browser helper copied from `assets/genelet.js`.
+- For PHP and Perl, `www/<role>/*.vue` and
+  `www/<role>/<component>/*.vue` with Vue components.
+- For PHP and Perl, `www/app.html`, the browser app shell that loads Vue
+  components.
+- `www/index.html`, a generated route index.
+- For PHP and Perl, `www/genelet.js`, the browser helper copied from
+  `assets/genelet.js`.
 
 These files are generated app UI, not the old hosted Tavola builder UI. Use
 `--no-web-ui` when you only want backend/API output.
@@ -143,7 +146,7 @@ script/smoke-generated-project --spec specs/project.template.json --lang all --n
 Run the focused Go CRUD route smoke with the SQLite fixture:
 
 ```bash
-script/smoke-generated-project --spec specs/go-smoke.project.json --lang go --no-web-ui
+script/smoke-generated-project --spec specs/go-smoke.project.json --lang go --web-ui
 ```
 
 ## Generated Endpoint Pattern
@@ -186,11 +189,12 @@ in the spec. `<component>` is a generated component name. `<action>` is an
 action allowed by that component's `component.json`, such as `topics`,
 `startnew`, `insert`, `edit`, `update`, or `delete`.
 
-The generated Vue shell at `www/app.html` uses hash routes such as
-`/app.html#/p/widget?action=topics`, then calls the JSON endpoint through
-`www/genelet.js`. API-only archives generated with `--no-web-ui` keep the same
-JSON endpoint pattern but omit the browser shell, Vue components, and HTML
-templates.
+The generated Vue shell for PHP and Perl at `www/app.html` uses hash routes
+such as `/app.html#/p/widget?action=topics`, then calls the JSON endpoint
+through `www/genelet.js`. Go currently emits minimal server-rendered HTML
+templates that exercise the same route contract. API-only archives generated
+with `--no-web-ui` keep the same JSON endpoint pattern but omit the browser
+shell, Vue components, and HTML templates.
 
 ## Metadata DB Compatibility
 
